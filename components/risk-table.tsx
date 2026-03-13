@@ -2,7 +2,7 @@
 
 import { useState } from "react"
 import type { Riesgo } from "@/lib/types"
-import { calcularNivelRiesgo, getRiskColor, getRiskTextColor } from "@/lib/types"
+import { calcularNivelRiesgo, getRiskColor, getRiskTextColor, interpretacionFromValor, getInterpretacionColor, getInterpretacionTextColor } from "@/lib/types"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
@@ -19,9 +19,7 @@ import {
 import { 
   ChevronDown, 
   ChevronUp, 
-  Search, 
-  Edit,
-  Trash2,
+  Search,
   Plus
 } from "lucide-react"
 
@@ -57,12 +55,18 @@ export function RiskTable({ riesgos, onEdit, onDelete, onAdd }: RiskTableProps) 
       if (nivel !== nivelFilter) return false
     }
 
-    // Fecha range filter
+    // Fecha range filter: include if either creation (`fecha`) or update (`fecha_ejecucion`) falls within range
     if (fechaDesde) {
-      if (new Date(r.fecha) < new Date(fechaDesde)) return false
+      const desde = new Date(fechaDesde)
+      const fechaElab = new Date(r.fecha)
+      const fechaAct = r.fecha_ejecucion ? new Date(r.fecha_ejecucion) : null
+      if (fechaElab < desde && (!fechaAct || fechaAct < desde)) return false
     }
     if (fechaHasta) {
-      if (new Date(r.fecha) > new Date(fechaHasta)) return false
+      const hasta = new Date(fechaHasta)
+      const fechaElab = new Date(r.fecha)
+      const fechaAct = r.fecha_ejecucion ? new Date(r.fecha_ejecucion) : null
+      if (fechaElab > hasta && (!fechaAct || fechaAct > hasta)) return false
     }
 
     return true
@@ -107,7 +111,8 @@ export function RiskTable({ riesgos, onEdit, onDelete, onAdd }: RiskTableProps) 
   }
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-4 overflow-x-auto">
+      <div className="min-w-max">
       {/* Search, filters and Add Button */}
       <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center justify-between">
         <div className="flex gap-3 items-center w-full sm:w-auto">
@@ -149,20 +154,26 @@ export function RiskTable({ riesgos, onEdit, onDelete, onAdd }: RiskTableProps) 
             </SelectContent>
           </Select>
 
-          <Input
-            type="date"
-            value={fechaDesde}
-            onChange={(e) => setFechaDesde(e.target.value)}
-            className="bg-background h-9 w-36"
-            placeholder="Desde"
-          />
-          <Input
-            type="date"
-            value={fechaHasta}
-            onChange={(e) => setFechaHasta(e.target.value)}
-            className="bg-background h-9 w-36"
-            placeholder="Hasta"
-          />
+          <div className="flex items-center gap-2">
+            <label className="text-xs text-muted-foreground">Desde</label>
+            <Input
+              type="date"
+              value={fechaDesde}
+              onChange={(e) => setFechaDesde(e.target.value)}
+              className="bg-background h-9 w-36"
+              placeholder="Desde"
+            />
+          </div>
+          <div className="flex items-center gap-2">
+            <label className="text-xs text-muted-foreground">Hasta</label>
+            <Input
+              type="date"
+              value={fechaHasta}
+              onChange={(e) => setFechaHasta(e.target.value)}
+              className="bg-background h-9 w-36"
+              placeholder="Hasta"
+            />
+          </div>
         </div>
 
         <Button onClick={onAdd} size="sm" className="bg-primary text-primary-foreground hover:bg-primary/90">
@@ -174,7 +185,7 @@ export function RiskTable({ riesgos, onEdit, onDelete, onAdd }: RiskTableProps) 
       {/* Table */}
       <div className="rounded-lg border border-border overflow-hidden">
         <div className="overflow-x-auto">
-          <Table>
+          <Table className="min-w-max">
             <TableHeader>
               <TableRow className="bg-muted/50 hover:bg-muted/50">
                 <TableHead 
@@ -190,7 +201,7 @@ export function RiskTable({ riesgos, onEdit, onDelete, onAdd }: RiskTableProps) 
                   Proceso <SortIcon field="proceso" />
                 </TableHead>
                 <TableHead 
-                  className="cursor-pointer hover:bg-muted/80 text-foreground font-semibold text-xs hidden md:table-cell"
+                  className="cursor-pointer hover:bg-muted/80 text-foreground font-semibold text-xs"
                   onClick={() => handleSort("zona")}
                 >
                   Zona <SortIcon field="zona" />
@@ -201,18 +212,19 @@ export function RiskTable({ riesgos, onEdit, onDelete, onAdd }: RiskTableProps) 
                 >
                   Clasificacion <SortIcon field="clasificacion" />
                 </TableHead>
-                <TableHead className="text-foreground font-semibold text-xs hidden lg:table-cell">
+                <TableHead className="text-foreground font-semibold text-xs">
                   Cargo
                 </TableHead>
                 <TableHead className="text-foreground font-semibold text-xs text-center">
-                  Nivel
+                  Interpretación Nivel Riesgo
                 </TableHead>
-                <TableHead className="text-foreground font-semibold text-xs hidden xl:table-cell">
-                  Fecha
+                <TableHead className="text-foreground font-semibold text-xs">
+                  Fecha Elaboración
                 </TableHead>
-                <TableHead className="text-right text-foreground font-semibold text-xs w-24">
-                  Acciones
+                <TableHead className="text-foreground font-semibold text-xs">
+                  Fecha Actualización
                 </TableHead>
+                {/* Acciones column removed to simplify layout */}
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -229,7 +241,7 @@ export function RiskTable({ riesgos, onEdit, onDelete, onAdd }: RiskTableProps) 
                     riesgo.exposicion, 
                     riesgo.consecuencia
                   )
-
+                  const interp = (riesgo.interpretacion_nivel_riesgo as string) || interpretacionFromValor(valor)
                   return (
                     <TableRow 
                       key={riesgo.id} 
@@ -242,7 +254,7 @@ export function RiskTable({ riesgos, onEdit, onDelete, onAdd }: RiskTableProps) 
                       <TableCell className="font-medium text-foreground text-sm">
                         {truncate(riesgo.proceso, 25)}
                       </TableCell>
-                      <TableCell className="text-foreground text-sm hidden md:table-cell">
+                      <TableCell className="text-foreground text-sm">
                         {truncate(riesgo.zona, 20)}
                       </TableCell>
                       <TableCell>
@@ -250,42 +262,24 @@ export function RiskTable({ riesgos, onEdit, onDelete, onAdd }: RiskTableProps) 
                           {truncate(riesgo.clasificacion, 15)}
                         </Badge>
                       </TableCell>
-                      <TableCell className="text-muted-foreground text-sm hidden lg:table-cell">
+                      <TableCell className="text-muted-foreground text-sm">
                         {truncate(riesgo.cargo, 18)}
                       </TableCell>
                       <TableCell className="text-center">
                         <Badge 
-                          className={`${getRiskColor(nivel)} ${getRiskTextColor(nivel)} border-0 text-xs font-medium px-2 py-0.5`}
+                          className={`${getInterpretacionColor(interp)} ${getInterpretacionTextColor(interp)} border-0 text-xs font-medium px-2 py-0.5`}
                         >
-                          {nivel.charAt(0).toUpperCase() + nivel.slice(1)}
+                          {interp}
                         </Badge>
                       </TableCell>
                       {/* 'expuestos' removed */}
-                      <TableCell className="text-muted-foreground text-xs hidden xl:table-cell">
+                      <TableCell className="text-muted-foreground text-xs">
                         {riesgo.fecha}
                       </TableCell>
-                      <TableCell onClick={(e) => e.stopPropagation()}>
-                        <div className="flex justify-end gap-1">
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className="h-7 w-7 p-0 text-muted-foreground hover:text-primary hover:bg-primary/10"
-                            onClick={() => onEdit(riesgo)}
-                            title="Editar"
-                          >
-                            <Edit className="h-3.5 w-3.5" />
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className="h-7 w-7 p-0 text-muted-foreground hover:text-destructive hover:bg-destructive/10"
-                            onClick={() => onDelete(riesgo.id)}
-                            title="Eliminar"
-                          >
-                            <Trash2 className="h-3.5 w-3.5" />
-                          </Button>
-                        </div>
+                      <TableCell className="text-muted-foreground text-xs">
+                        {riesgo.fecha_ejecucion || "-"}
                       </TableCell>
+                      {/* Actions column removed; editing now via row click */}
                     </TableRow>
                   )
                 })
@@ -293,6 +287,7 @@ export function RiskTable({ riesgos, onEdit, onDelete, onAdd }: RiskTableProps) 
             </TableBody>
           </Table>
         </div>
+      </div>
       </div>
 
       {/* Footer */}
