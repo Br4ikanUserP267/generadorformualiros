@@ -193,12 +193,20 @@ export function RiskForm({ riesgo, open, onClose, onSave }: RiskFormProps) {
                   <div>Pagina: 1 de 1</div>
                 </div>
               </div>
-              <div className="mt-3 grid grid-cols-3 gap-2">
-                <Input value={formData.proceso || ""} onChange={(e) => handleChange("proceso", e.target.value)} placeholder="Área / Proceso" />
-                <Input value={(formData.individuo as string) || ""} onChange={(e) => handleChange("individuo", e.target.value)} placeholder="Responsable" />
-                <div className="flex gap-2">
-                  <Input type="date" value={formData.fecha || ""} disabled className="cursor-not-allowed" />
-                  <Input type="date" value={(formData.fecha_ejecucion as string) || ""} onChange={(e) => handleChange("fecha_ejecucion", e.target.value)} className="bg-background" />
+              <div className="mt-3 grid grid-cols-2 gap-2">
+                <div>
+                  <Input value={formData.proceso || ""} onChange={(e) => handleChange("proceso", e.target.value)} placeholder="Área / Proceso" />
+                  <div className="mt-2">
+                    <div className="text-xs font-medium">FECHA ELABORACIÓN</div>
+                    <Input type="date" value={formData.fecha || ""} disabled className="cursor-not-allowed" />
+                  </div>
+                </div>
+                <div>
+                  <Input value={(formData.individuo as string) || ""} onChange={(e) => handleChange("individuo", e.target.value)} placeholder="Responsable" />
+                  <div className="mt-2">
+                    <div className="text-xs font-medium">FECHA ACTUALIZACIÓN</div>
+                    <Input type="date" value={(formData.fecha_ejecucion as string) || ""} disabled className="cursor-not-allowed" />
+                  </div>
                 </div>
               </div>
             </div>

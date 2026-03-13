@@ -264,20 +264,21 @@ export function RiskFormPage({ riesgo, onCancel, onSave }: RiskFormPageProps) {
                   <div>Pagina: 1 de 1</div>
                 </div>
               </div>
-              <div className="mt-4 grid grid-cols-3 gap-4 text-sm">
+              <div className="mt-4 grid grid-cols-2 gap-4 text-sm">
                 <div>
                   <div className="font-medium">ÁREA / PROCESO</div>
                   <Input value={formData.proceso || ""} onChange={(e) => handleChange("proceso", e.target.value)} />
+                  <div className="mt-2">
+                    <div className="text-xs font-medium">FECHA ELABORACIÓN</div>
+                    <Input type="date" value={formData.fecha || ""} disabled className="cursor-not-allowed" />
+                  </div>
                 </div>
                 <div>
                   <div className="font-medium">RESPONSABLE</div>
                   <Input value={formData.individuo || ""} onChange={(e) => handleChange("individuo", e.target.value)} />
-                </div>
-                <div>
-                  <div className="font-medium">FECHA ELABORACIÓN / ACTUALIZACIÓN</div>
-                  <div className="flex gap-2">
-                    <Input type="date" value={formData.fecha || ""} disabled className="cursor-not-allowed" />
-                    <Input type="date" value={formData.fecha_ejecucion || ""} onChange={(e) => handleChange("fecha_ejecucion", e.target.value)} className="bg-background" />
+                  <div className="mt-2">
+                    <div className="text-xs font-medium">FECHA ACTUALIZACIÓN</div>
+                    <Input type="date" value={formData.fecha_ejecucion || ""} disabled className="cursor-not-allowed" />
                   </div>
                 </div>
               </div>
@@ -636,8 +637,8 @@ export function RiskFormPage({ riesgo, onCancel, onSave }: RiskFormPageProps) {
                     <Textarea id="intervencion" value={formData.intervencion || ""} onChange={(e) => handleChange("intervencion", e.target.value)} rows={2} className="bg-background resize-y" />
                   </div>
                   <div>
-                    <div className="font-medium">Fecha de Ejecución</div>
-                    <Input id="fecha_ejecucion" type="date" value={(formData.fecha_ejecucion as string) || ""} onChange={(e) => handleChange("fecha_ejecucion", e.target.value)} className="bg-background" />
+                      <div className="font-medium">Fecha de Ejecución</div>
+                      <Input id="fecha_ejecucion" type="date" value={(formData.fecha_ejecucion as string) || ""} onChange={(e) => handleChange("fecha_ejecucion", e.target.value)} className="bg-background" />
                   </div>
                 </div>
               </div>
