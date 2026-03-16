@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import type { Riesgo } from "@/lib/types"
+import type { Riesgo, ArchivoAdjunto } from "@/lib/types"
 import { calcularNivelRiesgo, interpretacionFromValor } from "@/lib/types"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -28,7 +28,7 @@ import { FieldGroup, Field, FieldLabel } from "@/components/ui/field"
 import { Switch } from "@/components/ui/switch"
 import { useClasificaciones } from "@/hooks/use-clasificaciones"
 import { Spinner } from "@/components/ui/spinner"
-import { Download } from "lucide-react"
+import { Download, X } from "lucide-react"
 import { aiAutocomplete } from '@/lib/use-ai-autocomplete'
 
 interface RiskFormProps {
@@ -195,6 +195,40 @@ export function RiskForm({ riesgo, open, onClose, onSave }: RiskFormProps) {
   }
 
   const [isAutoLoading, setIsAutoLoading] = useState(false)
+
+  // File attachments (temporary client-side previews)
+  const handleFiles = (files: FileList | null) => {
+    if (!files) return
+    const newFiles: ArchivoAdjunto[] = Array.from(files).map((file, idx) => ({
+      id: `${Date.now()}_${idx}`,
+      nombre: file.name,
+      tipo: file.type || 'application/octet-stream',
+      tamano: file.size,
+      url: URL.createObjectURL(file),
+      fechaSubida: new Date().toISOString()
+    }))
+    setFormData(prev => ({ ...prev, archivos: [...(prev.archivos || []), ...newFiles] }))
+  }
+
+  const removeArchivo = (id: string) => {
+    setFormData(prev => {
+      const archivos = prev.archivos || []
+      const found = archivos.find(a => a.id === id)
+      if (found) {
+        try { URL.revokeObjectURL(found.url) } catch { /* ignore */ }
+      }
+      return { ...prev, archivos: archivos.filter(a => a.id !== id) }
+    })
+  }
+
+  useEffect(() => {
+    return () => {
+      try {
+        (formData.archivos || []).forEach(a => { if (a.url) URL.revokeObjectURL(a.url) })
+      } catch { }
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   const extractTextFromAiResponse = (data: any) => {
     if (!data) return ''
@@ -830,6 +864,49 @@ export function RiskForm({ riesgo, open, onClose, onSave }: RiskFormProps) {
                       <Input id="fecha_ejecucion" type="date" value={(formData.fecha_ejecucion as string) || ""} onChange={(e) => handleChange("fecha_ejecucion", e.target.value)} className="bg-background" />
                     </Field>
                   </FieldGroup>
+                </div>
+              </div>
+            </div>
+            {/* Archivos adjuntos */}
+            <div className="p-4 bg-card border border-border rounded-md">
+              <h3 className="font-semibold text-foreground mb-3">Archivos Adjuntos</h3>
+              <div className="space-y-2">
+                <input
+                  type="file"
+                  multiple
+                  onChange={(e) => handleFiles(e.target.files)}
+                  className="w-full text-sm"
+                />
+
+                <div className="mt-2 grid grid-cols-1 sm:grid-cols-3 gap-3">
+                  {(formData.archivos || []).map((a) => (
+                    <div key={a.id} className="border border-border rounded-md p-2 relative bg-background">
+                      <button
+                        type="button"
+                        onClick={(e) => { e.stopPropagation(); removeArchivo(a.id) }}
+                        className="absolute right-2 top-2 text-muted-foreground"
+                        aria-label={`Eliminar ${a.nombre}`}
+                      >
+                        <X className="h-4 w-4" />
+                      </button>
+
+                      {a.tipo.startsWith('image/') ? (
+                        <a href={a.url} target="_blank" rel="noreferrer">
+                          <img src={a.url} alt={a.nombre} className="w-full h-28 object-cover rounded" />
+                        </a>
+                      ) : a.tipo === 'application/pdf' ? (
+                        <a href={a.url} target="_blank" rel="noreferrer" className="block w-full h-28 overflow-hidden">
+                          <embed src={a.url} type="application/pdf" className="w-full h-28" />
+                        </a>
+                      ) : (
+                        <a href={a.url} target="_blank" rel="noreferrer" className="flex items-center justify-center w-full h-28 text-sm text-muted-foreground">
+                          {a.nombre}
+                        </a>
+                      )}
+
+                      <div className="mt-2 text-xs text-muted-foreground">{a.nombre} · {Math.round((a.tamano||0)/1024)} KB</div>
+                    </div>
+                  ))}
                 </div>
               </div>
             </div>
