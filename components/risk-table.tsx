@@ -471,7 +471,7 @@ export function RiskTable({ riesgos, onEdit, onDelete, onAdd }: RiskTableProps) 
           {sortedRiesgos.length} de {riesgos.length} registros
         </span>
         <span className="hidden sm:inline">
-          Clic en una fila para editar
+          Clic en una fila para editar tipo asistencial;
         </span>
       </div>
     </div>
