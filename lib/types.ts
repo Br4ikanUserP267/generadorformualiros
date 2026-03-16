@@ -46,6 +46,7 @@ export interface Riesgo {
   control_admin?: string
   epp?: string
   fecha_ejecucion?: string
+  tipo_proceso?: string
 }
 
 export interface Configuracion {

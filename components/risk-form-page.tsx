@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from "react"
 import type { Riesgo, ArchivoAdjunto } from "@/lib/types"
-import { /* calcularNivelRiesgo, getRiskColor, getRiskTextColor */ } from "@/lib/types"
+import { calcularNivelRiesgo, interpretacionFromValor } from "@/lib/types"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
@@ -20,7 +20,8 @@ import { FieldGroup, Field, FieldLabel } from "@/components/ui/field"
 import { Switch } from "@/components/ui/switch"
 import { useClasificaciones } from "@/hooks/use-clasificaciones"
 import { Spinner } from "@/components/ui/spinner"
-import { ArrowLeft, Save, X, Upload, FileText, Image, File, Trash2 } from "lucide-react"
+import { ArrowLeft, Save, X, Upload, FileText, Image, File, Trash2, Download } from "lucide-react"
+import { aiAutocomplete } from '@/lib/use-ai-autocomplete'
 
 interface RiskFormPageProps {
   riesgo: Riesgo | null
@@ -30,6 +31,7 @@ interface RiskFormPageProps {
 
 const DEFAULT_RIESGO: Partial<Riesgo> = {
   proceso: "",
+  tipo_proceso: "ASISTENCIAL",
   zona: "",
   actividad: "",
   tarea: "",
@@ -140,6 +142,89 @@ export function RiskFormPage({ riesgo, onCancel, onSave }: RiskFormPageProps) {
     setArchivos(prev => [...prev, ...newArchivos])
   }
 
+  const [isAutoLoading, setIsAutoLoading] = useState(false)
+
+  const extractTextFromAiResponse = (data: any) => {
+    if (!data) return ''
+    if (typeof data === 'string') return data
+
+    // Prefer normalized extracted text from server-side helper
+    if (data._extractedText && typeof data._extractedText === 'string') return data._extractedText
+
+    if (data.candidates && Array.isArray(data.candidates) && data.candidates[0]) {
+      const c = data.candidates[0]
+      if (typeof c === 'string') return c
+      if (c.content) {
+        if (typeof c.content === 'string') return c.content
+        if (typeof c.content === 'object' && c.content.parts && Array.isArray(c.content.parts)) {
+          return c.content.parts.map((p: any) => p?.text || '').join('')
+        }
+        if (c.output && c.output[0] && c.output[0].content) return c.output[0].content
+      }
+    }
+    if (data.output && Array.isArray(data.output) && data.output[0] && data.output[0].content) return data.output[0].content
+    if (data.choices && data.choices[0]) {
+      return data.choices[0].text || (data.choices[0].message && data.choices[0].message.content) || JSON.stringify(data)
+    }
+    try { return JSON.stringify(data) } catch { return String(data) }
+  }
+
+  const handleAutoComplete = async () => {
+    try {
+      setIsAutoLoading(true)
+      const summary = `Proceso: ${formData.proceso || ''}. Zona: ${formData.zona || ''}. Actividad: ${formData.actividad || ''}. Tarea: ${formData.tarea || ''}. Cargo: ${formData.cargo || ''}. Responsable: ${formData.individuo || ''}.`;
+      const prompt = `Eres un asistente experto en gestión de riesgos. A partir de la siguiente información general:\n${summary}\nGenera valores sugeridos para los siguientes campos del formulario (devuelve JSON con claves):\npeligro_desc, efectos, controles, intervencion, seguimiento, peor_consecuencia, control_eliminacion, control_sustitucion, control_ingenieria, control_admin, epp\nDevuelve sólo JSON válido.`
+
+      const resp = await aiAutocomplete(prompt, { maxTokens: 600 })
+      const text = extractTextFromAiResponse(resp)
+
+      let parsed: any = null
+      try { parsed = JSON.parse(text) } catch (e) { parsed = null }
+
+      if (parsed && typeof parsed === 'object') {
+        setFormData(prev => ({
+          ...prev,
+          peligro_desc: parsed.peligro_desc || parsed.peligro || prev.peligro_desc,
+          efectos: parsed.efectos || prev.efectos,
+          controles: parsed.controles || prev.controles,
+          intervencion: parsed.intervencion || prev.intervencion,
+          seguimiento: parsed.seguimiento || prev.seguimiento,
+          peor_consecuencia: parsed.peor_consecuencia || prev.peor_consecuencia,
+          control_eliminacion: parsed.control_eliminacion || prev.control_eliminacion,
+          control_sustitucion: parsed.control_sustitucion || prev.control_sustitucion,
+          control_ingenieria: parsed.control_ingenieria || prev.control_ingenieria,
+          control_admin: parsed.control_admin || prev.control_admin,
+          epp: parsed.epp || prev.epp
+        }))
+      } else if (text && text.trim()) {
+        const get = (label: string) => {
+          const re = new RegExp(label + '\\s*[:\\-]?\\s*([\\s\\S]*?)(?:\\n\\s*\\n|$)', 'i')
+          const m = text.match(re)
+          return m ? m[1].trim() : ''
+        }
+        const peligro = get('Peligro') || get('Descripción del peligro') || text
+        const efectos = get('Efectos') || ''
+        const controles = get('Controles') || ''
+        const intervencion = get('Intervención') || get('Medidas de intervención') || ''
+
+        setFormData(prev => ({
+          ...prev,
+          peligro_desc: peligro || prev.peligro_desc,
+          efectos: efectos || prev.efectos,
+          controles: controles || prev.controles,
+          intervencion: intervencion || prev.intervencion,
+        }))
+      } else {
+        window.alert('La IA no devolvió contenido útil.')
+      }
+    } catch (err: any) {
+      console.error('AI autocomplete error', err)
+      window.alert('Error al autocompletar: ' + (err?.message || String(err)))
+    } finally {
+      setIsAutoLoading(false)
+    }
+  }
+
   const handleRemoveFile = (id: string) => {
     setArchivos(prev => prev.filter(a => a.id !== id))
   }
@@ -192,6 +277,54 @@ export function RiskFormPage({ riesgo, onCancel, onSave }: RiskFormPageProps) {
     setIsSaving(false)
   }
 
+  const downloadBlob = (html: string, filename: string) => {
+    const blob = new Blob([html], { type: "application/msword" })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement("a")
+    a.href = url
+    a.download = filename
+    document.body.appendChild(a)
+    a.click()
+    a.remove()
+    URL.revokeObjectURL(url)
+  }
+
+  const generateFormHtml = (data: Partial<Riesgo>, attached: any[]) => {
+    const safe = (v: any) => (v === undefined || v === null ? "" : String(v))
+    const { nivel, valor } = calcularNivelRiesgo(Number(data.deficiencia || 0), Number(data.exposicion || 0), Number(data.consecuencia || 0))
+    const interp = (data.interpretacion_nivel_riesgo as string) || interpretacionFromValor(valor)
+    const listify = (t?: any) => (t ? String(t).split(/\r?\n/).map(s => s.trim()).filter(Boolean).map(s => `<li>${s}</li>`).join('') : '')
+    let html = `<!doctype html><html><head><meta charset="utf-8"/><title>Informe Riesgo ${safe(data.id)}</title>
+      <style>
+        body{font-family:Arial, Helvetica, sans-serif;color:#111827;margin:28px;line-height:1.35}
+        h2{font-size:14px;margin:18px 0 8px;color:#0f172a}
+        table{width:100%;border-collapse:collapse;margin-top:6px}
+        th,td{padding:8px 10px;text-align:left;vertical-align:top;border:1px solid #e6e7eb;font-size:12px}
+        th{background:#fff;font-weight:600;width:30%}
+        .bullet{margin:6px 0 0 18px}
+      </style>
+    </head><body>`
+    html += `<h2>Información general</h2><table><tr><th>Área / Proceso</th><td>${safe(data.proceso)}</td></tr><tr><th>Zona / Lugar</th><td>${safe(data.zona)}</td></tr><tr><th>Responsable / Cargo</th><td>${safe(data.individuo)} — ${safe(data.cargo)}</td></tr><tr><th>Fecha elaboración</th><td>${safe(data.fecha)}</td></tr><tr><th>Fecha actualización</th><td>${safe(data.fecha_ejecucion)}</td></tr></table>`
+    html += `<h2>Clasificación del riesgo</h2><table><tr><th>Clasificación</th><td>${safe(data.clasificacion)}</td></tr><tr><th>Deficiencia · Exposición · Consecuencia</th><td>${safe(data.deficiencia)} · ${safe(data.exposicion)} · ${safe(data.consecuencia)}</td></tr><tr><th>Nivel calculado</th><td>${nivel} (${valor}) — Interpretación: ${interp}</td></tr></table>`
+    html += `<h2>Descripción del peligro</h2><ul class="bullet">${listify(data.peligro_desc)}</ul><h2>Efectos</h2><ul class="bullet">${listify(data.efectos)}</ul>`
+    if (attached && attached.length > 0) {
+      html += `<h2>Archivos Adjuntos (${attached.length})</h2><ul class="bullet">`
+      for (const f of attached) {
+        html += `<li>${safe(f.nombre)} — ${Math.round((f.tamano||0)/1024)} KB</li>`
+      }
+      html += `</ul>`
+    }
+    html += `<h2>Controles y Medidas</h2><p>${safe(data.controles)}</p><p>${safe(data.intervencion)}</p>`
+    html += `</body></html>`
+    return html
+  }
+
+  const handleDownload = () => {
+    const html = generateFormHtml(formData, archivos)
+    const id = formData.id ? `_${formData.id}` : ""
+    downloadBlob(html, `informe_riesgo${id}.doc`)
+  }
+
   return (
     <div className="bg-background pb-8">
       {/* Header */}
@@ -222,6 +355,13 @@ export function RiskFormPage({ riesgo, onCancel, onSave }: RiskFormPageProps) {
                 <X className="h-4 w-4 mr-2" />
                 Cancelar
               </Button>
+              <Button size="sm" variant="outline" onClick={handleAutoComplete} disabled={isAutoLoading}>
+                {isAutoLoading ? <Spinner className="h-4 w-4" /> : 'Autocompletar IA'}
+              </Button>
+                <Button onClick={handleDownload} disabled={isSaving} className="text-primary-foreground hover:bg-primary-foreground/10" variant="ghost">
+                  <Download className="h-4 w-4 mr-2" />
+                  Descargar
+                </Button>
               <Button 
                 onClick={handleSubmit}
                 disabled={isSaving}
@@ -268,6 +408,17 @@ export function RiskFormPage({ riesgo, onCancel, onSave }: RiskFormPageProps) {
                 <div>
                   <div className="font-medium">ÁREA / PROCESO</div>
                   <Input value={formData.proceso || ""} onChange={(e) => handleChange("proceso", e.target.value)} />
+                  <div className="mt-2">
+                    <div className="text-xs font-medium">Tipo de Proceso</div>
+                    <Select value={(formData.tipo_proceso as string) || "ASISTENCIAL"} onValueChange={(v) => handleChange("tipo_proceso", v)}>
+                      <SelectTrigger className="bg-background w-full"><SelectValue placeholder="Seleccione..." /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="ASISTENCIAL">ASISTENCIAL</SelectItem>
+                        <SelectItem value="OPERATIVO">OPERATIVO</SelectItem>
+                        <SelectItem value="ADMINISTRATIVO">ADMINISTRATIVO</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
                   <div className="mt-2">
                     <div className="text-xs font-medium">FECHA ELABORACIÓN</div>
                     <Input type="date" value={formData.fecha || ""} disabled className="cursor-not-allowed" />

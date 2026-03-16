@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useAuth } from "@/lib/auth-context"
 import type { Riesgo } from "@/lib/types"
 import { mockRiesgos, mockConfiguracion } from "@/lib/mock-data"
@@ -30,7 +30,7 @@ import {
 
 export function Dashboard() {
   const { user, logout } = useAuth()
-  const [riesgos, setRiesgos] = useState<Riesgo[]>(mockRiesgos)
+  const [riesgos, setRiesgos] = useState<Riesgo[]>([])
   const [selectedRiesgo, setSelectedRiesgo] = useState<Riesgo | null>(null)
   const [formPageOpen, setFormPageOpen] = useState(false)
   const [deleteModalOpen, setDeleteModalOpen] = useState(false)
@@ -51,6 +51,24 @@ export function Dashboard() {
     setFormPageOpen(true)
   }
 
+  useEffect(() => {
+    // load persisted riesgos from API
+    const load = async () => {
+      try {
+        const res = await fetch('/api/riesgos')
+        if (res.ok) {
+          const data = await res.json()
+          setRiesgos(data)
+        } else {
+          setRiesgos(mockRiesgos)
+        }
+      } catch (e) {
+        setRiesgos(mockRiesgos)
+      }
+    }
+    load()
+  }, [])
+
   const handleAdd = () => {
     setSelectedRiesgo(null)
     setFormPageOpen(true)
@@ -63,24 +81,40 @@ export function Dashboard() {
 
   const confirmDelete = () => {
     if (riesgoToDelete !== null) {
-      setRiesgos(prev => prev.filter(r => r.id !== riesgoToDelete))
+      // persist delete
+      fetch(`/api/riesgos/${riesgoToDelete}`, { method: 'DELETE' }).then(() => {
+        setRiesgos(prev => prev.filter(r => r.id !== riesgoToDelete))
+      }).catch(() => {
+        setRiesgos(prev => prev.filter(r => r.id !== riesgoToDelete))
+      })
       setRiesgoToDelete(null)
       setDeleteModalOpen(false)
     }
   }
 
   const handleSave = (data: Partial<Riesgo>) => {
-    if (selectedRiesgo) {
-      // Update existing
-      setRiesgos(prev => prev.map(r => 
-        r.id === selectedRiesgo.id ? { ...r, ...data } : r
-      ))
-    } else {
-      // Create new
-      const newId = Math.max(...riesgos.map(r => r.id), 0) + 1
-      setRiesgos(prev => [...prev, { ...data, id: newId } as Riesgo])
+    const save = async () => {
+      try {
+        if (selectedRiesgo) {
+          const res = await fetch(`/api/riesgos/${selectedRiesgo.id}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) })
+          if (res.ok) {
+            const updated = await res.json()
+            setRiesgos(prev => prev.map(r => r.id === updated.id ? updated : r))
+          }
+        } else {
+          const res = await fetch('/api/riesgos', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) })
+          if (res.ok) {
+            const created = await res.json()
+            setRiesgos(prev => [...prev, created])
+          }
+        }
+      } catch (e) {
+        console.error('Save error', e)
+      } finally {
+        setFormPageOpen(false)
+      }
     }
-    setFormPageOpen(false)
+    save()
   }
 
   return (

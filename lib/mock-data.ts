@@ -15,6 +15,7 @@ export const mockRiesgos: Riesgo[] = [
   {
     id: 1,
     proceso: "Atención al Paciente",
+    tipo_proceso: "ASISTENCIAL",
     zona: "Urgencias",
     actividad: "Triage y evaluación inicial",
     tarea: "Evaluación de signos vitales y clasificación de pacientes según gravedad",
@@ -34,6 +35,7 @@ export const mockRiesgos: Riesgo[] = [
   {
     id: 2,
     proceso: "Cirugía",
+    tipo_proceso: "ASISTENCIAL",
     zona: "Quirófano Principal",
     actividad: "Procedimientos quirúrgicos mayores",
     tarea: "Asistencia en cirugías de alta complejidad incluyendo manejo de instrumental cortopunzante",
@@ -53,6 +55,7 @@ export const mockRiesgos: Riesgo[] = [
   {
     id: 3,
     proceso: "Servicios Generales",
+    tipo_proceso: "OPERATIVO",
     zona: "Áreas Comunes",
     actividad: "Limpieza y desinfección hospitalaria",
     tarea: "Limpieza de superficies, pisos y baños con productos químicos de desinfección hospitalaria",
@@ -72,6 +75,7 @@ export const mockRiesgos: Riesgo[] = [
   {
     id: 4,
     proceso: "Hospitalización",
+    tipo_proceso: "ASISTENCIAL",
     zona: "Pisos de Hospitalización",
     actividad: "Movilización de pacientes",
     tarea: "Traslado y posicionamiento de pacientes con movilidad reducida o nula",
@@ -91,6 +95,7 @@ export const mockRiesgos: Riesgo[] = [
   {
     id: 5,
     proceso: "Laboratorio Clínico",
+    tipo_proceso: "ASISTENCIAL",
     zona: "Área de Procesamiento",
     actividad: "Análisis de muestras biológicas",
     tarea: "Procesamiento y análisis de muestras de sangre, orina y otros fluidos corporales",
@@ -110,6 +115,7 @@ export const mockRiesgos: Riesgo[] = [
   {
     id: 6,
     proceso: "Radiología",
+    tipo_proceso: "ASISTENCIAL",
     zona: "Sala de Rayos X",
     actividad: "Toma de imágenes diagnósticas",
     tarea: "Operación de equipos de rayos X y posicionamiento de pacientes para estudios radiológicos",
@@ -129,6 +135,7 @@ export const mockRiesgos: Riesgo[] = [
   {
     id: 7,
     proceso: "Farmacia",
+    tipo_proceso: "ASISTENCIAL",
     zona: "Área de Preparación",
     actividad: "Preparación de medicamentos",
     tarea: "Preparación de mezclas intravenosas y medicamentos citotóxicos",
@@ -148,6 +155,7 @@ export const mockRiesgos: Riesgo[] = [
   {
     id: 8,
     proceso: "Mantenimiento",
+    tipo_proceso: "OPERATIVO",
     zona: "Cuarto de Máquinas",
     actividad: "Mantenimiento de equipos eléctricos",
     tarea: "Revisión y reparación de sistemas eléctricos de media y baja tensión",
