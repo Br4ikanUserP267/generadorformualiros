@@ -1,9 +1,10 @@
 import type { Metadata } from 'next'
-import { Inter } from 'next/font/google'
+import { Inter, Syne } from 'next/font/google'
 import { Analytics } from '@vercel/analytics/next'
 import './globals.css'
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-inter" });
+const syne = Syne({ subsets: ["latin"], variable: "--font-syne" });
 
 export const metadata: Metadata = {
   title: 'Matriz de Riesgos - Clínica Santa María S.A.S',
@@ -34,8 +35,8 @@ export default function RootLayout({
   children: React.ReactNode
 }>) {
   return (
-    <html lang="es">
-      <body className={`${inter.variable} font-sans antialiased`}>
+    <html lang="es" style={{ fontFamily: "'Inter', sans-serif" }}>
+      <body className={`${inter.variable} ${syne.variable} antialiased`} style={{ fontFamily: "'Inter', sans-serif" }}>
         {children}
         <Analytics />
       </body>
