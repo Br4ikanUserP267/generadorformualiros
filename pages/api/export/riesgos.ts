@@ -81,6 +81,20 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     ws.getRow(1).height = 22
     ws.getRow(1).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFD1D5DB' } }
 
+    // If this is the ASISTENCIAL sheet, add a top-level subsection header 'Asistencias'
+    // so that processes appear grouped under that subsection.
+    if (k === 'ASISTENCIAL') {
+      const subRow = ws.addRow(['Asistencias'])
+      const subRowNum = subRow.number
+      ws.mergeCells(subRowNum, 1, subRowNum, ws.columns.length)
+      const subCell = ws.getCell(subRowNum, 1)
+      subCell.font = { italic: true, name: 'Arial', size: 11 }
+      subCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFEFF6FF' } }
+      subCell.alignment = { horizontal: 'left' }
+      // small spacer after subsection header
+      ws.addRow([])
+    }
+
     // Group rows by `proceso` inside each sheet and add a process header row
     const procGroups: Record<string, any[]> = {}
     for (const r of rows) {
