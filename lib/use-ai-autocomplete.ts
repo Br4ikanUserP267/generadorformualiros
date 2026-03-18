@@ -22,7 +22,7 @@ export async function aiAutocomplete(prompt: string, opts?: { maxTokens?: number
   // Normalize common provider shapes so callers can more easily extract text:
   // - Gemini: { candidates: [{ content: { parts: [{ text }] } }] }
   // - Other shapes: { output: [{ content: { parts: [...] } }] } or choices/messages
-  const extractPartsText = (obj: any) => {
+  const extractPartsText = (obj: any): string => {
     if (!obj) return ''
     // If it's already a string
     if (typeof obj === 'string') return obj

@@ -2,6 +2,7 @@ import type { Metadata } from 'next'
 import { Inter, Syne } from 'next/font/google'
 import { Analytics } from '@vercel/analytics/next'
 import './globals.css'
+import { Toaster } from '@/components/ui/toaster'
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-inter" });
 const syne = Syne({ subsets: ["latin"], variable: "--font-syne" });
@@ -38,6 +39,7 @@ export default function RootLayout({
     <html lang="es" style={{ fontFamily: "'Inter', sans-serif" }}>
       <body className={`${inter.variable} ${syne.variable} antialiased`} style={{ fontFamily: "'Inter', sans-serif" }}>
         {children}
+        <Toaster />
         <Analytics />
       </body>
     </html>

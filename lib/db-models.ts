@@ -99,7 +99,7 @@ export function mapRiesgoRowToApp(row: RiesgoRow, archivos: ArchivoRow[] = []): 
     archivos: archivos.map(a => ({ id: a.id, nombre: a.nombre, tipo: a.tipo || '', tamano: a.tamano || 0, url: a.url || '', fechaSubida: a.fecha_subida })),
     fuente: row.fuente || undefined,
     medio: row.medio || undefined,
-    individuo: row.individuo || undefined,
+    individuo: row.individuo || '',
     probabilidad: row.probabilidad || undefined,
     interpretacion_probabilidad: row.interpretacion_probabilidad || undefined,
     nivel_riesgo: row.nivel_riesgo || undefined,

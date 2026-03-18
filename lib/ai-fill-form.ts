@@ -37,7 +37,7 @@ Devuelve sólo JSON válido con las claves: ${fields.join(', ')}. Si no puedes c
   // Merge only requested fields
   const toMerge: Partial<T> = {}
   for (const f of fields) {
-    if (parsed[f] !== undefined) toMerge[f] = parsed[f]
+    if (parsed[f] !== undefined) (toMerge as any)[f] = parsed[f]
   }
 
   setFormData(prev => ({ ...prev, ...toMerge }))

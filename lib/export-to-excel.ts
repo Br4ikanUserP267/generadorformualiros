@@ -120,3 +120,210 @@ export async function exportRisksToExcel(riesgos: Riesgo[], filename = 'matriz_r
   a.remove()
   URL.revokeObjectURL(url)
 }
+
+export async function exportAreaMatrixToExcel(matrix: import("./types").AreaMatrix, filename = undefined) {
+  const name = filename || `${matrix.area_nombre || 'area'}_matriz.xlsx`
+  const wb = new ExcelJS.Workbook()
+  wb.creator = 'Matriz de Riesgos'
+  wb.created = new Date()
+
+  const ws = wb.addWorksheet('Matriz')
+
+  // Header rows with area info
+  ws.addRow([`Área: ${matrix.area_nombre || ''}`])
+  ws.addRow([`Responsable: ${matrix.responsable || ''}`])
+  ws.addRow([`Fecha Elaboración: ${matrix.fecha_elaboracion || ''}`])
+  ws.addRow([`Fecha Actualización: ${matrix.fecha_actualizacion || ''}`])
+  ws.addRow([])
+
+  // columns
+  ws.columns = [
+    { header: 'Proceso', key: 'proceso', width: 24 },
+    { header: 'Zona', key: 'zona', width: 18 },
+    { header: 'Cargo', key: 'cargo', width: 18 },
+    { header: 'Actividad', key: 'actividad', width: 30 },
+    { header: 'Tarea', key: 'tarea', width: 24 },
+    { header: 'Peligro', key: 'peligro', width: 32 },
+    { header: 'Clasificación', key: 'clasificacion', width: 18 },
+    { header: 'Efectos', key: 'efectos', width: 32 },
+    { header: 'ND', key: 'nd', width: 8 },
+    { header: 'NE', key: 'ne', width: 8 },
+    { header: 'NP', key: 'np', width: 10 },
+    { header: 'NC', key: 'nc', width: 8 },
+    { header: 'Nivel Riesgo', key: 'nivel', width: 14 },
+    { header: 'Interpretación', key: 'interpretacion', width: 12 },
+    { header: 'Aceptabilidad', key: 'aceptabilidad', width: 16 },
+    { header: 'Controles', key: 'controles', width: 30 },
+    { header: 'Intervención', key: 'intervencion', width: 24 },
+    { header: 'Num Expuestos', key: 'num_expuestos', width: 12 },
+    { header: 'Peor Consecuencia', key: 'peor_consecuencia', width: 24 },
+    { header: 'Requisito Legal', key: 'requisito_legal', width: 18 }
+  ]
+
+  // header style
+  ws.getRow(6).font = { bold: true }
+  ws.getRow(6).alignment = { vertical: 'middle', horizontal: 'center' }
+
+  for (const r of matrix.filas) {
+    const np = Number(r.nivel_probabilidad ?? 0)
+    const nivel = Number(r.nivel_riesgo ?? 0)
+    ws.addRow({
+      proceso: r.proceso,
+      zona: r.zona,
+      cargo: r.cargo,
+      actividad: r.actividad,
+      tarea: r.tarea,
+      peligro: r.peligro_descripcion,
+      clasificacion: r.peligro_clasificacion,
+      efectos: r.efectos_posibles,
+      nd: r.nivel_deficiencia,
+      ne: r.nivel_exposicion,
+      np: np,
+      nc: r.nivel_consecuencia,
+      nivel: nivel,
+      interpretacion: r.interpretacion_riesgo || '',
+      aceptabilidad: r.aceptabilidad || '',
+      controles: [r.control_fuente, r.control_medio, r.control_individuo].filter(Boolean).join('\n'),
+      intervencion: r.intervencion || '',
+      num_expuestos: r.numero_expuestos || '',
+      peor_consecuencia: r.peor_consecuencia || '',
+      requisito_legal: r.requisito_legal || ''
+    })
+  }
+
+  ws.eachRow((row, rowNumber) => {
+    row.eachCell((cell) => {
+      cell.alignment = { wrapText: true, vertical: 'top' }
+      cell.font = { name: 'Arial', size: 10 }
+    })
+  })
+
+  const buf = await wb.xlsx.writeBuffer()
+  const blob = new Blob([buf], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' })
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement('a')
+  a.href = url
+  a.download = name
+  document.body.appendChild(a)
+  a.click()
+  a.remove()
+  URL.revokeObjectURL(url)
+}
+
+export async function exportNestedAreaToExcel(area: import("./types").AreaNested, filename = undefined) {
+  const name = filename || `${area.nombre || 'area'}_matriz.xlsx`
+  const wb = new ExcelJS.Workbook()
+  wb.creator = 'Matriz de Riesgos'
+  wb.created = new Date()
+
+  const ws = wb.addWorksheet('Matriz')
+
+  // Header rows with area info
+  ws.addRow([`Área: ${area.nombre || ''}`])
+  ws.addRow([`Responsable: ${area.responsable || ''}`])
+  ws.addRow([`Fecha Elaboración: ${area.fecha_elaboracion || ''}`])
+  ws.addRow([`Fecha Actualización: ${area.fecha_actualizacion || ''}`])
+  ws.addRow([])
+
+  ws.columns = [
+    { header: 'Área', key: 'area', width: 18 },
+    { header: 'Zona', key: 'zona', width: 18 },
+    { header: 'Actividad', key: 'actividad', width: 24 },
+    { header: 'Tarea', key: 'tarea', width: 24 },
+    { header: 'Proceso', key: 'proceso', width: 24 },
+    { header: 'Cargo', key: 'cargo', width: 16 },
+    { header: 'Clasificación', key: 'clasificacion', width: 18 },
+    { header: 'Nivel Deficiencia', key: 'deficiencia', width: 12 },
+    { header: 'Nivel Exposición', key: 'exposicion', width: 12 },
+    { header: 'Nivel Probabilidad', key: 'probabilidad', width: 12 },
+    { header: 'Nivel Consecuencia', key: 'consecuencia', width: 12 },
+    { header: 'Nivel Riesgo', key: 'nivel_riesgo', width: 14 },
+    { header: 'Interpretación Nivel Riesgo', key: 'interpretacion', width: 16 },
+    { header: 'Aceptabilidad', key: 'aceptabilidad', width: 16 },
+    { header: 'Descripción del Peligro', key: 'peligro_desc', width: 40 },
+    { header: 'Efectos', key: 'efectos', width: 40 },
+    { header: 'Controles', key: 'controles', width: 40 },
+    { header: 'Intervención', key: 'intervencion', width: 24 },
+    { header: 'Número Expuestos', key: 'num_expuestos', width: 12 },
+    { header: 'Peor Consecuencia', key: 'peor_consecuencia', width: 24 },
+    { header: 'Requisito Legal', key: 'requisito_legal', width: 18 }
+  ]
+
+  // header style
+  ws.getRow(6).font = { bold: true }
+  ws.getRow(6).alignment = { vertical: 'middle', horizontal: 'center' }
+
+  for (const z of area.zonas || []) {
+    for (const act of z.actividades || []) {
+      for (const t of act.tareas || []) {
+        for (const r of t.riesgos || []) {
+          const calc = (function() {
+            const nd = Number(r.deficiencia ?? 0)
+            const ne = Number(r.exposicion ?? 1) || 1
+            const nc = Number(r.consecuencia ?? 0)
+            const prob = nd * ne
+            const nivelVal = prob * nc
+            return { prob, nivelVal }
+          })()
+
+          ws.addRow({
+            area: area.nombre,
+            zona: z.nombre,
+            actividad: act.nombre,
+            tarea: t.nombre,
+            proceso: r.proceso || '',
+            cargo: r.cargo || '',
+            clasificacion: r.clasificacion || '',
+            deficiencia: r.deficiencia ?? '',
+            exposicion: r.exposicion ?? '',
+            probabilidad: calc.prob,
+            consecuencia: r.consecuencia ?? '',
+            nivel_riesgo: calc.nivelVal,
+            interpretacion: (r.interpretacion_nivel_riesgo || ''),
+            aceptabilidad: r.aceptabilidad || '',
+            peligro_desc: r.peligro_desc || '',
+            efectos: r.efectos || '',
+            controles: [r.controles || '', r.control_eliminacion || '', r.control_sustitucion || '', r.control_ingenieria || '', r.control_admin || '', r.epp || ''].filter(Boolean).join('\n'),
+            intervencion: r.intervencion || '',
+            num_expuestos: r.num_expuestos ?? '',
+            peor_consecuencia: r.peor_consecuencia || '',
+            requisito_legal: r.requisito_legal || ''
+          })
+        }
+      }
+    }
+  }
+
+  ws.eachRow((row) => {
+    row.eachCell((cell) => {
+      cell.alignment = { wrapText: true, vertical: 'top' }
+      cell.font = { name: 'Arial', size: 10 }
+    })
+  })
+
+  const buf = await wb.xlsx.writeBuffer()
+  const blob = new Blob([buf], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' })
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement('a')
+  a.href = url
+  a.download = name
+  document.body.appendChild(a)
+  a.click()
+  a.remove()
+  URL.revokeObjectURL(url)
+}
+
+// Generic wrapper used by dashboard and other pages — accepts single record or array
+export async function exportToExcel(records: any[] | any) {
+  if (Array.isArray(records)) {
+    // attempt to use exportRisksToExcel for arrays of flat riesgos
+    return exportRisksToExcel(records as any[])
+  }
+  // single record: if it looks like an area matrix, use area export, otherwise treat as single riesgo
+  const r = records as any
+  if (r && (r.filas || r.zonas || r.procesos)) {
+    // try nested area
+    try { return await exportAreaMatrixToExcel(r) } catch (e) {}
+  }
+  return exportRisksToExcel([r])
+}
