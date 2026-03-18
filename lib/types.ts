@@ -9,7 +9,10 @@ export interface ArchivoAdjunto {
 
 export interface Riesgo {
   id: number
+  area: string
   proceso: string
+  responsable: string
+  individuo: string
   zona: string
   actividad: string
   tarea: string
@@ -29,7 +32,6 @@ export interface Riesgo {
   // Additional optional fields to support extended form columns
   fuente?: string
   medio?: string
-  individuo?: string
   probabilidad?: number
   interpretacion_probabilidad?: string
   nivel_riesgo?: number
@@ -47,6 +49,96 @@ export interface Riesgo {
   epp?: string
   fecha_ejecucion?: string
   tipo_proceso?: string
+}
+
+export type MatrixRow = {
+  proceso: string
+  zona: string
+  actividad: string
+  tarea: string
+  cargo: string
+  rutinario: boolean
+
+  peligro_descripcion: string
+  peligro_clasificacion: string
+  efectos_posibles: string
+
+  control_fuente: string
+  control_medio: string
+  control_individuo: string
+
+  nivel_deficiencia: number
+  nivel_exposicion: number
+
+  nivel_probabilidad?: number
+  interpretacion_probabilidad?: string
+
+  nivel_consecuencia: number
+
+  nivel_riesgo?: number
+  interpretacion_riesgo?: string
+  aceptabilidad?: string
+
+  numero_expuestos: number
+  peor_consecuencia: string
+  requisito_legal: string
+
+  eliminacion: string
+  sustitucion: string
+  ingenieria: string
+  administrativos: string
+  epp: string
+
+  intervencion: string
+  fecha_ejecucion: string
+}
+
+export type AreaMatrix = {
+  area_nombre: string
+  responsable: string
+  fecha_elaboracion: string
+  fecha_actualizacion: string
+  filas: MatrixRow[]
+}
+
+// Nested structures for Area → Zona → Actividad → Tarea → Riesgo
+export type RiesgoNested = Riesgo
+
+export type Tarea = {
+  id: string
+  nombre: string
+  descripcion?: string
+  rutinario?: boolean
+  riesgos: RiesgoNested[]
+}
+
+export type Actividad = {
+  id: string
+  nombre: string
+  descripcion?: string
+  cargo?: string
+  tareas: Tarea[]
+}
+
+export type Zona = {
+  id: string
+  nombre: string
+  actividades: Actividad[]
+}
+
+export type Proceso = {
+  id: string
+  nombre: string
+  zonas: Zona[]
+}
+
+export type AreaNested = {
+  id: string
+  nombre: string
+  responsable: string
+  fecha_elaboracion: string
+  fecha_actualizacion: string
+  procesos: Proceso[]
 }
 
 export interface Configuracion {
@@ -101,10 +193,10 @@ export function interpretacionFromValor(val: number): string {
 
 export function getInterpretacionColor(interp: string): string {
   switch (interp) {
-    // Map from lower→higher: I (lowest) = RED, IV (highest) = GREEN
+    // Map desired presentation: I -> red, II -> yellow, III -> green, IV -> green
     case 'I': return 'bg-red-600'
-    case 'II': return 'bg-orange-500'
-    case 'III': return 'bg-yellow-400'
+    case 'II': return 'bg-yellow-400'
+    case 'III': return 'bg-green-600'
     case 'IV': return 'bg-green-600'
     default: return 'bg-muted'
   }
@@ -112,12 +204,11 @@ export function getInterpretacionColor(interp: string): string {
 
 export function getInterpretacionTextColor(interp: string): string {
   switch (interp) {
+    case 'II':
+      return 'text-black'
     case 'III':
     case 'IV':
     case 'I':
-    case 'II':
-      // Default to white text for colored backgrounds except yellow (III)
-      if (interp === 'III') return 'text-black'
       return 'text-white'
     default:
       return 'text-muted-foreground'

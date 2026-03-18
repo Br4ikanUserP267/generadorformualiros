@@ -1,4 +1,4 @@
-[ 
+[
   {
     "id": 1,
     "proceso": "Atención al Paciente",
@@ -38,5 +38,68 @@
     "intervencion": "Adquisición de instrumental con sistemas de seguridad integrados. Capacitación en técnicas de manipulación segura. Evaluación ergonómica del espacio de trabajo.",
     "fecha": "2024-01-20",
     "seguimiento": "Registro de incidentes cortopunzantes. Evaluación trimestral de técnicas de manipulación. Seguimiento a personal expuesto."
+  },
+  {
+    "area": "ijqirj",
+    "proceso": "rwew",
+    "responsable": "jewjrewkjr",
+    "tipo_proceso": "ASISTENCIAL",
+    "zona": "jfif",
+    "actividad": "jnd",
+    "tarea": "kfkff",
+    "cargo": "thnml",
+    "rutinario": true,
+    "clasificacion": "",
+    "peligro_desc": "5555",
+    "efectos": "444",
+    "deficiencia": 10,
+    "exposicion": 6,
+    "consecuencia": 50,
+    "controles": "",
+    "intervencion": "5",
+    "fecha": "2026-03-10",
+    "seguimiento": "",
+    "probabilidad": 60,
+    "interpretacion_probabilidad": "Muy Alto",
+    "nivel_riesgo": 3000,
+    "interpretacion_nivel_riesgo": "I",
+    "aceptabilidad": "No Aceptable",
+    "fecha_ejecucion": "2026-03-27",
+    "individuo": "rkweklwjfwjk",
+    "control_eliminacion": "we",
+    "control_sustitucion": "ewe",
+    "control_ingenieria": "frbg",
+    "advertencia": "fr",
+    "senalizacion": "fre",
+    "control_admin": "r",
+    "epp": "fd",
+    "archivos": [],
+    "id": 3,
+    "fuente": "444",
+    "medio": "589"
+  },
+  {
+    "id": 4
+  },
+  {
+    "id": 5
+  },
+  {
+    "id": 6
+  },
+  {
+    "id": 7
+  },
+  {
+    "id": 8
+  },
+  {
+    "id": 9
+  },
+  {
+    "id": 10
+  },
+  {
+    "id": 11
   }
 ]
