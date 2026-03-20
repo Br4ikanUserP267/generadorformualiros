@@ -1,4 +1,5 @@
-"use client"
+const fs = require('fs');
+const content = `"use client"
 
 import React, { useMemo, useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
@@ -14,7 +15,7 @@ const Icons = {
 }
 
 function getIcon(tipo: string) {
-  const t = tipo.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'')
+  const t = tipo.toLowerCase().normalize('NFD').replace(/[\\u0300-\\u036f]/g,'')
   if(t.includes('asist')) return Icons.asistencial
   if(t.includes('admin')) return Icons.administrativo
   if(t.includes('apoyo')) return Icons.apoyo
@@ -85,7 +86,7 @@ export function Dashboard() {
             let d = isoDate || ''
             if (isoDate && isoDate.includes('-')) {
               const parts = isoDate.split('T')[0].split('-')
-              if (parts.length === 3) d = `${parts[2]}/${parts[1]}/${parts[0]}`
+              if (parts.length === 3) d = \`\${parts[2]}/\${parts[1]}/\${parts[0]}\`
             }
 
             return {
@@ -107,14 +108,6 @@ export function Dashboard() {
     }
     load()
   }, [])
-
-  const tiposList = useMemo(() => {
-    const set = new Set<string>()
-    matrices.forEach(m => {
-      m.tipos.forEach((t: string) => { if (t) set.add(t) })
-    })
-    return Array.from(set).sort()
-  }, [matrices])
 
   const filtered = useMemo(() => {
     return matrices.filter(m => {
@@ -146,13 +139,23 @@ export function Dashboard() {
     }
   }, [filtered])
 
-  const handleNew = () => {
-    router.push('/matriz/nuevo')
+  const handleNew = async () => {
+    try {
+      const res = await fetch('/api/riesgos', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ area: 'Nueva Matriz', procesos: [] })
+      })
+      if (res.ok) {
+        const { id } = await res.json()
+        router.push(\`/matriz/\${id}\`)
+      }
+    } catch(e) {}
   }
 
   function confirmDeleteAction() {
     if (!deleteTarget) return
-    fetch(`/api/riesgos/${deleteTarget}`, { method: 'DELETE' }).then(() => { 
+    fetch(\`/api/riesgos/\${deleteTarget}\`, { method: 'DELETE' }).then(() => { 
       setMatrices((prev) => prev.filter(p => p.id !== deleteTarget))
       setConfirmOpen(false)
       setDeleteTarget(null)
@@ -163,8 +166,8 @@ export function Dashboard() {
   }
 
   return (
-    <div className="min-h-screen bg-var-background-tertiary">
-      <style dangerouslySetInnerHTML={{__html: `
+    <div className="min-h-screen bg-gray-50 flex items-center justify-center p-6">
+      <style dangerouslySetInnerHTML={{__html: \`
         :root {
           --color-background-primary: #ffffff;
           --color-background-secondary: #f8fafc;
@@ -192,35 +195,35 @@ export function Dashboard() {
           }
         }
         .html-wrapper * { box-sizing:border-box;margin:0;padding:0;font-family:inherit; }
-        .html-wrapper { width:100%; min-height: 100vh; display: flex; flex-direction: column; background: var(--color-background-tertiary); }
-        .topbar {background:#ffffff;border-bottom: 0.5px solid #d4e8d4;padding:16px 24px;display:flex;align-items:center;justify-content:space-between;}
-        .logo {display:flex;align-items:center;gap:12px}
-        .logo-divider {width: 0.5px; height: 30px; background: #c8dfc8;}
-        .logo-text {font-size:16px;font-weight:600;color:#1a5c2a}
-        .logo-sub {font-size:12px;color:#7aaa7a}
-        .user-pill {display:flex;align-items:center;gap:8px;font-size:13px;color:#555}
-        .user-dot {width:32px;height:32px;border-radius:50%;background:#e8f5e9;color:#1a5c2a;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:600;text-transform:uppercase;}
+        .html-wrapper { width:100%; max-width: 1200px; margin: 0 auto; border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-lg);overflow:hidden; background: var(--color-background-tertiary); box-shadow: 0 4px 20px rgba(0,0,0,0.05); }
+        .topbar {background:#1a5c2a;color:#fff;padding:10px 20px;display:flex;align-items:center;justify-content:space-between;border-radius:var(--border-radius-lg) var(--border-radius-lg) 0 0}
+        .logo {display:flex;align-items:center;gap:10px}
+        .logo-badge {width:32px;height:32px;border-radius:8px;background:rgba(255,255,255,.2);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:500}
+        .logo-text {font-size:14px;font-weight:500}
+        .logo-sub {font-size:11px;opacity:.6}
+        .user-pill {display:flex;align-items:center;gap:6px;font-size:12px;opacity:.85}
+        .user-dot {width:26px;height:26px;border-radius:50%;background:rgba(255,255,255,.2);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:500;text-transform:uppercase;}
         
-        .page {flex: 1; padding: 24px; max-width: 1400px; margin: 0 auto; width: 100%;}
+        .page {background:var(--color-background-tertiary);padding:14px;border:0.5px solid var(--color-border-tertiary);border-top:none;border-radius:0 0 var(--border-radius-lg) var(--border-radius-lg)}
         
-        .stat-row {display:grid;grid-template-columns:repeat(6,1fr);gap:12px;margin-bottom:16px}
+        .stat-row {display:grid;grid-template-columns:repeat(7,1fr);gap:8px;margin-bottom:14px}
         @media (max-width: 768px) { .stat-row { grid-template-columns:repeat(3,1fr); } }
         @media (max-width: 480px) { .stat-row { grid-template-columns:1fr 1fr; } }
-        .scard {background:var(--color-background-primary);border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-lg);padding:16px 20px;display:flex;flex-direction:column;gap:6px}
-        .scard-num {font-size:28px;font-weight:600;line-height:1}
-        .scard-lbl {font-size:12px;color:var(--color-text-secondary);font-weight:500;}
-        .scard-bar {height:4px;border-radius:2px;margin-top:5px}
+        .scard {background:var(--color-background-primary);border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-lg);padding:10px 12px;display:flex;flex-direction:column;gap:3px}
+        .scard-num {font-size:22px;font-weight:500;line-height:1}
+        .scard-lbl {font-size:10px;color:var(--color-text-secondary)}
+        .scard-bar {height:3px;border-radius:2px;margin-top:5px}
         
-        .filters {background:var(--color-background-primary);border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-lg);padding:14px 16px;margin-bottom:16px}
-        .filter-row {display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+        .filters {background:var(--color-background-primary);border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-lg);padding:10px 12px;margin-bottom:12px}
+        .filter-row {display:flex;align-items:center;gap:8px;flex-wrap:wrap}
         .fi {position:relative;display:flex;align-items:center}
         .fi svg {position:absolute;left:8px;pointer-events:none;opacity:.35;top:50%;transform:translateY(-50%)}
-        .fi input {padding:8px 10px 8px 30px;font-size:13px;border-radius:var(--border-radius-md);border:0.5px solid var(--color-border-secondary);background:var(--color-background-secondary);color:var(--color-text-primary);width:200px;outline:none}
+        .fi input {padding:6px 8px 6px 26px;font-size:12px;border-radius:var(--border-radius-md);border:0.5px solid var(--color-border-secondary);background:var(--color-background-secondary);color:var(--color-text-primary);width:170px;outline:none}
         .fi input::placeholder {color:var(--color-text-tertiary)}
-        .fsel {padding:8px 12px;font-size:13px;border-radius:var(--border-radius-md);border:0.5px solid var(--color-border-secondary);background:var(--color-background-secondary);color:var(--color-text-secondary);cursor:pointer;outline:none;appearance:auto}
-        .fdate {padding:8px 12px;font-size:13px;border-radius:var(--border-radius-md);border:0.5px solid var(--color-border-secondary);background:var(--color-background-secondary);color:var(--color-text-secondary);width:130px;outline:none}
-        .flabel {font-size:13px;color:var(--color-text-secondary);white-space:nowrap}
-        .new-btn {margin-left:auto;padding:9px 20px;font-size:13px;border-radius:var(--border-radius-md);border:none;background:#1a5c2a;color:#fff;cursor:pointer;font-weight:600;white-space:nowrap;transition:opacity 0.2s;}
+        .fsel {padding:6px 8px;font-size:12px;border-radius:var(--border-radius-md);border:0.5px solid var(--color-border-secondary);background:var(--color-background-secondary);color:var(--color-text-secondary);cursor:pointer;outline:none;appearance:auto}
+        .fdate {padding:6px 8px;font-size:12px;border-radius:var(--border-radius-md);border:0.5px solid var(--color-border-secondary);background:var(--color-background-secondary);color:var(--color-text-secondary);width:120px;outline:none}
+        .flabel {font-size:11px;color:var(--color-text-secondary);white-space:nowrap}
+        .new-btn {margin-left:auto;padding:7px 16px;font-size:12px;border-radius:var(--border-radius-md);border:none;background:#1a5c2a;color:#fff;cursor:pointer;font-weight:500;white-space:nowrap;transition:opacity 0.2s;}
         .new-btn:hover {opacity:0.9;}
         
         .results-label {font-size:11px;color:var(--color-text-secondary);margin-bottom:8px}
@@ -247,13 +250,12 @@ export function Dashboard() {
         .mcard-actions {display:flex;flex-direction:column;gap:4px;flex-shrink:0}
         .ibt {width:28px;height:28px;border-radius:var(--border-radius-md);border:0.5px solid var(--color-border-tertiary);background:transparent;cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--color-text-secondary);transition:all 0.15s;}
         .ibt:hover {background:var(--color-background-secondary);color:var(--color-text-primary);}
-      `}} />
+      \`}} />
 
       <div className="html-wrapper">
         <div className="topbar">
           <div className="logo">
-            <img src="/csmLOGO_1_.png" alt="Logo" style={{height: '38px', objectFit: 'contain'}} />
-            <div className="logo-divider"></div>
+            <div className="logo-badge">MR</div>
             <div>
               <div className="logo-text">Matriz de Riesgos</div>
               <div className="logo-sub">{(user as any)?.organizacion || 'Organización'} — v1</div>
@@ -262,8 +264,8 @@ export function Dashboard() {
           <div className="user-pill">
             <div className="user-dot">{(user?.nombre||'U')[0]}</div>
             <span>{user?.nombre || 'Usuario'} &nbsp;·&nbsp; {user?.cargo || 'Rol'}</span>
-            <span style={{opacity:'.3', margin:'0 4px', color:'#c8dfc8'}}>|</span>
-            <span style={{cursor:'pointer', color:'#1a5c2a', fontWeight:500}} onClick={() => { logout(); router.push('/') }}>Cerrar sesión</span>
+            <span style={{opacity:'.3', margin:'0 4px'}}>|</span>
+            <span style={{cursor:'pointer', opacity:'.7'}} onClick={() => { logout(); router.push('/') }}>Cerrar sesión</span>
           </div>
         </div>
 
@@ -299,6 +301,9 @@ export function Dashboard() {
               <span className="scard-lbl">Bajo</span>
               <div className="scard-bar" style={{background:'#198754'}}></div>
             </div>
+            <div className="scard" style={{border:'none',background:'transparent',display:'flex',flexDirection:'column',justifyContent:'center',padding:0}}>
+              <button className="new-btn" style={{margin:0, width:'100%'}} onClick={handleNew}>+ Nueva matriz</button>
+            </div>
           </div>
 
           <div className="filters">
@@ -311,13 +316,22 @@ export function Dashboard() {
               <input className="fdate" type="date" value={dateDesde} onChange={e=>setDateDesde(e.target.value)} />
               <span className="flabel">Hasta</span>
               <input className="fdate" type="date" value={dateHasta} onChange={e=>setDateHasta(e.target.value)} />
+              <select className="fsel" value={clasFilter} onChange={e=>setClasFilter(e.target.value)}>
+                <option value="">Clasificación: Todas</option>
+                <option value="Biológico">Biológico</option>
+                <option value="Químico">Químico</option>
+                <option value="Mecánico">Mecánico</option>
+                <option value="Psicosocial">Psicosocial</option>
+                <option value="Físico">Físico</option>
+              </select>
               <select className="fsel" value={tipoFilter} onChange={e=>setTipoFilter(e.target.value)}>
                 <option value="">Tipo: Todos</option>
-                {tiposList.map(t => (
-                  <option key={t} value={t}>{t}</option>
-                ))}
+                <option value="Asistencial">Asistencial</option>
+                <option value="Administrativo">Administrativo</option>
+                <option value="Apoyo">Apoyo</option>
+                <option value="Diagnóstico">Diagnóstico</option>
+                <option value="Infraestructura">Infraestructura</option>
               </select>
-              <button className="new-btn" onClick={handleNew}>+ Nueva matriz</button>
             </div>
           </div>
 
@@ -381,3 +395,5 @@ export function Dashboard() {
     </div>
   )
 }
+`;
+fs.writeFileSync('components/dashboard.tsx', content);

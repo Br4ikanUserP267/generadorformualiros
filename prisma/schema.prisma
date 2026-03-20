@@ -1,0 +1,171 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Usuario {
+  id           String   @id @default(uuid())
+  nombre       String
+  email        String   @unique
+  passwordHash String   @map("password_hash")
+  createdAt    DateTime @default(now()) @map("created_at")
+  matrices     Matriz[]
+
+  @@map("usuarios")
+}
+
+model Matriz {
+  id                 String    @id @default(uuid())
+  usuarioId          String    @map("usuario_id")
+  area               String?
+  responsable        String?
+  fechaElaboracion   DateTime? @map("fecha_elaboracion")
+  fechaActualizacion DateTime? @map("fecha_actualizacion")
+  createdAt          DateTime  @default(now()) @map("created_at")
+  updatedAt          DateTime  @updatedAt @map("updated_at")
+  deletedAt          DateTime? @map("deleted_at")
+  archivos           Archivo[]
+  usuario            Usuario   @relation(fields: [usuarioId], references: [id])
+  procesos           Proceso[]
+
+  @@map("matrices")
+}
+
+model Proceso {
+  id        String    @id @default(uuid())
+  matrizId  String    @map("matriz_id")
+  nombre    String
+  orden     Int       @default(0)
+  deletedAt DateTime? @map("deleted_at")
+  matriz    Matriz    @relation(fields: [matrizId], references: [id], onDelete: Cascade)
+  zonas     Zona[]
+
+  @@map("procesos")
+}
+
+model Zona {
+  id          String      @id @default(uuid())
+  procesoId   String      @map("proceso_id")
+  nombre      String
+  orden       Int         @default(0)
+  deletedAt   DateTime?   @map("deleted_at")
+  actividades Actividad[]
+  proceso     Proceso     @relation(fields: [procesoId], references: [id], onDelete: Cascade)
+
+  @@map("zonas")
+}
+
+model Actividad {
+  id          String    @id @default(uuid())
+  zonaId      String    @map("zona_id")
+  nombre      String
+  descripcion String?   @map("descripcion")
+  tareas      String?
+  cargo       String?
+  rutinario   Boolean   @default(false)
+  orden       Int       @default(0)
+  deletedAt   DateTime? @map("deleted_at")
+  zona        Zona      @relation(fields: [zonaId], references: [id], onDelete: Cascade)
+  peligros    Peligro[]
+
+  @@map("actividades")
+}
+
+model Peligro {
+  id              String        @id @default(uuid())
+  actividadId     String        @map("actividad_id")
+  descripcion     String?
+  clasificacion   String?
+  efectosPosibles String?       @map("efectos_posibles")
+  orden           Int           @default(0)
+  deletedAt       DateTime?     @map("deleted_at")
+  control         Control?
+  criterio        Criterio?
+  evaluacion      Evaluacion?
+  intervencion    Intervencion?
+  actividad       Actividad     @relation(fields: [actividadId], references: [id], onDelete: Cascade)
+
+  @@map("peligros")
+}
+
+model Control {
+  id        String  @id @default(uuid())
+  peligroId String  @unique @map("peligro_id")
+  fuente    String?
+  medio     String?
+  individuo String?
+  peligro   Peligro @relation(fields: [peligroId], references: [id], onDelete: Cascade)
+
+  @@map("controles")
+}
+
+model Evaluacion {
+  id                 String  @id @default(uuid())
+  peligroId          String  @unique @map("peligro_id")
+  nivelDeficiencia   Int?    @map("nivel_deficiencia")
+  nivelExposicion    Int?    @map("nivel_exposicion")
+  nivelProbabilidad  Int?    @map("nivel_probabilidad")
+  interpProbabilidad String? @map("interp_probabilidad")
+  nivelConsecuencia  Int?    @map("nivel_consecuencia")
+  nivelRiesgo        Int?    @map("nivel_riesgo")
+  interpRiesgo       String? @map("interp_riesgo")
+  aceptabilidad      String?
+  peligro            Peligro @relation(fields: [peligroId], references: [id], onDelete: Cascade)
+
+  @@map("evaluaciones")
+}
+
+model Criterio {
+  id               String  @id @default(uuid())
+  peligroId        String  @unique @map("peligro_id")
+  numExpuestos     Int?    @map("num_expuestos")
+  peorConsecuencia String? @map("peor_consecuencia")
+  requisitoLegal   Boolean @default(false) @map("requisito_legal")
+  peligro          Peligro @relation(fields: [peligroId], references: [id], onDelete: Cascade)
+
+  @@map("criterios")
+}
+
+model Intervencion {
+  id                       String    @id @default(uuid())
+  peligroId                String    @unique @map("peligro_id")
+  eliminacion              String?
+  sustitucion              String?
+  controlesIngenieria      String?   @map("controles_ingenieria")
+  controlesAdministrativos String?   @map("controles_administrativos")
+  epp                      String?
+  responsable              String?
+  fechaEjecucion           DateTime? @map("fecha_ejecucion")
+  peligro                  Peligro   @relation(fields: [peligroId], references: [id], onDelete: Cascade)
+
+  @@map("intervenciones")
+}
+
+model Archivo {
+  id               String    @id @default(uuid())
+  matrizId         String    @map("matriz_id")
+  nombreOriginal   String    @map("nombre_original")
+  nombreAlmacenado String    @map("nombre_almacenado")
+  tipoMime         String?   @map("tipo_mime")
+  tamanioBytes     Int?      @map("tamanio_bytes")
+  url              String
+  uploadedAt       DateTime  @default(now()) @map("uploaded_at")
+  deletedAt        DateTime? @map("deleted_at")
+  matriz           Matriz    @relation(fields: [matrizId], references: [id])
+
+  @@map("archivos")
+}
+
+// Lightweight storage for UI risks previously stored in local JSON.
+model Riesgo {
+  id        Int      @id @default(autoincrement())
+  data      Json
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("riesgos")
+}

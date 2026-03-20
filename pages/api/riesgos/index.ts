@@ -1,40 +1,203 @@
 import { NextApiRequest, NextApiResponse } from 'next'
-import fs from 'fs/promises'
-import path from 'path'
+import prisma from '@/lib/prisma'
 
-const DATA_FILE = path.join(process.cwd(), 'data', 'riesgos.json')
-
-async function readData() {
-  try {
-    const raw = await fs.readFile(DATA_FILE, 'utf-8')
-    return JSON.parse(raw)
-  } catch (e) {
-    return []
-  }
-}
-
-async function writeData(data: any) {
-  await fs.mkdir(path.dirname(DATA_FILE), { recursive: true })
-  await fs.writeFile(DATA_FILE, JSON.stringify(data, null, 2), 'utf-8')
+export const config = {
+  api: {
+    bodyParser: {
+      sizeLimit: '10mb',
+    },
+  },
 }
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
-  if (req.method === 'GET') {
-    const data = await readData()
-    return res.status(200).json(data)
-  }
+  try {
+    if (req.method === 'GET') {
+      const rows = await prisma.matriz.findMany({
+        include: {
+          archivos: true,
+          procesos: {
+            include: {
+              zonas: {
+                include: {
+                  actividades: {
+                    include: {
+                      peligros: {
+                        include: {
+                          control: true,
+                          criterio: true,
+                          evaluacion: true,
+                          intervencion: true
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        orderBy: { createdAt: 'asc' }
+      })
 
-  if (req.method === 'POST') {
-    const body = req.body
-    if (!body || typeof body !== 'object') return res.status(400).json({ error: 'Invalid payload' })
-    const data = await readData()
-    const maxId = data.reduce((m: number, r: any) => Math.max(m, Number(r.id || 0)), 0)
-    const newItem = { ...body, id: maxId + 1 }
-    data.push(newItem)
-    await writeData(data)
-    return res.status(201).json(newItem)
-  }
+      // Construct JSON exactly like the frontend expects
+      const mapped = rows.map((m) => {
+        return {
+          id: m.id,
+          area: m.area || '',
+          responsable: m.responsable || '',
+          fecha_elaboracion: m.fechaElaboracion ? m.fechaElaboracion.toISOString().split('T')[0] : '',
+          fecha_actualizacion: m.fechaActualizacion ? m.fechaActualizacion.toISOString().split('T')[0] : '',
+          files: m.archivos.map((a) => ({
+            name: a.nombreOriginal || 'file',
+            type: a.tipoMime || '',
+            data: a.url || ''
+          })),
+          procesos: m.procesos.map(p => ({
+            id: p.id,
+            nombre: p.nombre,
+            zonas: p.zonas.map(z => ({
+              id: z.id,
+              nombre: z.nombre,
+              cargo: '', // From actividad or fallback
+              rutinario: false,
+              actividades: z.actividades.map(a => ({
+                id: a.id,
+                nombre: a.nombre,
+                descripcion: a.descripcion || '',
+                tareas: a.tareas || '',
+                cargo: a.cargo || '',
+                rutinario: !!a.rutinario,
+                peligros: a.peligros.map(pel => ({
+                  id: pel.id,
+                  descripcion: pel.descripcion || '',
+                  clasificacion: pel.clasificacion || '',
+                  efectos: pel.efectosPosibles || '',
+                  controles: {
+                    fuente: pel.control?.fuente || '',
+                    medio: pel.control?.medio || '',
+                    individuo: pel.control?.individuo || ''
+                  },
+                  evaluacion: {
+                    nd: pel.evaluacion?.nivelDeficiencia || null,
+                    ne: pel.evaluacion?.nivelExposicion || null,
+                    nc: pel.evaluacion?.nivelConsecuencia || null,
+                    np: pel.evaluacion?.nivelProbabilidad || null,
+                    nr: pel.evaluacion?.nivelRiesgo || null,
+                    interp_np: pel.evaluacion?.interpProbabilidad || '',
+                    interp_nr: pel.evaluacion?.interpRiesgo || '',
+                    aceptabilidad: pel.evaluacion?.aceptabilidad || ''
+                  },
+                  criterios: {
+                    num_expuestos: pel.criterio?.numExpuestos || null,
+                    peor_consecuencia: pel.criterio?.peorConsecuencia || '',
+                    requisito_legal: !!pel.criterio?.requisitoLegal
+                  },
+                  intervencion: {
+                    eliminacion: pel.intervencion?.eliminacion || '',
+                    sustitucion: pel.intervencion?.sustitucion || '',
+                    controles_ingenieria: pel.intervencion?.controlesIngenieria || '',
+                    controles_administrativos: pel.intervencion?.controlesAdministrativos || '',
+                    epp: pel.intervencion?.epp || '',
+                    responsable: pel.intervencion?.responsable || '',
+                    fecha_ejecucion: pel.intervencion?.fechaEjecucion ? pel.intervencion.fechaEjecucion.toISOString().split('T')[0] : ''
+                  },
+                  _ui: { expanded: false, activeTab: 0 }
+                }))
+              }))
+            }))
+          }))
+        }
+      })
+      
+      return res.status(200).json(mapped)
+    }
 
-  res.setHeader('Allow', 'GET,POST')
-  res.status(405).end('Method Not Allowed')
+    if (req.method === 'POST') {
+      const body = req.body
+      if (!body || typeof body !== 'object') return res.status(400).json({ error: 'Invalid payload' })
+
+      // Get any valid user to act as foreign key
+      const firstUser = await prisma.usuario.findFirst()
+      if (!firstUser) {
+        return res.status(500).json({ error: 'No hay usuarios en la base de datos' })
+      }
+
+      const created = await prisma.matriz.create({
+        data: {
+          usuarioId: firstUser.id,
+          area: body.area,
+          archivos: {
+            create: (body.files || []).map((f: any) => ({
+              nombreOriginal: f.name || 'file',
+              nombreAlmacenado: f.name || 'file',
+              tipoMime: f.type || '',
+              url: f.data || ''
+            }))
+          },
+          responsable: body.responsable,
+          fechaElaboracion: body.fecha_elaboracion ? new Date(body.fecha_elaboracion) : null,
+          fechaActualizacion: body.fecha_actualizacion ? new Date(body.fecha_actualizacion) : null,
+          procesos: {
+            create: (body.procesos || []).map((p: any) => ({
+              nombre: p.nombre,
+              zonas: {
+                create: (p.zonas || []).map((z: any) => ({
+                  nombre: z.nombre,
+                  actividades: {
+                    create: (z.actividades || []).map((a: any) => ({
+                      nombre: a.nombre,
+                      descripcion: a.descripcion,
+                      tareas: a.tareas,
+                      cargo: z.cargo || a.cargo, // Frontend fallback pattern
+                      rutinario: a.rutinario || z.rutinario || false,
+                      peligros: {
+                        create: (a.peligros || []).map((pel: any) => ({
+                          descripcion: pel.descripcion,
+                          clasificacion: pel.clasificacion,
+                          efectosPosibles: pel.efectos,
+                          control: pel.controles ? { create: { fuente: pel.controles.fuente, medio: pel.controles.medio, individuo: pel.controles.individuo } } : undefined,
+                          evaluacion: pel.evaluacion ? { create: { 
+                            nivelDeficiencia: Number(pel.evaluacion.nd) || null,
+                            nivelExposicion: Number(pel.evaluacion.ne) || null,
+                            nivelConsecuencia: Number(pel.evaluacion.nc) || null,
+                            nivelProbabilidad: Number(pel.evaluacion.np) || null,
+                            nivelRiesgo: Number(pel.evaluacion.nr) || null,
+                            interpProbabilidad: pel.evaluacion.interp_np,
+                            interpRiesgo: pel.evaluacion.interp_nr,
+                            aceptabilidad: pel.evaluacion.aceptabilidad
+                          }} : undefined,
+                          criterio: pel.criterios ? { create: {
+                            numExpuestos: Number(pel.criterios.num_expuestos) || null,
+                            peorConsecuencia: pel.criterios.peor_consecuencia,
+                            requisitoLegal: !!pel.criterios.requisito_legal
+                          }} : undefined,
+                          intervencion: pel.intervencion ? { create: {
+                            eliminacion: pel.intervencion.eliminacion,
+                            sustitucion: pel.intervencion.sustitucion,
+                            controlesIngenieria: pel.intervencion.controles_ingenieria,
+                            controlesAdministrativos: pel.intervencion.controles_administrativos,
+                            epp: pel.intervencion.epp,
+                            responsable: pel.intervencion.responsable,
+                            fechaEjecucion: pel.intervencion.fecha_ejecucion ? new Date(pel.intervencion.fecha_ejecucion) : null
+                          }} : undefined
+                        }))
+                      }
+                    }))
+                  }
+                }))
+              }
+            }))
+          }
+        }
+      })
+      
+      return res.status(201).json({ id: created.id })
+    }
+
+    res.setHeader('Allow', 'GET,POST')
+    res.status(405).end('Method Not Allowed')
+  } catch (err: any) {
+    console.error('API /api/riesgos error:', err)
+    res.status(500).json({ error: 'Internal server error' })
+  }
 }

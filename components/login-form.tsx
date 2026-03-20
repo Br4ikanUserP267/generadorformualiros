@@ -35,9 +35,9 @@ export function LoginForm() {
       <div className="w-full max-w-md">
         <div className="flex flex-col items-center mb-8">
           <img
-            src="https://hebbkx1anhila5yf.public.blob.vercel-storage.com/image-ScJPjpOXSkIGZHkl7FFCE7fq1ZwfXt.png"
+            src="/csmLOGO_1_.png"
             alt="Clínica Santa María S.A.S"
-            className="h-32 w-auto mb-4"
+            className="h-32 w-auto mb-4 object-contain"
           />
           <h1 className="text-2xl font-semibold text-foreground text-center text-balance">
             Sistema de Matriz de Riesgos

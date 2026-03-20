@@ -10,7 +10,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Switch } from "@/components/ui/switch"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Badge } from "@/components/ui/badge"
-import { PencilIcon } from 'lucide-react'
+import { PencilIcon, TrashIcon } from 'lucide-react'
 
 function makeId(prefix = '') { return prefix + Math.random().toString(36).slice(2,9) }
 
@@ -36,14 +36,31 @@ function interpNivelRiesgo(nr: number) {
   return { label: String(nr), color: '#9CA3AF' }
 }
 
+function renderPeligroBadge(nrVal: number) {
+  if (!nrVal) return null;
+  const label = interpNivelRiesgo(nrVal).label;
+  if (label === 'I') return { dot: '#a50000', bg: '#fce8e8', text: 'Muy alto' };
+  if (label === 'II') return { dot: '#dc3545', bg: '#fdecea', text: 'Alto' };
+  if (label === 'III') return { dot: '#fd7e14', bg: '#fff3e0', text: 'Medio' };
+  if (label === 'IV') return { dot: '#198754', bg: '#e8f5e9', text: 'Bajo' };
+  return null;
+}
+
 function aceptabilidadFromNivel(label: string) {
   switch (label) {
-    case 'I': return 'I — No aceptable (situación crítica)'
-    case 'II': return 'II — No aceptable o aceptable con control específico'
-    case 'III': return 'III — Aceptable con mejora'
-    case 'IV': return 'IV — Aceptable'
+    case 'I': return 'No Aceptable'
+    case 'II': return 'Aceptable con Control Especifico'
+    case 'III': return 'Mejorable'
+    case 'IV': return 'Aceptable'
     default: return '—'
   }
+}
+
+function aceptabilidadColor(text: string) {
+  if (text.includes('No Aceptable')) return '#c0392b' // Rojo
+  if (text.includes('Control Especifico')) return '#f59e0b' // Amarillo
+  if (text.includes('Mejorable') || text.includes('Aceptable')) return '#27ae60' // Verde
+  return '#9CA3AF'
 }
 
 function shortFileName(n: string, maxBase = 12) {
@@ -56,67 +73,49 @@ function shortFileName(n: string, maxBase = 12) {
 }
 
 export default function MatrixEditor({ id }: { id?: string }) {
-  const [matrix, setMatrix] = useState<any>(() => {
-    if (id === 'nuevo') {
-      return {
+  const router = useRouter()
+  const [matrix, setMatrix] = useState<any>(null)
+  const [selected, setSelected] = useState<{procesoId?: string, zonaId?: string, actividadId?: string}>({})
+
+  useEffect(() => {
+    if (id && id !== 'nuevo') {
+      fetch(`/api/riesgos/${id}`)
+        .then(r => r.json())
+        .then(data => {
+          if (data.error) {
+            toast({ title: 'Error', variant: 'destructive', description: data.error })
+            router.push('/dashboard')
+          } else {
+            setMatrix(data)
+            const p = data.procesos?.[0]
+            const z = p?.zonas?.[0]
+            const a = z?.actividades?.[0]
+            setSelected({ procesoId: p?.id, zonaId: z?.id, actividadId: a?.id })
+          }
+        })
+        .catch(e => {
+          toast({ title: 'Error', variant: 'destructive', description: 'No se pudo cargar la matriz' })
+          router.push('/dashboard')
+        })
+    } else {
+      setMatrix({
         id: makeId('m-'),
         area: '',
         responsable: '',
         fecha_elaboracion: new Date().toISOString().split('T')[0],
         fecha_actualizacion: new Date().toISOString().split('T')[0],
         procesos: []
-      }
+      })
     }
-    return {
-      id: makeId('m-'),
-      area: '',
-      responsable: '',
-      fecha_elaboracion: new Date().toISOString().split('T')[0],
-      fecha_actualizacion: new Date().toISOString().split('T')[0],
-      procesos: [ { id: makeId('p-'), nombre: 'Proceso 1', zonas: [ { id: makeId('z-'), nombre: 'Zona 1', actividades: [] } ] } ]
-    }
-  })
+  }, [id, router])
 
-  // load persisted matrix on client only to avoid SSR hydration mismatch
-  useEffect(() => {
-    try {
-      const saved = localStorage.getItem('matrix_v1')
-      if (saved) {
-        const parsed = JSON.parse(saved)
-        // migrate old zona-level actividad fields into actividades array
-        for (const p of parsed.procesos || []) {
-          for (const z of p.zonas || []) {
-            if (!Array.isArray(z.actividades)) {
-              const hasActividad = z.actividad || z.tareas || z.cargo || z.rutinario
-              z.actividades = []
-              if (hasActividad) {
-                z.actividades.push({ id: makeId('a-'), nombre: z.actividad || 'Actividad 1', tareas: z.tareas || '', cargo: z.cargo || '', rutinario: !!z.rutinario, peligros: z.peligros || [] })
-              }
-              // remove legacy props
-              delete z.actividad; delete z.tareas; delete z.cargo; delete z.rutinario
-              delete z.peligros
-            }
-          }
-        }
-        setMatrix(parsed)
-      }
-    } catch (e) {
-      // ignore
-    }
-  }, [])
-
-  const [selected, setSelected] = useState<{procesoId?: string, zonaId?: string, actividadId?: string}>(()=>{
-    const p = matrix.procesos?.[0]
-    const z = p?.zonas?.[0]
-    const a = z?.actividades?.[0]
-    return { procesoId: p?.id, zonaId: z?.id, actividadId: a?.id }
-  })
   const [showProcesoModal, setShowProcesoModal] = useState(false)
   const [editingProceso, setEditingProceso] = useState<any>(null)
   const [showActividadModal, setShowActividadModal] = useState(false)
   const [editingActividad, setEditingActividad] = useState<any>(null)
   const [actividadTarget, setActividadTarget] = useState<{procesoId?:string,zonaId?:string}|null>(null)
   const [showZonaModal, setShowZonaModal] = useState(false)
+  const [editingZona, setEditingZona] = useState<any>(null)
   const [zonaParentProcesoId, setZonaParentProcesoId] = useState<string | null>(null)
   const [zonaModalName, setZonaModalName] = useState('')
   const [zonaModalCargo, setZonaModalCargo] = useState('')
@@ -127,13 +126,11 @@ export default function MatrixEditor({ id }: { id?: string }) {
   const [uploadedFiles, setUploadedFiles] = useState<Array<{name:string,type:string,size:number,data:string}>>([])
   const [selectedPreviewIndex, setSelectedPreviewIndex] = useState<number | null>(null)
   const fileInputRef = useRef<HTMLInputElement | null>(null)
-  const router = useRouter()
 
   // helpers to mutate matrix immutably
   function updateMatrix(fn: (m: any) => any) {
     setMatrix((m: any) => {
       const next = fn(JSON.parse(JSON.stringify(m)))
-      try { localStorage.setItem('matrix_v1', JSON.stringify(next)) } catch(e){}
       return next
     })
   }
@@ -168,12 +165,23 @@ export default function MatrixEditor({ id }: { id?: string }) {
 
   function addZona(procesoId: string) {
     // open Zona creation modal so user can fill name, cargo and add actividades
-    const p = matrix.procesos.find((x: any) => x.id === procesoId)
+    const p = matrix?.procesos?.find((x: any) => x.id === procesoId)
+    setEditingZona(null)
     setZonaParentProcesoId(procesoId)
     setZonaModalName(`Zona ${ (p?.zonas?.length||0) + 1 }`)
     setZonaModalCargo('')
     setZonaModalRutinario(false)
     setZonaModalActivities([])
+    setShowZonaModal(true)
+  }
+
+  function editZonaItem(procesoId: string, z: any) {
+    setEditingZona(z)
+    setZonaParentProcesoId(procesoId)
+    setZonaModalName(z.nombre || '')
+    setZonaModalCargo(z.cargo || '')
+    setZonaModalRutinario(!!z.rutinario)
+    setZonaModalActivities([]) // We don't edit child activities here
     setShowZonaModal(true)
   }
 
@@ -187,6 +195,24 @@ export default function MatrixEditor({ id }: { id?: string }) {
 
   function saveZonaModal() {
     if (!zonaParentProcesoId) { setShowZonaModal(false); return }
+    
+    if (editingZona) {
+      updateMatrix((m: any) => {
+        const p = m.procesos.find((x: any) => x.id === zonaParentProcesoId)
+        const z = p.zonas.find((x: any) => x.id === editingZona.id)
+        if (z) {
+          z.nombre = zonaModalName
+          z.cargo = zonaModalCargo
+          z.rutinario = !!zonaModalRutinario
+        }
+        return m
+      })
+      setShowZonaModal(false)
+      setZonaParentProcesoId(null)
+      setEditingZona(null)
+      return
+    }
+
     const newZonaId = makeId('z-')
     const actividadIds = (zonaModalActivities||[]).map(a => ({ id: makeId('a-'), nombre: a.nombre, tareas: a.tareas || '' }))
     updateMatrix((m: any) => {
@@ -329,18 +355,33 @@ export default function MatrixEditor({ id }: { id?: string }) {
   }
 
   const stats = useMemo(() => {
-    const zonas = matrix.procesos.reduce((acc: number, p: any) => acc + (p.zonas?.length||0), 0)
-    const peligros = matrix.procesos.reduce((acc: number, p: any) => acc + (p.zonas?.reduce((a:number,z:any)=> a + (z.actividades?.reduce((aa:number,act:any)=> aa + (act.peligros?.length||0),0)||0),0)||0), 0)
+    if (!matrix) return { zonas: 0, peligros: 0 }
+    const zonas = (matrix.procesos || []).reduce((acc: number, p: any) => acc + (p.zonas?.length||0), 0)
+    const peligros = (matrix.procesos || []).reduce((acc: number, p: any) => acc + (p.zonas?.reduce((a:number,z:any)=> a + (z.actividades?.reduce((aa:number,act:any)=> aa + (act.peligros?.length||0),0)||0),0)||0), 0)
     return { zonas, peligros }
   }, [matrix])
 
-  function saveMatrix() {
+  async function saveMatrix() {
     try {
-      localStorage.setItem('matrix_v1', JSON.stringify(matrix))
-      toast({ title: 'Guardado', description: 'La matriz ha sido guardada.' })
+      const isNew = String(matrix.id).startsWith('m-') || id === 'nuevo'
+      const method = isNew ? 'POST' : 'PUT'
+      const url = isNew ? '/api/riesgos' : `/api/riesgos/${matrix.id}`
+
+      const res = await fetch(url, {
+        method,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(matrix)
+      })
+
+      if (!res.ok) {
+        throw new Error('Error al guardar en el servidor')
+      }
+
+      toast({ title: 'Éxito', description: 'La matriz se ha guardado correctamente en la base de datos.' })
       router.push('/dashboard')
-    } catch (e) {
-      toast({ title: 'Error', description: 'Error guardando la matriz.' })
+    } catch (err: any) {
+      console.error(err)
+      toast({ title: 'Error', variant: 'destructive', description: err.message || 'No se pudo guardar la matriz' })
     }
   }
 
@@ -401,49 +442,59 @@ export default function MatrixEditor({ id }: { id?: string }) {
     setShowFilesModal(false)
   }
 
-  const currentProceso = matrix.procesos.find((p: any) => p.id === selected.procesoId)
+  const currentProceso = matrix?.procesos?.find((p: any) => p.id === selected.procesoId)
   const currentZona = currentProceso?.zonas?.find((z: any) => z.id === selected.zonaId)
   const currentActividad = currentZona?.actividades?.find((a: any) => a.id === selected.actividadId)
 
+  if (!matrix) {
+    return (
+      <div className="flex bg-white items-center justify-center p-8 text-slate-500 h-screen w-full">
+        Cargando matriz de riesgos...
+      </div>
+    )
+  }
+
   return (
-    <div className="min-h-screen bg-white text-slate-800">
+    <div className="min-h-screen bg-[#f5f7f5] text-slate-800">
       {/* Top bar */}
-      <div className="sticky top-0 border-b px-4 py-3 flex items-center gap-4 z-10" style={{background:'#1a5c2a'}}>
-        <div className="flex items-center">
-          <Button variant="ghost" onClick={() => router.push('/dashboard')}>Volver</Button>
+      <div className="sticky top-0 px-4 py-3 flex items-center gap-4 z-10" style={{background:'#ffffff', borderBottom: '0.5px solid #d4e8d4'}}>
+        <div className="flex items-center gap-2">
+          <img src="/csmLOGO_1_.png" style={{ height: '38px', objectFit: 'contain' }} alt="Logo" />
+          <div style={{ width: '0.5px', height: '30px', background: '#c8dfc8', margin: '0 4px' }} />
+          <Button variant="ghost" style={{color: '#1a5c2a'}} onClick={() => router.push('/dashboard')}>Volver</Button>
         </div>
-        <div className="flex-1 flex items-center gap-3 justify-center text-white">
-            <div className="text-xs">Área / Proceso</div>
-            <Input value={matrix.area} onChange={(e:any)=> updateMatrix((m:any)=>{ m.area = e.target.value; return m })} />
-            <div className="text-xs">Responsable</div>
-            <Input value={matrix.responsable} onChange={(e:any)=> updateMatrix((m:any)=>{ m.responsable = e.target.value; return m })} />
-            <div className="text-xs">Fecha Elaboración</div>
-            <Input type="date" value={matrix.fecha_elaboracion} onChange={(e:any)=> updateMatrix((m:any)=>{ m.fecha_elaboracion = e.target.value; return m })} />
-            <div className="text-xs">Fecha Actualización</div>
-            <Input type="date" value={matrix.fecha_actualizacion} onChange={(e:any)=> updateMatrix((m:any)=>{ m.fecha_actualizacion = e.target.value; return m })} />
+        <div className="flex-1 flex items-center gap-3 justify-center text-[#1a5c2a]">
+            <div className="text-xs font-medium">Área / Proceso</div>
+            <Input style={{background: '#f4faf4', border: '0.5px solid #c8dfc8', color: '#1a5c2a'}} value={matrix.area} onChange={(e:any)=> updateMatrix((m:any)=>{ m.area = e.target.value; return m })} />
+            <div className="text-xs font-medium">Responsable</div>
+            <Input style={{background: '#f4faf4', border: '0.5px solid #c8dfc8', color: '#1a5c2a'}} value={matrix.responsable} onChange={(e:any)=> updateMatrix((m:any)=>{ m.responsable = e.target.value; return m })} />
+            <div className="text-xs font-medium">Fecha Elaboración</div>
+            <Input type="date" style={{background: '#f4faf4', border: '0.5px solid #c8dfc8', color: '#1a5c2a'}} value={matrix.fecha_elaboracion} onChange={(e:any)=> updateMatrix((m:any)=>{ m.fecha_elaboracion = e.target.value; return m })} />
+            <div className="text-xs font-medium">Fecha Actualización</div>
+            <Input type="date" style={{background: '#f4faf4', border: '0.5px solid #c8dfc8', color: '#1a5c2a'}} value={matrix.fecha_actualizacion} onChange={(e:any)=> updateMatrix((m:any)=>{ m.fecha_actualizacion = e.target.value; return m })} />
         
         </div>
         <div className="flex items-center gap-2">
-          <Button variant="outline" onClick={()=> setShowFilesModal(true)}>Añadir Archivos</Button>
           <Button onClick={saveMatrix}>Guardar</Button>
         </div>
       </div>
 
                 <div className="p-4 flex items-start gap-6">
                   <aside className="w-80 mr-6">
-                    <div className="flex items-center justify-between mb-2">
-                      <div className="font-semibold">Procesos</div>
-                      <Button size="sm" onClick={addProceso}>+ Proceso</Button>
-                    </div>
-                    <div className="mt-2 space-y-3">
+                    <div style={{ border: '0.5px solid #dde8dd', borderRadius: '10px', overflow: 'hidden', background: '#fff' }}>
+                      <div className="flex items-center justify-between px-4 py-2" style={{ background: '#2d7a40', color: '#fff' }}>
+                        <div className="font-semibold text-sm">Procesos</div>
+                        <Button size="sm" variant="secondary" className="bg-white text-[#2d7a40] hover:bg-slate-100" onClick={addProceso}>+ Proceso</Button>
+                      </div>
+                      <div className="p-4 space-y-3">
                     { (matrix.procesos || []).map((p: any) => (
                       <div key={p.id} className="border rounded p-2">
                         <div className="flex items-center justify-between">
-                          <div className="font-medium bg-[#1a5c2a] text-white px-2 py-1 rounded">{p.nombre}</div>
+                          <div className="font-medium bg-[#2d7a40] text-white px-2 py-1 rounded">{p.nombre}</div>
                           <div className="flex items-center gap-2">
                             <Button size="sm" variant="ghost" onClick={()=>addZona(p.id)}>+ Zona</Button>
-                            <Button size="sm" variant="ghost" onClick={()=>editProceso(p)} aria-label="Editar proceso"><PencilIcon size={14} /></Button>
-                            <Button size="sm" variant="destructive" onClick={()=>removeProceso(p.id)}>Eliminar</Button>
+                            <button onClick={()=>editProceso(p)} className="text-slate-500 hover:text-slate-700" aria-label="Editar proceso"><PencilIcon size={14} /></button>
+                            <button onClick={()=>removeProceso(p.id)} className="text-red-400 hover:text-red-700" aria-label="Eliminar proceso"><TrashIcon size={14} /></button>
                           </div>
                         </div>
 
@@ -457,11 +508,11 @@ export default function MatrixEditor({ id }: { id?: string }) {
                                 <div className={`flex items-center justify-between p-2 cursor-pointer ${selected.zonaId===z.id? 'bg-slate-100':''}`} onClick={() => setSelected({ procesoId: p.id, zonaId: z.id })}>
                                   <div className="flex items-center gap-2">
                                     <button onClick={(e:any)=>{ e.stopPropagation(); setExpandedZonaIds(s=>({...s, [z.id]: !expanded})) }} className="text-slate-500">{expanded ? '▾' : '▸'}</button>
-                                    <div className="text-sm">{z.nombre}</div>
-                                  </div>
-                                  <div className="flex items-center gap-2">
-                                    <div style={{width:18,height:18,background:pill.color,borderRadius:999}} title={pill.label}></div>
-                                  </div>
+                                    <div className="text-sm bg-[#2d7a40] text-white px-2 py-1 rounded">{z.nombre}</div>                                      <button onClick={(e:any)=>{ e.stopPropagation(); editZonaItem(p.id, z) }} className="text-slate-400 hover:text-slate-700 ml-1" title="Editar zona">
+                                        <PencilIcon size={12} />
+                                      </button>                                      <button onClick={(e:any)=>{ e.stopPropagation(); removeZona(p.id, z.id) }} className="text-red-400 hover:text-red-700 ml-1" title="Eliminar zona">
+                                        <TrashIcon size={12} />
+                                      </button>                                  </div>
                                 </div>
                                 {expanded && (
                                   <div className="pl-6 pr-2 pb-2">
@@ -477,6 +528,9 @@ export default function MatrixEditor({ id }: { id?: string }) {
                                                 <path d="M12 20h9"></path>
                                                 <path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5z"></path>
                                               </svg>
+                                            </button>
+                                            <button aria-label="Eliminar actividad" className="text-red-400 hover:text-red-600 text-sm ml-1" onClick={(e:any)=>{ e.stopPropagation(); removeActividad(p.id, z.id, a.id) }}>
+                                              <TrashIcon size={14} />
                                             </button>
                                           </div>
                                         </div>
@@ -494,18 +548,25 @@ export default function MatrixEditor({ id }: { id?: string }) {
                       </div>
                     )) }
                   </div>
+                </div>
                   
 
-          <div className="mt-6 border-t pt-4">
-            <Card className="p-2">
-              <CardHeader className="bg-[#1a5c2a] text-white"><CardTitle className="text-xs">Archivos</CardTitle></CardHeader>
-              <CardContent>
+          <div className="mt-6 pt-4">
+            <div style={{ border: '0.5px solid #dde8dd', borderRadius: '10px', overflow: 'hidden', background: '#fff' }}>
+              <div className="flex flex-row items-center justify-between px-4 py-2" style={{ background: '#2d7a40', color: '#fff' }}>
+                <div className="font-semibold text-sm">Archivos</div>
+                <Button size="sm" variant="outline" style={{border: '0.5px solid #b2d8b2', color: '#1a5c2a', background: '#e8f5e9'}} onClick={()=> setShowFilesModal(true)}>Añadir Archivos</Button>
+              </div>
+              <div className="p-4">
                 {(!(matrix.files && matrix.files.length)) ? (
                   <div className="text-sm text-slate-500">No hay archivos adjuntos a esta matriz.</div>
                 ) : (
                   <div className="flex flex-wrap gap-3">
                     {(matrix.files || []).map((f: any, i: number) => (
-                      <div key={i} className="w-28 p-2 flex flex-col items-center bg-white rounded shadow-sm border">
+                      <div key={i} className="w-28 p-2 flex flex-col items-center bg-white rounded shadow-sm border relative group">
+                        <button onClick={() => updateMatrix((m:any)=>{ m.files.splice(i,1); return m })} className="absolute -top-2 -right-2 bg-red-100 hover:bg-red-200 text-red-600 rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity shadow-sm border border-red-200" title="Eliminar archivo">
+                          <TrashIcon size={12} />
+                        </button>
                         {f.type?.startsWith('image/') ? (
                           <img src={f.data} alt={f.name} className="w-20 h-14 object-cover rounded" />
                         ) : (
@@ -519,8 +580,8 @@ export default function MatrixEditor({ id }: { id?: string }) {
                     ))}
                   </div>
                 )}
-              </CardContent>
-            </Card>
+              </div>
+            </div>
           </div>
         </aside>
 
@@ -535,35 +596,42 @@ export default function MatrixEditor({ id }: { id?: string }) {
                 <div><Button variant="destructive" onClick={() => removeActividad(currentProceso.id, currentZona.id, currentActividad.id)}>Eliminar actividad</Button></div>
               </div>
 
-                      <Card>
-                        <CardHeader className="bg-[#1a5c2a] text-white"><CardTitle>Información de la Actividad</CardTitle></CardHeader>
-                <CardContent>
-                  <div className="grid grid-cols-2 gap-3">
+                      <Card className="flex flex-col gap-0 overflow-hidden p-0 border border-[#dde8dd] shadow-sm">
+                        <CardHeader className="flex items-center bg-[#2d7a40] text-white px-4 py-3 mt-0 min-h-[48px]"><CardTitle className="text-sm font-semibold">Información de la Actividad</CardTitle></CardHeader>
+                <CardContent className="p-4">
+                  <div className="grid grid-cols-2 gap-3 mt-0">
                     <div className="col-span-2">
-                      <div className="text-xs">Actividades</div>
-                      <Textarea rows={3} value={currentActividad.descripcion||''} onChange={(e:any)=> updateMatrix((m:any)=>{ const a = m.procesos.find((p:any)=>p.id===currentProceso.id).zonas.find((zz:any)=>zz.id===currentZona.id).actividades.find((aa:any)=>aa.id===currentActividad.id); if (a) a.descripcion = e.target.value; return m })} />
+                      <div style={{ color: '#2d7a40', fontSize: '11px', fontWeight: 500, textTransform: 'uppercase', letterSpacing: '0.04em' }} className="mb-1">Actividades</div>
+                      <Textarea rows={3} value={currentActividad.descripcion||''}  onInput={(e:any) => { e.currentTarget.style.height = 'auto'; e.currentTarget.style.height = e.currentTarget.scrollHeight + 'px'; }} onChange={(e:any)=> updateMatrix((m:any)=>{ const a = m.procesos.find((p:any)=>p.id===currentProceso.id).zonas.find((zz:any)=>zz.id===currentZona.id).actividades.find((aa:any)=>aa.id===currentActividad.id); if (a) a.descripcion = e.target.value; return m })} />
                     </div>
                     <div className="col-span-2">
-                      <div className="text-xs">Tareas</div>
-                      <Textarea rows={2} value={currentActividad.tareas||''} onChange={(e:any)=> updateMatrix((m:any)=>{ const a = m.procesos.find((p:any)=>p.id===currentProceso.id).zonas.find((zz:any)=>zz.id===currentZona.id).actividades.find((aa:any)=>aa.id===currentActividad.id); if (a) a.tareas = e.target.value; return m })} />
+                      <div style={{ color: '#2d7a40', fontSize: '11px', fontWeight: 500, textTransform: 'uppercase', letterSpacing: '0.04em' }} className="mb-1">Tareas</div>
+                      <Textarea rows={2} value={currentActividad.tareas||''}  onInput={(e:any) => { e.currentTarget.style.height = 'auto'; e.currentTarget.style.height = e.currentTarget.scrollHeight + 'px'; }} onChange={(e:any)=> updateMatrix((m:any)=>{ const a = m.procesos.find((p:any)=>p.id===currentProceso.id).zonas.find((zz:any)=>zz.id===currentZona.id).actividades.find((aa:any)=>aa.id===currentActividad.id); if (a) a.tareas = e.target.value; return m })} />
                     </div>
                     <div>
-                      <div className="text-xs">Cargo</div>
+                      <div style={{ color: '#2d7a40', fontSize: '11px', fontWeight: 500, textTransform: 'uppercase', letterSpacing: '0.04em' }} className="mb-1">Cargo</div>
                       <Input value={currentActividad.cargo||''} onChange={(e:any)=> updateMatrix((m:any)=>{ const a = m.procesos.find((p:any)=>p.id===currentProceso.id).zonas.find((zz:any)=>zz.id===currentZona.id).actividades.find((aa:any)=>aa.id===currentActividad.id); if (a) a.cargo = e.target.value; return m })} />
+                    </div>
+                    <div className="flex flex-col items-start justify-center">
+                      <div style={{ color: '#2d7a40', fontSize: '11px', fontWeight: 500, textTransform: 'uppercase', letterSpacing: '0.04em' }} className="mb-1">Rutinario</div>
+                      <div className="flex items-center gap-2">
+                        <Switch checked={!!currentActividad.rutinario} onCheckedChange={(v:boolean)=> updateMatrix((m:any)=>{ const a = m.procesos.find((p:any)=>p.id===currentProceso.id).zonas.find((zz:any)=>zz.id===currentZona.id).actividades.find((aa:any)=>aa.id===currentActividad.id); if (a) a.rutinario = v; return m })} />
+                        <div>{currentActividad.rutinario ? 'Sí' : 'No'}</div>
+                      </div>
                     </div>
                   </div>
                 </CardContent>
               </Card>
 
-                  <Card>
-                <CardHeader className="flex items-center justify-between bg-[#1a5c2a] text-white"><CardTitle>Peligros</CardTitle><div><Badge>{currentActividad?.peligros?.length||0}</Badge> <Button size="sm" onClick={() => addPeligro(currentProceso.id, currentZona.id, currentActividad?.id)}>+ Agregar peligro</Button></div></CardHeader>
-                <CardContent>
+                  <Card className="flex flex-col gap-0 overflow-hidden p-0 border border-[#dde8dd] shadow-sm">
+                <CardHeader className="flex items-center justify-between bg-[#2d7a40] text-white px-4 py-3 mt-0 min-h-[48px]"><CardTitle className="text-sm font-semibold">Peligros</CardTitle><div><Badge className="bg-white/20 hover:bg-white/30 text-white">{currentActividad?.peligros?.length||0}</Badge> <Button size="sm" variant="secondary" className="bg-white text-[#2d7a40] hover:bg-slate-100 ml-2" onClick={() => addPeligro(currentProceso.id, currentZona.id, currentActividad?.id)}>+ Agregar peligro</Button></div></CardHeader>
+                <CardContent className="p-4">
                   {(!currentActividad || !currentActividad.peligros || currentActividad.peligros.length===0) ? (
                     <div className="p-6 border-dashed border rounded text-slate-500">No hay peligros en esta actividad.</div>
                   ) : (
                     <div className="space-y-3">
                       {currentActividad.peligros.map((r: any, idx: number) => (
-                        <div key={r.id} className="border rounded">
+                        <div key={r.id} className="border rounded bg-[#fafcfa]">
                           <div className="p-3 flex items-center justify-between cursor-pointer" onClick={() => updatePeligroField(currentProceso.id, currentZona.id, currentActividad.id, r.id, ['_ui','expanded'], !r._ui?.expanded)}>
                             <div className="flex items-center gap-3">
                               <div className="font-medium">Peligro {idx+1}</div>
@@ -586,27 +654,16 @@ export default function MatrixEditor({ id }: { id?: string }) {
                                 <div className="grid grid-cols-1 gap-3">
                                   <div>
                                     <div className="text-xs">Descripción</div>
-                                    <Textarea rows={3} value={r.descripcion||''} onChange={(e:any)=> updatePeligroField(currentProceso.id, currentZona.id, currentActividad.id, r.id, ['descripcion'], e.target.value)} />
+                                    <Textarea rows={3} value={r.descripcion||''}  onInput={(e:any) => { e.currentTarget.style.height = 'auto'; e.currentTarget.style.height = e.currentTarget.scrollHeight + 'px'; }} onChange={(e:any)=> updatePeligroField(currentProceso.id, currentZona.id, currentActividad.id, r.id, ['descripcion'], e.target.value)} />
                                   </div>
                                   <div className="grid grid-cols-2 gap-3">
                                     <div>
                                       <div className="text-xs">Clasificación</div>
-                                      <select className="w-full p-2 border rounded" value={r.clasificacion||''} onChange={(e:any)=> updatePeligroField(currentProceso.id, currentZona.id, currentActividad.id, r.id, ['clasificacion'], e.target.value)}>
-                                        <option value="">Seleccione...</option>
-                                        <option>Físico</option>
-                                        <option>Químico</option>
-                                        <option>Biológico</option>
-                                        <option>Ergonómico</option>
-                                        <option>Psicosocial</option>
-                                        <option>Eléctrico</option>
-                                        <option>Locativo</option>
-                                        <option>Mecánico</option>
-                                        <option>Fenómenos naturales</option>
-                                      </select>
+                                      <Input placeholder="Ej: Físico, Químico..." value={r.clasificacion||''} onChange={(e:any)=> updatePeligroField(currentProceso.id, currentZona.id, currentActividad.id, r.id, ['clasificacion'], e.target.value)} />
                                     </div>
                                     <div>
                                       <div className="text-xs">Efectos posibles</div>
-                                      <Textarea rows={2} value={r.efectos||''} onChange={(e:any)=> updatePeligroField(currentProceso.id, currentZona.id, currentActividad.id, r.id, ['efectos'], e.target.value)} />
+                                      <Textarea rows={2} value={r.efectos||''}  onInput={(e:any) => { e.currentTarget.style.height = 'auto'; e.currentTarget.style.height = e.currentTarget.scrollHeight + 'px'; }} onChange={(e:any)=> updatePeligroField(currentProceso.id, currentZona.id, currentActividad.id, r.id, ['efectos'], e.target.value)} />
                                     </div>
                                   </div>
 
@@ -614,8 +671,8 @@ export default function MatrixEditor({ id }: { id?: string }) {
                                     <div className="text-xs font-medium">Controles existentes</div>
                                     <div className="grid grid-cols-1 gap-2">
                                       <Input placeholder="Fuente" value={r.controles?.fuente||''} onChange={(e:any)=> updatePeligroField(currentProceso.id, currentZona.id, currentActividad.id, r.id, ['controles','fuente'], e.target.value)} />
-                                      <Textarea rows={2} placeholder="Medio" value={r.controles?.medio||''} onChange={(e:any)=> updatePeligroField(currentProceso.id, currentZona.id, currentActividad.id, r.id, ['controles','medio'], e.target.value)} />
-                                      <Textarea rows={2} placeholder="Individuo" value={r.controles?.individuo||''} onChange={(e:any)=> updatePeligroField(currentProceso.id, currentZona.id, currentActividad.id, r.id, ['controles','individuo'], e.target.value)} />
+                                      <Textarea rows={2} placeholder="Medio" value={r.controles?.medio||''}  onInput={(e:any) => { e.currentTarget.style.height = 'auto'; e.currentTarget.style.height = e.currentTarget.scrollHeight + 'px'; }} onChange={(e:any)=> updatePeligroField(currentProceso.id, currentZona.id, currentActividad.id, r.id, ['controles','medio'], e.target.value)} />
+                                      <Textarea rows={2} placeholder="Individuo" value={r.controles?.individuo||''}  onInput={(e:any) => { e.currentTarget.style.height = 'auto'; e.currentTarget.style.height = e.currentTarget.scrollHeight + 'px'; }} onChange={(e:any)=> updatePeligroField(currentProceso.id, currentZona.id, currentActividad.id, r.id, ['controles','individuo'], e.target.value)} />
                                     </div>
                                   </div>
                                 </div>
@@ -664,7 +721,7 @@ export default function MatrixEditor({ id }: { id?: string }) {
                                   </div>
 
                                   <div className="md:col-span-3 mt-3 p-3 bg-slate-50 rounded">
-                                    <div className="text-xs font-medium">Valoración del Riesgo</div>
+                                    <div className="text-xs font-medium">Aceptabilidad Del Riesgo</div>
                                     <div className="mt-2 grid md:grid-cols-3 gap-4 items-center">
                                       <div className="flex flex-col">
                                         <div className="text-xs text-slate-600">Interpretación Nivel Probabilidad</div>
@@ -675,9 +732,12 @@ export default function MatrixEditor({ id }: { id?: string }) {
                                         <div className="mt-2"><span className="px-2 py-1 rounded" style={{background: interpNivelRiesgo(Number(r.evaluacion?.nr||0)).color, color:'#fff'}}>{interpNivelRiesgo(Number(r.evaluacion?.nr||0)).label}</span></div>
                                       </div>
                                       <div className="flex flex-col">
-                                        <div className="text-xs text-slate-600">Valoración</div>
+                                        <div className="text-xs text-slate-600">Aceptabilidad Del Riesgo</div>
                                         <div className="mt-2">
-                                          <Input readOnly value={( (r.evaluacion?.aceptabilidad || aceptabilidadFromNivel(r.evaluacion?.nivel_riesgo || ''))?.split('—')?.[1] || (r.evaluacion?.aceptabilidad || aceptabilidadFromNivel(r.evaluacion?.nivel_riesgo || '')) ).toString().trim()} />
+                                          {(() => {
+                                            const aceptabilidadText = aceptabilidadFromNivel(r.evaluacion?.nivel_riesgo || interpNivelRiesgo(Number(r.evaluacion?.nr||0)).label)
+                                            return <span className="px-2 py-1 rounded" style={{background: aceptabilidadColor(aceptabilidadText), color:'#fff'}}>{aceptabilidadText}</span>
+                                          })()}
                                         </div>
                                       </div>
                                     </div>
@@ -702,7 +762,7 @@ export default function MatrixEditor({ id }: { id?: string }) {
                                   </div>
                                   <div>
                                     <div className="text-xs">Peor Consecuencia</div>
-                                    <Textarea rows={2} value={r.criterios?.peor_consecuencia||''} onChange={(e:any)=> updatePeligroField(currentProceso.id, currentZona.id, currentActividad.id, r.id, ['criterios','peor_consecuencia'], e.target.value)} />
+                                    <Textarea rows={2} value={r.criterios?.peor_consecuencia||''}  onInput={(e:any) => { e.currentTarget.style.height = 'auto'; e.currentTarget.style.height = e.currentTarget.scrollHeight + 'px'; }} onChange={(e:any)=> updatePeligroField(currentProceso.id, currentZona.id, currentActividad.id, r.id, ['criterios','peor_consecuencia'], e.target.value)} />
                                   </div>
                                 </div>
                               )}
@@ -719,19 +779,19 @@ export default function MatrixEditor({ id }: { id?: string }) {
                                   </div>
                                   <div className="col-span-2">
                                     <div className="text-xs">Controles de Ingeniería</div>
-                                    <Textarea rows={2} value={r.intervencion?.controles_ingenieria||''} onChange={(e:any)=> updatePeligroField(currentProceso.id, currentZona.id, currentActividad.id, r.id, ['intervencion','controles_ingenieria'], e.target.value)} />
+                                    <Textarea rows={2} value={r.intervencion?.controles_ingenieria||''}  onInput={(e:any) => { e.currentTarget.style.height = 'auto'; e.currentTarget.style.height = e.currentTarget.scrollHeight + 'px'; }} onChange={(e:any)=> updatePeligroField(currentProceso.id, currentZona.id, currentActividad.id, r.id, ['intervencion','controles_ingenieria'], e.target.value)} />
                                   </div>
                                   <div className="col-span-2">
-                                    <div className="text-xs">Controles Administrativos / Señalización</div>
-                                    <Textarea rows={2} value={r.intervencion?.controles_administrativos||''} onChange={(e:any)=> updatePeligroField(currentProceso.id, currentZona.id, currentActividad.id, r.id, ['intervencion','controles_administrativos'], e.target.value)} />
+                                    <div className="text-xs">Señalización, Advertencia, Controles Administrativos</div>
+                                    <Textarea rows={2} value={r.intervencion?.controles_administrativos||''}  onInput={(e:any) => { e.currentTarget.style.height = 'auto'; e.currentTarget.style.height = e.currentTarget.scrollHeight + 'px'; }} onChange={(e:any)=> updatePeligroField(currentProceso.id, currentZona.id, currentActividad.id, r.id, ['intervencion','controles_administrativos'], e.target.value)} />
                                   </div>
                                   <div>
-                                    <div className="text-xs">EPP</div>
-                                    <Textarea rows={2} value={r.intervencion?.epp||''} onChange={(e:any)=> updatePeligroField(currentProceso.id, currentZona.id, currentActividad.id, r.id, ['intervencion','epp'], e.target.value)} />
+                                    <div className="text-xs">Equipos / Elementos de Protección Personal</div>
+                                    <Textarea rows={2} value={r.intervencion?.epp||''}  onInput={(e:any) => { e.currentTarget.style.height = 'auto'; e.currentTarget.style.height = e.currentTarget.scrollHeight + 'px'; }} onChange={(e:any)=> updatePeligroField(currentProceso.id, currentZona.id, currentActividad.id, r.id, ['intervencion','epp'], e.target.value)} />
                                   </div>
                                   <div>
-                                    <div className="text-xs">Responsable</div>
-                                    <Input value={r.intervencion?.responsable||''} onChange={(e:any)=> updatePeligroField(currentProceso.id, currentZona.id, currentActividad.id, r.id, ['intervencion','responsable'], e.target.value)} />
+                                    <div className="text-xs">Intervención</div>
+                                    <Textarea rows={2} value={r.intervencion?.responsable||''}  onInput={(e:any) => { e.currentTarget.style.height = 'auto'; e.currentTarget.style.height = e.currentTarget.scrollHeight + 'px'; }} onChange={(e:any)=> updatePeligroField(currentProceso.id, currentZona.id, currentActividad.id, r.id, ['intervencion','responsable'], e.target.value)} />
                                   </div>
                                   <div>
                                     <div className="text-xs">Fecha de ejecución</div>
@@ -783,10 +843,10 @@ export default function MatrixEditor({ id }: { id?: string }) {
         </DialogContent>
       </Dialog>
 
-      <Dialog open={showZonaModal} onOpenChange={setShowZonaModal}>
+      <Dialog open={showZonaModal} onOpenChange={(open) => { setShowZonaModal(open); if(!open) setEditingZona(null); }}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Nueva Zona / Lugar</DialogTitle>
+            <DialogTitle>{editingZona ? 'Editar Zona / Lugar' : 'Nueva Zona / Lugar'}</DialogTitle>
           </DialogHeader>
           <div className="p-2">
             <div>
@@ -871,3 +931,4 @@ export default function MatrixEditor({ id }: { id?: string }) {
     </div>
   )
 }
+

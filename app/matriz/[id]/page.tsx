@@ -1,10 +1,12 @@
 import React from 'react'
 import MatrixEditor from '@/components/matrix-editor'
 
-export default function MatrizPage({ params }: { params: { id: string } }) {
+export default async function MatrizPage({ params }: { params: Promise<{ id: string }> | { id: string } }) {
+  const { id } = await params
+
   return (
     <div>
-      <MatrixEditor id={params.id} />
+      <MatrixEditor id={id} />
     </div>
   )
 }
