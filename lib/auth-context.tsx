@@ -31,20 +31,26 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const login = useCallback(async (email: string, password: string): Promise<boolean> => {
     setIsLoading(true)
     
-    // Simulate API delay
-    await new Promise(resolve => setTimeout(resolve, 800))
-    
-    const foundUser = MOCK_USERS.find(u => u.email === email && u.password === password)
-    
-    if (foundUser) {
-      setUser({
-        id: foundUser.id,
-        email: foundUser.email,
-        nombre: foundUser.nombre,
-        cargo: foundUser.cargo
+    try {
+      const res = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password })
       })
-      setIsLoading(false)
-      return true
+
+      if (res.ok) {
+        const data = await res.json()
+        setUser({
+          id: data.id,
+          email: data.email,
+          nombre: data.nombre,
+          cargo: data.cargo || 'Usuario'
+        })
+        setIsLoading(false)
+        return true
+      }
+    } catch (err) {
+      console.error('Login error', err)
     }
     
     setIsLoading(false)
