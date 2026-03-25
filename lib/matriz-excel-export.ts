@@ -617,6 +617,53 @@ export async function exportMatrizToExcel(matrizData: MatrizData): Promise<void>
             // Merge G (Rutinario)
             mergeRanges.push(`G${actividadRowStart}:G${actividadRowEnd}`)
           }
+
+          // Merge evaluation/criteria columns for consecutive Peligros with identical calculations
+          // Columns N (14) to X (24) cover: N-T (evaluación), U (aceptabilidad), V-X (criterios)
+          if (actividadRowStart <= actividadRowEnd) {
+            const evalCols = [14,15,16,17,18,19,20,21,22,23,24]
+
+            let groupStart = actividadRowStart
+            // Helper to stringify cell value for comparison
+            const cellValueStr = (r: number, c: number) => {
+              const v = ws.getCell(r, c).value
+              if (v === null || v === undefined) return ''
+              if (typeof v === 'object' && 'text' in v) return String((v as any).text)
+              return String(v)
+            }
+
+            for (let r = actividadRowStart + 1; r <= actividadRowEnd + 1; r++) {
+              // compare previous row (r-1) with current row r (or '' at end)
+              const prevRow = r - 1
+              const currRow = r <= actividadRowEnd ? r : null
+
+              // Determine if all evalCols are equal between prevRow and currRow
+              let same = true
+              if (currRow === null) {
+                same = false
+              } else {
+                for (const col of evalCols) {
+                  if (cellValueStr(prevRow, col) !== cellValueStr(currRow, col)) {
+                    same = false
+                    break
+                  }
+                }
+              }
+
+              // If value changed (same==false), close previous group
+              if (!same) {
+                const groupEnd = prevRow
+                if (groupEnd > groupStart) {
+                  // push merge ranges for each evaluation/criteria column
+                  for (const col of evalCols) {
+                    const colLetter = colNumberToLetter(col)
+                    mergeRanges.push(`${colLetter}${groupStart}:${colLetter}${groupEnd}`)
+                  }
+                }
+                groupStart = r
+              }
+            }
+          }
         }
 
         // Merge cells for zona rows
