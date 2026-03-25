@@ -2,9 +2,6 @@ FROM node:20-alpine AS builder
 
 WORKDIR /app
 
-# Set a dummy DATABASE_URL for build time (Prisma needs this to generate client)
-ENV DATABASE_URL="postgresql://user:password@localhost:5432/dummy"
-
 # Install all dependencies (including dev dependencies for build)
 COPY package.json package-lock.json* ./
 RUN npm ci
