@@ -9,6 +9,8 @@ services:
     environment:
       - NODE_ENV=production
       - PORT=4597
+    ports:
+      - "4597:4597"
     expose:
       - "4597"
     networks:
