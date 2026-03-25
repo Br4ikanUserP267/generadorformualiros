@@ -2,25 +2,34 @@ FROM node:20-alpine AS builder
 
 WORKDIR /app
 
-# Install dependencies (no lockfile present)
-COPY package.json ./
-RUN npm install
+# Install dependencies
+COPY package.json package-lock.json* ./
+RUN npm ci --only=production && npm cache clean --force
 
-# Copy source and build
+# Copy source
 COPY . .
+
+# Build the application
 RUN npm run build
 
-FROM node:20-alpine AS runner
-WORKDIR /app
-ENV NODE_ENV=production
-ENV PORT=4597
+# Production stage
+FROM node:20-alpine
 
-# Copy built app and dependencies
+WORKDIR /app
+
+ENV NODE_ENV=production
+ENV PORT=3000
+
+# Copy only necessary files from builder
 COPY --from=builder /app/.next ./.next
 COPY --from=builder /app/public ./public
 COPY --from=builder /app/package.json ./package.json
 COPY --from=builder /app/node_modules ./node_modules
 
-EXPOSE 4597
+# Create non-root user for security
+RUN addgroup -g 1001 -S nodejs && adduser -S nextjs -u 1001
+USER nextjs
+
+EXPOSE 3000
 
 CMD ["npm", "start"]

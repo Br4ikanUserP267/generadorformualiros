@@ -1,10 +1,48 @@
 version: '3.8'
+
 services:
   app:
-    build: .
-    ports:
-      - "45657:3000"
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: matriz-riesgo-app
     environment:
       - NODE_ENV=production
       - PORT=3000
-    command: ["npm", "start"]
+    ports:
+      - "3000"
+    expose:
+      - "3000"
+    networks:
+      - matriz-network
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:3000/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    restart: unless-stopped
+
+  nginx:
+    image: nginx:alpine
+    container_name: matriz-riesgo-nginx
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      app:
+        condition: service_healthy
+    networks:
+      - matriz-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+networks:
+  matriz-network:
+    driver: bridge
