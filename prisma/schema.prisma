@@ -160,12 +160,4 @@ model Archivo {
   @@map("archivos")
 }
 
-// Lightweight storage for UI risks previously stored in local JSON.
-model Riesgo {
-  id        Int      @id @default(autoincrement())
-  data      Json
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  @@map("riesgos")
-}
+// Keep schema clean - Archivo model is the final model
