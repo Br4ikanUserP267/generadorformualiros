@@ -9,8 +9,6 @@ services:
     environment:
       - NODE_ENV=production
       - PORT=4597
-    ports:
-      - "4597:4597"
     expose:
       - "4597"
     networks:
@@ -28,8 +26,6 @@ services:
       context: .
       dockerfile: Dockerfile.nginx
     container_name: matriz-riesgo-nginx
-    ports:
-      - "80:80"
     expose:
       - "80"
     depends_on:
