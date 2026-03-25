@@ -1,3 +1,11 @@
-// Prisma configuration file
-// DATABASE_URL should be provided via environment variables
-export default {}
+import { Config } from '@prisma/internals'
+
+const config: Config = {
+  datasources: {
+    db: {
+      url: process.env.DATABASE_URL,
+    },
+  },
+}
+
+export default config
