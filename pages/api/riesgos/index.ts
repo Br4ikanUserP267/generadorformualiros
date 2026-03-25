@@ -13,6 +13,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   try {
     if (req.method === 'GET') {
       const rows = await prisma.matriz.findMany({
+        where: {
+          deletedAt: null  // Exclude soft-deleted records
+        },
         include: {
           archivos: true,
           procesos: {
