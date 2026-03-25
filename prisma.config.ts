@@ -1,12 +1,3 @@
-import { defineConfig } from '@prisma/internals'
-
-export default defineConfig({
-  migrate: {
-    seed: undefined,
-  },
-  datasources: {
-    db: {
-      url: process.env.DATABASE_URL,
-    },
-  },
-})
+// Prisma configuration file
+// DATABASE_URL should be provided via environment variables
+export default {}
