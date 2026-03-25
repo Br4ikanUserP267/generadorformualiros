@@ -1,0 +1,7 @@
+{
+  "datasources": {
+    "db": {
+      "url": "env(DATABASE_URL)"
+    }
+  }
+}
