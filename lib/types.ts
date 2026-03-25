@@ -24,11 +24,12 @@ export interface Riesgo {
   deficiencia: number
   exposicion: number
   consecuencia: number
-  controles: string
-  intervencion: string
+  controles?: string | { fuente?: string; medio?: string; individuo?: string }
+  intervencion?: string | { descripcion?: string; fecha?: string; eliminacion?: string; sustitucion?: string; ingenieria?: string; administrativos?: string; epp?: string; responsable?: string; fecha_ejecucion?: string }
   fecha: string
   seguimiento: string
   archivos?: ArchivoAdjunto[]
+  tipo_proceso?: string
   // Additional optional fields to support extended form columns
   fuente?: string
   medio?: string
@@ -48,7 +49,28 @@ export interface Riesgo {
   control_admin?: string
   epp?: string
   fecha_ejecucion?: string
-  tipo_proceso?: string
+  // Nested structures from API response
+  descripcion?: string
+  efectosPosibles?: string
+  evaluacion?: {
+    nd?: number
+    ne?: number
+    np?: number
+    nc?: number
+    nr?: number
+    deficiencia?: number
+    exposicion?: number
+    consecuencia?: number
+    probabilidad?: number
+    nivel_riesgo?: number
+    interpretacion?: string
+  }
+  criterios?: {
+    aceptabilidad?: string
+    num_expuestos?: number
+    peor_consecuencia?: string
+    requisito_legal?: string
+  }
 }
 
 export type MatrixRow = {
@@ -117,7 +139,9 @@ export type Actividad = {
   nombre: string
   descripcion?: string
   cargo?: string
-  tareas: Tarea[]
+  rutinario?: boolean
+  tareas?: string | Tarea[]
+  peligros?: Riesgo[]
 }
 
 export type Zona = {

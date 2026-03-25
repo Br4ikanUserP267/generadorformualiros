@@ -175,7 +175,10 @@ export const mockRiesgos: Riesgo[] = [
   },
   {
     id: 8,
+    area: "Mantenimiento",
+    responsable: "Supervisor de Mantenimiento",
     proceso: "Mantenimiento",
+    individuo: "Técnico de mantenimiento",
     tipo_proceso: "OPERATIVO",
     zona: "Cuarto de Máquinas",
     actividad: "Mantenimiento de equipos eléctricos",

@@ -387,10 +387,10 @@ export function Dashboard() {
 
       <ConfirmModal
         open={confirmOpen}
-        onOpenChange={setConfirmOpen}
+        onCancel={() => setConfirmOpen(false)}
         onConfirm={confirmDeleteAction}
         title="Eliminar Matriz"
-        description="¿Estás seguro de que deseas eliminar esta matriz? Esta acción no se puede deshacer y borrará todos los procesos, actividades y peligros asociados."
+        message="¿Estás seguro de que deseas eliminar esta matriz? Esta acción no se puede deshacer y borrará todos los procesos, actividades y peligros asociados."
       />
     </div>
   )

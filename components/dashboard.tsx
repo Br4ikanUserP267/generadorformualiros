@@ -4,6 +4,8 @@ import React, { useMemo, useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { useAuth } from '@/lib/auth-context'
 import ConfirmModal from './confirm-modal'
+import { exportMatrizToExcel } from '@/lib/matriz-excel-export'
+import type { Riesgo } from '@/lib/types'
 
 const Icons = {
   asistencial: <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M6 2a2 2 0 100 4 2 2 0 000-4z" stroke="currentColor" strokeWidth="1.1"/><path d="M2 10c0-2.2 1.8-4 4-4s4 1.8 4 4" stroke="currentColor" strokeWidth="1.1" strokeLinecap="round"/></svg>,
@@ -21,6 +23,72 @@ function getIcon(tipo: string) {
   if(t.includes('diag')) return Icons.diagnostico
   if(t.includes('infra')) return Icons.infraestructura
   return Icons.apoyo
+}
+
+// Helper function to flatten matrix data into Riesgo array for export
+function flattenMatrixToRiesgos(matrix: any): Riesgo[] {
+  const riesgos: Riesgo[] = []
+  const procesos = matrix.procesos || []
+  
+  for (const proceso of procesos) {
+    const zonas = proceso.zonas || []
+    for (const zona of zonas) {
+      const actividades = zona.actividades || []
+      for (const actividad of actividades) {
+        const peligros = actividad.peligros || []
+        for (const peligro of peligros) {
+          const nd = peligro.evaluacion?.nd || 0
+          const ne = peligro.evaluacion?.ne || 0
+          const nc = peligro.evaluacion?.nc || 0
+          const nr = (nd * ne) * nc
+          
+          // Build controls string from individual control fields
+          const controlsArray = [
+            peligro.controles?.fuente || '',
+            peligro.controles?.medio || '',
+            peligro.controles?.individuo || ''
+          ].filter(Boolean)
+          const controlsStr = controlsArray.join(', ')
+          
+          riesgos.push({
+            id: peligro.id,
+            area: matrix.area || '',
+            proceso: proceso.nombre || '',
+            responsable: matrix.responsable || '',
+            individuo: actividad.cargo || '',
+            zona: zona.nombre || '',
+            actividad: actividad.nombre || '',
+            tarea: actividad.tareas || '',
+            cargo: actividad.cargo || '',
+            rutinario: actividad.rutinario || false,
+            clasificacion: peligro.clasificacion || '',
+            peligro_desc: peligro.descripcion || '',
+            efectos: peligro.efectos || '',
+            deficiencia: nd,
+            exposicion: ne,
+            consecuencia: nc,
+            controles: controlsStr,
+            control_eliminacion: peligro.intervencion?.eliminacion || '',
+            control_sustitucion: peligro.intervencion?.sustitucion || '',
+            control_ingenieria: peligro.intervencion?.controles_ingenieria || '',
+            control_admin: peligro.intervencion?.controles_administrativos || '',
+            epp: peligro.intervencion?.epp || '',
+            intervencion: peligro.intervencion?.descripcion || '',
+            fecha: matrix.fecha_elaboracion || '',
+            fecha_ejecucion: peligro.intervencion?.fecha_ejecucion || '',
+            seguimiento: peligro.seguimiento || '',
+            num_expuestos: peligro.criterios?.num_expuestos,
+            peor_consecuencia: peligro.criterios?.peor_consecuencia || '',
+            requisito_legal: peligro.criterios?.requisito_legal ? 'Sí' : 'No',
+            interpretacion_nivel_riesgo: peligro.evaluacion?.interp_nr || '',
+            aceptabilidad: peligro.evaluacion?.aceptabilidad || ''
+          })
+        }
+      }
+    }
+  }
+  
+  return riesgos
 }
 
 const COLORS = [
@@ -160,6 +228,21 @@ export function Dashboard() {
       setConfirmOpen(false)
       setDeleteTarget(null)
     })
+  }
+
+  async function handleDownloadMatrix(matrizId: string) {
+    try {
+      const res = await fetch(`/api/riesgos/${matrizId}`)
+      if (!res.ok) throw new Error('Failed to fetch matrix')
+      const matrizData = await res.json()
+      
+      // Export directly with nested structure
+      await exportMatrizToExcel(matrizData)
+    } catch (error) {
+      console.error('Error downloading matrix:', error)
+      const errorMsg = error instanceof Error ? error.message : String(error)
+      alert(`Error al descargar la matriz: ${errorMsg}`)
+    }
   }
 
   return (
@@ -350,8 +433,8 @@ export function Dashboard() {
                   </div>
                 </div>
                 <div className="mcard-actions" onClick={e => e.stopPropagation()}>
-                  <button className="ibt" title="Ver" onClick={(e) => { e.stopPropagation(); router.push('/matriz/' + m.id) }}>
-                    <svg width="13" height="13" viewBox="0 0 12 12" fill="none"><circle cx="6" cy="6" r="2" stroke="currentColor" strokeWidth="1.2"/><path d="M1 6c0 0 2-4 5-4s5 4 5 4-2 4-5 4-5-4-5-4z" stroke="currentColor" strokeWidth="1.2"/></svg>
+                  <button className="ibt" title="Descargar" onClick={(e) => { e.stopPropagation(); handleDownloadMatrix(m.id) }}>
+                    <svg width="13" height="13" viewBox="0 0 12 12" fill="none"><path d="M6 8.5v-5M3.5 6L6 8.5l2.5-2.5" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round"/><path d="M1 10.5h10" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round"/></svg>
                   </button>
                   <button className="ibt" title="Editar" onClick={(e) => { e.stopPropagation(); router.push('/matriz/' + m.id) }}>
                     <svg width="13" height="13" viewBox="0 0 12 12" fill="none"><path d="M8 2l2 2-6 6H2V8l6-6z" stroke="currentColor" strokeWidth="1.2" strokeLinejoin="round"/></svg>
@@ -373,10 +456,10 @@ export function Dashboard() {
 
       <ConfirmModal
         open={confirmOpen}
-        onOpenChange={setConfirmOpen}
+        onCancel={() => setConfirmOpen(false)}
         onConfirm={confirmDeleteAction}
         title="Eliminar Matriz"
-        description="¿Estás seguro de que deseas eliminar esta matriz? Esta acción no se puede deshacer y borrará todos los procesos, actividades y peligros asociados."
+        message="¿Estás seguro de que deseas eliminar esta matriz? Esta acción no se puede deshacer y borrará todos los procesos, actividades y peligros asociados."
       />
     </div>
   )

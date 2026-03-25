@@ -80,6 +80,8 @@ export interface ArchivoRow {
 export function mapRiesgoRowToApp(row: RiesgoRow, archivos: ArchivoRow[] = []): AppRiesgo {
   return {
     id: row.id,
+    area: '',
+    responsable: '',
     proceso: row.proceso,
     zona: row.zona,
     actividad: row.actividad || '',

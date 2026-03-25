@@ -3,6 +3,7 @@
 import React, { useMemo, useState, useEffect, useRef } from "react"
 import { useRouter } from 'next/navigation'
 import { toast } from '@/hooks/use-toast'
+import { exportMatrizToExcel } from '@/lib/matriz-excel-export'
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
@@ -17,10 +18,10 @@ function makeId(prefix = '') { return prefix + Math.random().toString(36).slice(
 // risk interpretation helpers (GTC-45 rules)
 function interpProbabilidad(np: number) {
   if (!np) return { label: '—', color: '#9CA3AF' }
-  if (np >= 24 && np <= 40) return { label: 'Muy Alta', color: '#c0392b' }
-  if (np >= 10 && np <= 23) return { label: 'Alta', color: '#c0392b' }
-  if (np >= 6 && np <= 9) return { label: 'Media', color: '#f59e0b' }
-  if (np >= 2 && np <= 5) return { label: 'Baja', color: '#27ae60' }
+  if (np >= 24 && np <= 40) return { label: 'Muy Alto', color: '#c0392b' }
+  if (np >= 10 && np <= 23) return { label: 'Alto', color: '#c0392b' }
+  if (np >= 6 && np <= 9) return { label: 'Medio', color: '#f59e0b' }
+  if (np >= 2 && np <= 5) return { label: 'Bajo', color: '#27ae60' }
   return { label: String(np), color: '#9CA3AF' }
 }
 
@@ -385,6 +386,27 @@ export default function MatrixEditor({ id }: { id?: string }) {
     }
   }
 
+  async function handleExportMatrix() {
+    try {
+      if (!matrix.id || String(matrix.id).startsWith('m-')) {
+        toast({ title: 'Aviso', description: 'Por favor, guarda la matriz primero antes de exportar.' })
+        return
+      }
+      
+      // Fetch the full matrix data from API
+      const res = await fetch(`/api/riesgos/${matrix.id}`)
+      if (!res.ok) throw new Error('No se pudo obtener los datos de la matriz')
+      const matrizData = await res.json()
+      
+      // Export to Excel
+      await exportMatrizToExcel(matrizData)
+      toast({ title: 'Éxito', description: 'La matriz se ha exportado correctamente a Excel.' })
+    } catch (err: any) {
+      console.error(err)
+      toast({ title: 'Error', variant: 'destructive', description: err.message || 'No se pudo exportar la matriz' })
+    }
+  }
+
   function exportJson() { const s = JSON.stringify(matrix, null, 2); const blob = new Blob([s], {type:'application/json'}); const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = `matrix_${matrix.id}.json`; a.click(); URL.revokeObjectURL(url) }
 
   async function handleFilesInput(e: React.ChangeEvent<HTMLInputElement>) {
@@ -476,6 +498,7 @@ export default function MatrixEditor({ id }: { id?: string }) {
         </div>
         <div className="flex items-center gap-2">
           <Button onClick={saveMatrix}>Guardar</Button>
+          <Button onClick={handleExportMatrix} variant="outline">Exportar Excel</Button>
         </div>
       </div>
 
