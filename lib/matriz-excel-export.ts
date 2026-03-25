@@ -89,8 +89,10 @@ interface Proceso {
 interface Archivo {
   id?: string
   nombre_original?: string
+  nombreOriginal?: string
   name?: string
   tipo?: string
+  tipoMime?: string
   type?: string
   tamano?: number
   url?: string
@@ -618,50 +620,64 @@ export async function exportMatrizToExcel(matrizData: MatrizData): Promise<void>
             mergeRanges.push(`G${actividadRowStart}:G${actividadRowEnd}`)
           }
 
-          // Merge evaluation/criteria columns for consecutive Peligros with identical calculations
-          // Columns N (14) to X (24) cover: N-T (evaluación), U (aceptabilidad), V-X (criterios)
-          if (actividadRowStart <= actividadRowEnd) {
-            const evalCols = [14,15,16,17,18,19,20,21,22,23,24]
+          // Merge evaluation columns for consecutive Peligros with identical values within this Actividad
+          // Only merge columns N-U (14-21): Nivel Deficiencia, Exposición, Probabilidad, Interp Probabilidad, Consecuencia, Riesgo, Interp Riesgo, Aceptabilidad
+          if (actividadRowStart < actividadRowEnd) {
+            const evalCols = [14, 15, 16, 17, 18, 19, 20, 21] // N-U: Evaluación + Aceptabilidad columns
 
-            let groupStart = actividadRowStart
-            // Helper to stringify cell value for comparison
-            const cellValueStr = (r: number, c: number) => {
-              const v = ws.getCell(r, c).value
-              if (v === null || v === undefined) return ''
-              if (typeof v === 'object' && 'text' in v) return String((v as any).text)
-              return String(v)
+            // Helper to get cell value as string for comparison
+            const getCellValue = (row: number, col: number): string => {
+              try {
+                const cell = ws.getCell(row, col)
+                if (cell.value === null || cell.value === undefined) return ''
+                // Handle rich text or formula results
+                if (typeof cell.value === 'object') {
+                  if ('richText' in cell.value) {
+                    return cell.value.richText.map((rt: any) => rt.text).join('')
+                  }
+                  if ('text' in cell.value) {
+                    return String(cell.value.text)
+                  }
+                }
+                return String(cell.value)
+              } catch {
+                return ''
+              }
             }
 
-            for (let r = actividadRowStart + 1; r <= actividadRowEnd + 1; r++) {
-              // compare previous row (r-1) with current row r (or '' at end)
-              const prevRow = r - 1
-              const currRow = r <= actividadRowEnd ? r : null
+            // Compare if two rows have identical evaluation values
+            const rowsMatch = (row1: number, row2: number): boolean => {
+              for (const col of evalCols) {
+                if (getCellValue(row1, col) !== getCellValue(row2, col)) {
+                  return false
+                }
+              }
+              return true
+            }
 
-              // Determine if all evalCols are equal between prevRow and currRow
-              let same = true
-              if (currRow === null) {
-                same = false
-              } else {
+            // Find consecutive groups of Peligros with identical evaluation values and merge them
+            let groupStart = actividadRowStart
+            let currentRow = actividadRowStart
+
+            while (currentRow < actividadRowEnd) {
+              let groupEnd = currentRow
+              
+              // Find all consecutive rows that match the current group
+              while (groupEnd + 1 <= actividadRowEnd && rowsMatch(groupStart, groupEnd + 1)) {
+                groupEnd++
+              }
+
+              // If group spans multiple rows, merge the evaluation columns
+              if (groupEnd > groupStart) {
                 for (const col of evalCols) {
-                  if (cellValueStr(prevRow, col) !== cellValueStr(currRow, col)) {
-                    same = false
-                    break
-                  }
+                  const colLetter = colNumberToLetter(col)
+                  mergeRanges.push(`${colLetter}${groupStart}:${colLetter}${groupEnd}`)
                 }
               }
 
-              // If value changed (same==false), close previous group
-              if (!same) {
-                const groupEnd = prevRow
-                if (groupEnd > groupStart) {
-                  // push merge ranges for each evaluation/criteria column
-                  for (const col of evalCols) {
-                    const colLetter = colNumberToLetter(col)
-                    mergeRanges.push(`${colLetter}${groupStart}:${colLetter}${groupEnd}`)
-                  }
-                }
-                groupStart = r
-              }
+              // Move to next group
+              currentRow = groupEnd + 1
+              groupStart = currentRow
             }
           }
         }
@@ -718,63 +734,118 @@ export async function exportMatrizToExcel(matrizData: MatrizData): Promise<void>
 
     // ========== FOTOGRAFIAS SHEET ==========
     const photoSheet = wb.addWorksheet('Fotografias')
-    photoSheet.getColumn(1).width = 3
-    photoSheet.getColumn(2).width = 40
-    photoSheet.getColumn(3).width = 40
-    photoSheet.getColumn(4).width = 40
-    photoSheet.getColumn(5).width = 40
+    photoSheet.getColumn(1).width = 35  // File name column
+    photoSheet.getColumn(2).width = 50  // Image column
 
     const archivos = matrizData.archivos || matrizData.files || []
 
+    // Helper function to fetch image from URL and return as buffer
+    async function fetchImageAsBuffer(urlStr: string): Promise<Buffer | null> {
+      try {
+        // Handle relative URLs - prepend base URL if needed
+        let fullUrl = urlStr
+        if (!urlStr.startsWith('http://') && !urlStr.startsWith('https://')) {
+          const baseUrl = typeof window !== 'undefined' ? window.location.origin : ''
+          fullUrl = baseUrl + (urlStr.startsWith('/') ? urlStr : '/' + urlStr)
+        }
+
+        const response = await fetch(fullUrl)
+        if (!response.ok) {
+          console.warn(`Failed to fetch image: ${urlStr} (${response.status})`)
+          return null
+        }
+
+        const arrayBuffer = await response.arrayBuffer()
+        return Buffer.from(arrayBuffer)
+      } catch (error) {
+        console.error(`Error fetching image from ${urlStr}:`, error)
+        return null
+      }
+    }
+
     if (!archivos || archivos.length === 0) {
       // No files
-      const cell = photoSheet.getCell('B2')
+      const cell = photoSheet.getCell('A2')
       cell.value = 'Sin fotografías adjuntas'
       cell.font = { name: 'Arial', size: 11 }
       cell.alignment = { horizontal: 'center', vertical: 'middle' }
     } else {
-      // Group files in columns of 4 per row
-      let fileIndex = 0
+      // Process files
       let photoRow = 2
-      const filesPerRow = 4
 
-      while (fileIndex < archivos.length) {
-        for (let col = 0; col < filesPerRow && fileIndex < archivos.length; col++) {
-          const archivo = archivos[fileIndex]
-          const startCol = col * 1 + 2 // Start from column B
-          const endCol = startCol + 1 // Span 2 columns
+      for (const archivo of archivos) {
+        const fileName = archivo.nombre_original || archivo.nombreOriginal || archivo.name || 'Archivo'
+        const tipoMime = archivo.tipoMime || archivo.tipo || archivo.type || ''
+        const fileUrl = archivo.url || archivo.data || ''
 
-          // Header row with filename
-          const headerCell = photoSheet.getCell(photoRow, startCol)
-          photoSheet.mergeCells(photoRow, startCol, photoRow, endCol)
-          const fileName = archivo.nombre_original || archivo.name || 'Archivo'
-          headerCell.value = fileName
-          headerCell.font = { bold: true, name: 'Arial', size: 10 }
-          headerCell.alignment = { horizontal: 'center', vertical: 'middle' }
-          applyStandardBorder(headerCell)
+        // Row for file name (Column A)
+        const nameCell = photoSheet.getCell(`A${photoRow}`)
+        nameCell.value = fileName
+        nameCell.font = { bold: true, name: 'Arial', size: 10 }
+        nameCell.alignment = { horizontal: 'left', vertical: 'middle', wrapText: true }
+        applyStandardBorder(nameCell)
 
-          // Empty rows below header for image area (rows photoRow+1 to photoRow+20)
-          for (let i = 1; i <= 20; i++) {
-            const cell = photoSheet.getCell(photoRow + i, startCol)
-            cell.alignment = { horizontal: 'center', vertical: 'middle' }
-            applyStandardBorder(cell)
-          }
+        // Row for image/content (Column B)
+        const imageCell = photoSheet.getCell(`B${photoRow}`)
 
-          // Add URL as hyperlink in the cell below header
-          const fileUrl = archivo.url || archivo.data
-          if (fileUrl) {
-            const urlCell = photoSheet.getCell(photoRow + 1, startCol)
-            urlCell.value = {
-              text: 'Ver archivo',
-              hyperlink: fileUrl
+        if (tipoMime.startsWith('image/') && fileUrl) {
+          // This is an image file - try to fetch and embed
+          try {
+            const imageBuffer = await fetchImageAsBuffer(fileUrl)
+
+            if (imageBuffer) {
+              // Determine image type extension - ExcelJS only supports jpeg, png, gif
+              const mimeToExt: { [key: string]: 'jpeg' | 'png' | 'gif' } = {
+                'image/jpeg': 'jpeg',
+                'image/jpg': 'jpeg',
+                'image/png': 'png',
+                'image/gif': 'gif',
+                'image/bmp': 'png',      // Fallback unsupported formats to png
+                'image/webp': 'png'
+              }
+              const ext = mimeToExt[tipoMime] || 'png'
+
+              // Add image to workbook and insert into cell
+              // Cast Buffer to the proper type for ExcelJS
+              const imageId = wb.addImage({
+                buffer: imageBuffer as any,
+                extension: ext
+              })
+
+              photoSheet.addImage(imageId, {
+                tl: { col: 1.5, row: photoRow - 1 }, // Column B, starting at current row
+                ext: { width: 400, height: 300 } // Max dimensions, preserve aspect ratio
+              })
+
+              // Set row height to accommodate image
+              photoSheet.getRow(photoRow).height = 220
+              imageCell.value = '(Imagen embebida)'
+              imageCell.font = { name: 'Arial', size: 9, italic: true, color: { argb: 'FF999999' } }
+              imageCell.alignment = { horizontal: 'center', vertical: 'middle' }
+            } else {
+              // Failed to fetch image
+              imageCell.value = 'Error al cargar imagen'
+              imageCell.font = { name: 'Arial', size: 9, color: { argb: 'FFFF0000' } }
+              imageCell.alignment = { horizontal: 'center', vertical: 'middle' }
+              photoSheet.getRow(photoRow).height = 25
             }
-            urlCell.font = { color: { argb: 'FF0563C1' }, underline: true }
-            urlCell.alignment = { horizontal: 'center', vertical: 'middle' }
+          } catch (error) {
+            console.error(`Error processing image ${fileName}:`, error)
+            imageCell.value = 'Error al procesar imagen'
+            imageCell.font = { name: 'Arial', size: 9, color: { argb: 'FFFF0000' } }
+            imageCell.alignment = { horizontal: 'center', vertical: 'middle' }
+            photoSheet.getRow(photoRow).height = 25
           }
-
-          fileIndex++
+        } else {
+          // Non-image file
+          imageCell.value = 'Archivo no visual'
+          imageCell.font = { name: 'Arial', size: 9, italic: true }
+          imageCell.alignment = { horizontal: 'center', vertical: 'middle' }
+          photoSheet.getRow(photoRow).height = 25
         }
-        photoRow += 21 // Move to next row after processing up to 4 files
+
+        applyStandardBorder(imageCell)
+        photoRow++
       }
     }
 
