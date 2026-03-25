@@ -9,6 +9,9 @@ RUN npm ci
 # Copy source and prisma schema
 COPY . .
 
+# Generate prisma client for Linux (doesn't touch the real DB)
+RUN npx prisma generate
+
 # Build the application
 RUN npm run build
 
@@ -20,14 +23,18 @@ WORKDIR /app
 ENV NODE_ENV=production
 ENV PORT=4597
 
-# Install production dependencies
+# Copy package.json files first
 COPY package.json package-lock.json* ./
+
+# Install production dependencies
 RUN npm ci --only=production && npm cache clean --force
 
-# Copy prisma schema and configuration
-COPY --from=builder /app/prisma ./prisma
-COPY --chown=1001:1001 --from=builder /app/node_modules/.prisma ./node_modules/.prisma
-COPY --chown=1001:1001 --from=builder /app/node_modules/@prisma ./node_modules/@prisma
+# Copy prisma schema - needed before client copy
+COPY prisma ./prisma
+
+# Copy the pre-generated prisma client from builder
+COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma
+COPY --from=builder /app/node_modules/@prisma ./node_modules/@prisma
 
 # Copy built application from builder
 COPY --from=builder /app/.next ./.next
@@ -36,8 +43,8 @@ COPY --from=builder /app/public ./public
 # Create non-root user for security
 RUN addgroup -g 1001 -S nodejs && adduser -S nextjs -u 1001
 
-# Ensure proper permissions
-RUN chown -R nextjs:nodejs /app && chmod -R 755 /app
+# Ensure proper permissions for nextjs user
+RUN chown -R nextjs:nodejs /app
 
 USER nextjs
 
