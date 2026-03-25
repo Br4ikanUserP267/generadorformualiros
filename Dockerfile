@@ -6,8 +6,11 @@ WORKDIR /app
 COPY package.json package-lock.json* ./
 RUN npm ci
 
-# Copy source
+# Copy source and prisma schema
 COPY . .
+
+# Generate Prisma client
+RUN npx prisma generate
 
 # Build the application
 RUN npm run build
@@ -24,6 +27,10 @@ ENV PORT=4597
 COPY package.json package-lock.json* ./
 RUN npm ci --only=production && npm cache clean --force
 
+# Copy prisma schema and client
+COPY --from=builder /app/prisma ./prisma
+COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma
+
 # Copy built application from builder
 COPY --from=builder /app/.next ./.next
 COPY --from=builder /app/public ./public
@@ -32,6 +39,6 @@ COPY --from=builder /app/public ./public
 RUN addgroup -g 1001 -S nodejs && adduser -S nextjs -u 1001
 USER nextjs
 
-EXPOSE 3000
+EXPOSE 4597
 
 CMD ["npm", "start"]
