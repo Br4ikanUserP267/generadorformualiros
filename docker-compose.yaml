@@ -28,9 +28,8 @@ services:
       context: .
       dockerfile: Dockerfile.nginx
     container_name: matriz-riesgo-nginx
-    ports:
-      - "80:80"
-      - "443:443"
+    expose:
+      - "80"
     depends_on:
       app:
         condition: service_healthy
