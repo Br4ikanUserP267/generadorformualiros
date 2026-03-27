@@ -8,10 +8,54 @@ interface MatrixPreviewProps {
   onClose: () => void
 }
 
+interface ColumnWidths {
+  [key: string]: number
+}
+
+// Helper function to get color based on risk level
+function getRiskColor(nr: number): { bg: string; text: string } {
+  if (nr >= 4000) return { bg: '#fce8e8', text: '#a50000' } // Muy alto
+  if (nr >= 501) return { bg: '#fdecea', text: '#dc3545' } // Alto
+  if (nr >= 121) return { bg: '#fff3e0', text: '#fd7e14' } // Medio
+  return { bg: '#e8f5e9', text: '#198754' } // Bajo
+}
+
 export function MatrixPreview({ matrizId, onClose }: MatrixPreviewProps) {
   const router = useRouter()
   const [matrizData, setMatrizData] = useState<any>(null)
   const [loading, setLoading] = useState(true)
+  const [columnWidths, setColumnWidths] = useState<ColumnWidths>({
+    proceso: 120,
+    zona: 120,
+    actividad: 300,
+    tareas: 300,
+    cargo: 120,
+    rutinario: 80,
+    peligro: 200,
+    clasificacion: 140,
+    efectos: 200,
+    controlFuente: 150,
+    controlMedio: 150,
+    controlIndividuo: 150,
+    nd: 60,
+    ne: 60,
+    nc: 60,
+    nr: 60,
+    interpNr: 120,
+    aceptabilidad: 120,
+    numExpuestos: 100,
+    peorConsecuencia: 150,
+    requisitoLegal: 100,
+    eliminacion: 150,
+    sustitucion: 150,
+    controlIngenieria: 180,
+    controlAdmin: 180,
+    epp: 150,
+    responsable: 150,
+    fechaEjecucion: 120
+  })
+  const [resizingColumn, setResizingColumn] = useState<string | null>(null)
+  const [resizeStartX, setResizeStartX] = useState(0)
 
   useEffect(() => {
     const loadMatriz = async () => {
@@ -29,6 +73,32 @@ export function MatrixPreview({ matrizId, onClose }: MatrixPreviewProps) {
     }
     loadMatriz()
   }, [matrizId])
+
+  useEffect(() => {
+    const handleMouseMove = (e: MouseEvent) => {
+      if (!resizingColumn) return
+      const diff = e.clientX - resizeStartX
+      setColumnWidths(prev => ({
+        ...prev,
+        [resizingColumn]: Math.max(60, prev[resizingColumn] + diff)
+      }))
+      setResizeStartX(e.clientX)
+    }
+
+    const handleMouseUp = () => {
+      setResizingColumn(null)
+    }
+
+    if (resizingColumn) {
+      document.addEventListener('mousemove', handleMouseMove)
+      document.addEventListener('mouseup', handleMouseUp)
+    }
+
+    return () => {
+      document.removeEventListener('mousemove', handleMouseMove)
+      document.removeEventListener('mouseup', handleMouseUp)
+    }
+  }, [resizingColumn, resizeStartX])
 
   if (loading) {
     return (
@@ -56,7 +126,9 @@ export function MatrixPreview({ matrizId, onClose }: MatrixPreviewProps) {
   const cellStyle = {
     border: '1px solid #000',
     padding: '8px',
-    textAlign: 'left' as const
+    textAlign: 'left' as const,
+    wordWrap: 'break-word' as const,
+    whiteSpace: 'normal' as const
   }
 
   const headerCellStyle = {
@@ -64,8 +136,70 @@ export function MatrixPreview({ matrizId, onClose }: MatrixPreviewProps) {
     backgroundColor: '#006666',
     color: '#fff',
     fontWeight: 'bold' as const,
-    textAlign: 'center' as const
+    textAlign: 'center' as const,
+    position: 'relative' as const,
+    userSelect: 'none' as const
   }
+
+  const columns = [
+    { key: 'proceso', label: 'Proceso' },
+    { key: 'zona', label: 'Zona' },
+    { key: 'actividad', label: 'Actividad' },
+    { key: 'tareas', label: 'Tareas' },
+    { key: 'cargo', label: 'Cargo' },
+    { key: 'rutinario', label: 'Rutinario' },
+    { key: 'peligro', label: 'Peligro' },
+    { key: 'clasificacion', label: 'Clasificación' },
+    { key: 'efectos', label: 'Efectos' },
+    { key: 'controlFuente', label: 'Control Fuente' },
+    { key: 'controlMedio', label: 'Control Medio' },
+    { key: 'controlIndividuo', label: 'Control Individuo' },
+    { key: 'nd', label: 'ND' },
+    { key: 'ne', label: 'NE' },
+    { key: 'nc', label: 'NC' },
+    { key: 'nr', label: 'NR' },
+    { key: 'interpNr', label: 'Interpretación' },
+    { key: 'aceptabilidad', label: 'Aceptabilidad' },
+    { key: 'numExpuestos', label: 'Nº Expuestos' },
+    { key: 'peorConsecuencia', label: 'Peor Consecuencia' },
+    { key: 'requisitoLegal', label: 'Requisito Legal' },
+    { key: 'eliminacion', label: 'Eliminación' },
+    { key: 'sustitucion', label: 'Sustitución' },
+    { key: 'controlIngenieria', label: 'Controles Ingeniería' },
+    { key: 'controlAdmin', label: 'Controles Admin' },
+    { key: 'epp', label: 'EPP' },
+    { key: 'responsable', label: 'Responsable' },
+    { key: 'fechaEjecucion', label: 'Fecha Ejecución' }
+  ]
+
+  const HeaderCell = ({ column }: { column: { key: string; label: string } }) => (
+    <th
+      style={{
+        ...headerCellStyle,
+        width: columnWidths[column.key] || 100,
+        position: 'relative'
+      }}
+    >
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', height: '100%' }}>
+        <span>{column.label}</span>
+        <div
+          onMouseDown={(e) => {
+            e.preventDefault()
+            setResizingColumn(column.key)
+            setResizeStartX(e.clientX)
+          }}
+          style={{
+            width: '4px',
+            height: '20px',
+            cursor: 'col-resize',
+            backgroundColor: 'rgba(255,255,255,0.5)',
+            marginLeft: '4px',
+            borderRadius: '2px'
+          }}
+        />
+      </div>
+    </th>
+  )
 
   const infoRowStyle = {
     ...cellStyle,
@@ -91,7 +225,7 @@ export function MatrixPreview({ matrizId, onClose }: MatrixPreviewProps) {
                   rows.push({
                     proceso: p.nombre || '',
                     zona: z.nombre || '',
-                    actividad: a.nombre || '',
+                    actividad: a.descripcion || a.nombre || '',
                     tareas: a.tareas || '',
                     cargo: a.cargo || '',
                     rutinario: a.rutinario ? 'Sí' : 'No',
@@ -128,10 +262,10 @@ export function MatrixPreview({ matrizId, onClose }: MatrixPreviewProps) {
   }
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-lg max-w-full max-h-[90vh] overflow-auto shadow-lg flex flex-col">
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-0">
+      <div className="bg-white w-screen h-screen flex flex-col">
         {/* Header */}
-        <div className="sticky top-0 bg-white border-b p-4 flex justify-between items-center z-10">
+        <div className="sticky top-0 bg-white border-b p-4 flex justify-between items-center z-10 flex-shrink-0">
           <div>
             <h2 className="text-xl font-bold">{matrizData.area || 'Matriz'}</h2>
             <p className="text-sm text-gray-500">
@@ -147,87 +281,61 @@ export function MatrixPreview({ matrizId, onClose }: MatrixPreviewProps) {
         </div>
 
         {/* Content */}
-        <div className="overflow-auto flex-1 p-4">
-          <table style={tableStyle}>
+        <div className="overflow-auto flex-1">
+          <div className="p-4">
+            <table style={tableStyle}>
             <thead>
               <tr>
-                <th style={headerCellStyle}>Proceso</th>
-                <th style={headerCellStyle}>Zona</th>
-                <th style={headerCellStyle}>Actividad</th>
-                <th style={headerCellStyle}>Tareas</th>
-                <th style={headerCellStyle}>Cargo</th>
-                <th style={headerCellStyle}>Rutinario</th>
-                <th style={headerCellStyle}>Peligro</th>
-                <th style={headerCellStyle}>Clasificación</th>
-                <th style={headerCellStyle}>Efectos</th>
-                <th style={headerCellStyle}>Control Fuente</th>
-                <th style={headerCellStyle}>Control Medio</th>
-                <th style={headerCellStyle}>Control Individuo</th>
-                <th style={headerCellStyle}>ND</th>
-                <th style={headerCellStyle}>NE</th>
-                <th style={headerCellStyle}>NC</th>
-                <th style={headerCellStyle}>NR</th>
-                <th style={headerCellStyle}>Interpretación</th>
-                <th style={headerCellStyle}>Aceptabilidad</th>
-                <th style={headerCellStyle}>Nº Expuestos</th>
-                <th style={headerCellStyle}>Peor Consecuencia</th>
-                <th style={headerCellStyle}>Requisito Legal</th>
-                <th style={headerCellStyle}>Eliminación</th>
-                <th style={headerCellStyle}>Sustitución</th>
-                <th style={headerCellStyle}>Controles Ingeniería</th>
-                <th style={headerCellStyle}>Controles Admin</th>
-                <th style={headerCellStyle}>EPP</th>
-                <th style={headerCellStyle}>Responsable</th>
-                <th style={headerCellStyle}>Fecha Ejecución</th>
+                {columns.map(col => (
+                  <HeaderCell key={col.key} column={col} />
+                ))}
               </tr>
             </thead>
             <tbody>
               {rows.length === 0 ? (
                 <tr>
-                  <td colSpan={28} style={{ ...cellStyle, textAlign: 'center', padding: '20px' }}>
+                  <td colSpan={columns.length} style={{ ...cellStyle, textAlign: 'center', padding: '20px' }}>
                     No hay peligros registrados
                   </td>
                 </tr>
               ) : (
                 rows.map((row, idx) => (
                   <tr key={idx}>
-                    <td style={cellStyle}>{row.proceso}</td>
-                    <td style={cellStyle}>{row.zona}</td>
-                    <td style={cellStyle}>{row.actividad}</td>
-                    <td style={cellStyle}>{row.tareas}</td>
-                    <td style={cellStyle}>{row.cargo}</td>
-                    <td style={cellStyle}>{row.rutinario}</td>
-                    <td style={cellStyle}>{row.peligro}</td>
-                    <td style={cellStyle}>{row.clasificacion}</td>
-                    <td style={cellStyle}>{row.efectos}</td>
-                    <td style={cellStyle}>{row.controlFuente}</td>
-                    <td style={cellStyle}>{row.controlMedio}</td>
-                    <td style={cellStyle}>{row.controlIndividuo}</td>
-                    <td style={{ ...cellStyle, textAlign: 'center' }}>{row.nd}</td>
-                    <td style={{ ...cellStyle, textAlign: 'center' }}>{row.ne}</td>
-                    <td style={{ ...cellStyle, textAlign: 'center' }}>{row.nc}</td>
-                    <td style={{ ...cellStyle, textAlign: 'center' }}>{row.nr}</td>
-                    <td style={cellStyle}>{row.interpNr}</td>
-                    <td style={cellStyle}>{row.aceptabilidad}</td>
-                    <td style={{ ...cellStyle, textAlign: 'center' }}>{row.numExpuestos}</td>
-                    <td style={cellStyle}>{row.peorConsecuencia}</td>
-                    <td style={cellStyle}>{row.requisitoLegal}</td>
-                    <td style={cellStyle}>{row.eliminacion}</td>
-                    <td style={cellStyle}>{row.sustitucion}</td>
-                    <td style={cellStyle}>{row.controlIngenieria}</td>
-                    <td style={cellStyle}>{row.controlAdmin}</td>
-                    <td style={cellStyle}>{row.epp}</td>
-                    <td style={cellStyle}>{row.responsable}</td>
-                    <td style={cellStyle}>{row.fechaEjecucion}</td>
+                    {columns.map(col => {
+                      const value = row[col.key as keyof typeof row]
+                      const isNumeric = ['nd', 'ne', 'nc', 'nr', 'numExpuestos'].includes(col.key)
+                      const isEvaluationField = ['nd', 'ne', 'nc', 'nr', 'interpNr', 'aceptabilidad'].includes(col.key)
+                      
+                      let cellBackgroundStyle = {}
+                      if (isEvaluationField && row.nr) {
+                        const colors = getRiskColor(row.nr)
+                        cellBackgroundStyle = { backgroundColor: colors.bg, color: colors.text }
+                      }
+                      
+                      return (
+                        <td
+                          key={col.key}
+                          style={{
+                            ...cellStyle,
+                            width: columnWidths[col.key] || 100,
+                            textAlign: isNumeric ? 'center' : 'left',
+                            ...cellBackgroundStyle
+                          }}
+                        >
+                          {value}
+                        </td>
+                      )
+                    })}
                   </tr>
                 ))
               )}
             </tbody>
           </table>
+          </div>
         </div>
 
         {/* Footer */}
-        <div className="sticky bottom-0 bg-white border-t p-4 flex justify-end gap-3">
+        <div className="sticky bottom-0 bg-white border-t p-4 flex justify-end gap-3 flex-shrink-0">
           <button
             onClick={onClose}
             className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 font-medium"

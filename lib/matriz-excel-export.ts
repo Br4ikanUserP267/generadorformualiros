@@ -115,6 +115,20 @@ interface MatrizData {
 // Helper Functions
 // ============================================================================
 
+function getRiskColorFill(nr: number): { type: 'pattern'; pattern: 'solid'; fgColor: { argb: string } } {
+  if (nr >= 4000) return { type: 'pattern' as const, pattern: 'solid' as const, fgColor: { argb: 'FFfce8e8' } } // Muy alto
+  if (nr >= 501) return { type: 'pattern' as const, pattern: 'solid' as const, fgColor: { argb: 'FFfdecea' } } // Alto
+  if (nr >= 121) return { type: 'pattern' as const, pattern: 'solid' as const, fgColor: { argb: 'FFfff3e0' } } // Medio
+  return { type: 'pattern' as const, pattern: 'solid' as const, fgColor: { argb: 'FFe8f5e9' } } // Bajo
+}
+
+function getRiskColorFont(nr: number): { color: { argb: string } } {
+  if (nr >= 4000) return { color: { argb: 'FFa50000' } } // Muy alto
+  if (nr >= 501) return { color: { argb: 'FFdc3545' } } // Alto
+  if (nr >= 121) return { color: { argb: 'FFfd7e14' } } // Medio
+  return { color: { argb: 'FF198754' } } // Bajo
+}
+
 function colNumberToLetter(n: number): string {
   let s = ''
   while (n > 0) {
@@ -594,12 +608,24 @@ export async function exportMatrizToExcel(matrizData: MatrizData): Promise<void>
             // Column AE - Fecha Ejecución
             row.getCell(31).value = formatDate(intervencion.fecha_ejecucion) || ''
 
+            // Get NR value for coloring evaluation cells
+            const nr = evaluacion.nivel_riesgo || evaluacion.nr || 0
+
             // Apply cell formatting
             row.height = 45
-            row.eachCell({ includeEmpty: true }, (cell) => {
-              cell.font = { name: 'Arial', size: 9 }
-            cell.alignment = { horizontal: 'center', vertical: 'middle', wrapText: true }
+            row.eachCell({ includeEmpty: true }, (cell, colNum) => {
+              // Apply base formatting
+              cell.alignment = { horizontal: 'center', vertical: 'middle', wrapText: true }
               applyStandardBorder(cell)
+              
+              // Apply risk colors to evaluation columns (N-U: 14-21)
+              if (colNum >= 14 && colNum <= 21) {
+                cell.fill = getRiskColorFill(nr)
+                const riskFont = getRiskColorFont(nr)
+                cell.font = { name: 'Arial', size: 9, bold: false, color: riskFont.color }
+              } else {
+                cell.font = { name: 'Arial', size: 9 }
+              }
             })
 
             currentRow++
