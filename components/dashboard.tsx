@@ -110,6 +110,8 @@ export function Dashboard() {
   const [clasFilter, setClasFilter] = useState('')
   const [deleteTarget, setDeleteTarget] = useState<string|null>(null)
   const [confirmOpen, setConfirmOpen] = useState(false)
+  const [duplicateSuccess, setDuplicateSuccess] = useState(false)
+  const [duplicateSuccessTitle, setDuplicateSuccessTitle] = useState('')
 
   useEffect(() => {
     const load = async () => {
@@ -267,10 +269,60 @@ export function Dashboard() {
       })
 
       if (!createRes.ok) throw new Error('No se pudo crear la copia')
-      const newMatriz = await createRes.json()
       
-      setMatrices((prev) => [...prev, { ...matrizData, id: newMatriz.id, area: duplicateData.area, fecha_actualizacion: duplicateData.fecha_actualizacion }])
-      alert('Matriz duplicada exitosamente')
+      // Reload matrices list to ensure all fields are properly structured
+      const reloadRes = await fetch('/api/riesgos')
+      if (reloadRes.ok) {
+        const js = await reloadRes.json()
+        // Use same mapping logic as initial load
+        const mapped = (js || []).map((m: any) => {
+          const tagsSet = new Set<string>()
+          const clasifSet = new Set<string>()
+          let counts = [0, 0, 0, 0]
+          let totalPeligros = 0
+          
+          if (m.procesos) {
+            m.procesos.forEach((p:any) => {
+              if (p.nombre) tagsSet.add(p.nombre)
+              p.zonas?.forEach((z:any) => {
+                z.actividades?.forEach((a:any) => {
+                  a.peligros?.forEach((pel:any) => {
+                    totalPeligros++
+                    if (pel.clasificacion) clasifSet.add(pel.clasificacion)
+                    
+                    const nd = Number(pel.evaluacion?.nd || pel.evaluacion?.deficiencia || 0)
+                    const ne = Number(pel.evaluacion?.ne || pel.evaluacion?.exposicion || 0)
+                    const nc = Number(pel.evaluacion?.nc || pel.evaluacion?.consecuencia || 0)
+                    const nr = (nd * ne) * nc
+                    
+                    if (!nr || nr === 0) { counts[3]++ }
+                    else if (nr >= 4000) counts[0]++
+                    else if (nr >= 501) counts[0]++
+                    else if (nr >= 121) counts[1]++
+                    else if (nr >= 40) counts[2]++
+                    else counts[3]++
+                  })
+                })
+              })
+            })
+          }
+
+          return {
+            id: m.id,
+            title: m.area || 'Sin área',
+            date: m.fecha_elaboracion ? m.fecha_elaboracion : 'N/A',
+            responsable: m.responsable || '',
+            tipos: Array.from(tagsSet),
+            clasifs: Array.from(clasifSet),
+            counts
+          }
+        })
+        setMatrices(mapped)
+      }
+      
+      // Show success with modal style
+      setDuplicateSuccessTitle(`${duplicateData.area}`)
+      setDuplicateSuccess(true)
     } catch (error) {
       console.error('Error duplicating matrix:', error)
       const errorMsg = error instanceof Error ? error.message : String(error)
@@ -496,6 +548,15 @@ export function Dashboard() {
         onConfirm={confirmDeleteAction}
         title="Eliminar Matriz"
         message="¿Estás seguro de que deseas eliminar esta matriz? Esta acción no se puede deshacer y borrará todos los procesos, actividades y peligros asociados."
+      />
+
+      <ConfirmModal
+        open={duplicateSuccess}
+        onCancel={() => setDuplicateSuccess(false)}
+        onConfirm={() => setDuplicateSuccess(false)}
+        title="Matriz Duplicada"
+        message={`La matriz "${duplicateSuccessTitle}" ha sido duplicada exitosamente.`}
+        confirmLabel="Aceptar"
       />
     </div>
   )
