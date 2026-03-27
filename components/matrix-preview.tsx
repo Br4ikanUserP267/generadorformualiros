@@ -56,6 +56,11 @@ export function MatrixPreview({ matrizId, onClose }: MatrixPreviewProps) {
   })
   const [resizingColumn, setResizingColumn] = useState<string | null>(null)
   const [resizeStartX, setResizeStartX] = useState(0)
+  const [collapsedZonas, setCollapsedZonas] = useState<Record<string, boolean>>({})
+
+  function toggleZona(name: string) {
+    setCollapsedZonas(prev => ({ ...prev, [name]: !prev[name] }))
+  }
 
   useEffect(() => {
     const loadMatriz = async () => {
@@ -322,45 +327,71 @@ export function MatrixPreview({ matrizId, onClose }: MatrixPreviewProps) {
                   </td>
                 </tr>
               ) : (
-                rows.map((row, idx) => (
-                  <tr key={idx}>
-                    {columns.map(col => {
-                      const value = row[col.key as keyof typeof row]
-                      const isNumeric = ['nd', 'ne', 'nc', 'nr', 'numExpuestos'].includes(col.key)
-                      const isEvaluationField = ['nd', 'ne', 'nc', 'nr', 'interpNr', 'aceptabilidad'].includes(col.key)
+                (() => {
+                  const elements: any[] = []
+                  let i = 0
+                  while (i < rows.length) {
+                    const zonaSpan = rowSpans['zona'][i] || 1
+                    const zonaName = rows[i].zona || ''
+                    const isCollapsed = (collapsedZonas && collapsedZonas[zonaName]) === true
 
-                      // handle merging for selected keys
-                      if (mergeKeys.includes(col.key)) {
-                        const span = rowSpans[col.key][idx] || 0
-                        if (span === 0) return null
-                        const isEval = isEvaluationField && row.nr
-                        const evalStyle = isEval ? { backgroundColor: getRiskColor(row.nr).bg, color: getRiskColor(row.nr).text } : {}
-                        return (
-                          <td key={col.key} rowSpan={span} style={{ ...cellStyle, width: columnWidths[col.key] || 100, verticalAlign: 'top', textAlign: isNumeric ? 'center' : 'left', ...evalStyle }}>
-                            {value}
+                    if (isCollapsed) {
+                      // render single collapsed row for this zona
+                      elements.push(
+                        <tr key={`zona-c-${i}`}>
+                          <td colSpan={columns.length} style={{ ...cellStyle, backgroundColor: '#f1f5f9', cursor: 'pointer' }} onClick={() => toggleZona(zonaName)}>
+                            {zonaName}
                           </td>
-                        )
-                      }
-
-                      // non-merged columns
-                      const bgStyle = (isEvaluationField && row.nr) ? { backgroundColor: getRiskColor(row.nr).bg, color: getRiskColor(row.nr).text } : {}
-                      return (
-                        <td
-                          key={col.key}
-                          style={{
-                            ...cellStyle,
-                            width: columnWidths[col.key] || 100,
-                            textAlign: isNumeric ? 'center' : 'left',
-                            verticalAlign: 'top',
-                            ...bgStyle
-                          }}
-                        >
-                          {value}
-                        </td>
+                        </tr>
                       )
-                    })}
-                  </tr>
-                ))
+                      i += zonaSpan
+                      continue
+                    }
+
+                    // expanded: render each row in the zona group
+                    const end = i + zonaSpan
+                    for (let r = i; r < end; r++) {
+                      const row = rows[r]
+                      elements.push(
+                        <tr key={`row-${r}`}>
+                          {columns.map(col => {
+                            const value = row[col.key as keyof typeof row]
+                            const isNumeric = ['nd', 'ne', 'nc', 'nr', 'numExpuestos'].includes(col.key)
+                            const isEvaluationField = ['nd', 'ne', 'nc', 'nr', 'interpNr', 'aceptabilidad'].includes(col.key)
+
+                            if (mergeKeys.includes(col.key)) {
+                              const span = rowSpans[col.key][r] || 0
+                              if (span === 0) return null
+                              const evalStyle = (isEvaluationField && row.nr) ? { backgroundColor: getRiskColor(row.nr).bg, color: getRiskColor(row.nr).text } : {}
+                              // make zona cell clickable to toggle
+                              if (col.key === 'zona') {
+                                return (
+                                  <td key={col.key} rowSpan={span} style={{ ...cellStyle, width: columnWidths[col.key] || 100, verticalAlign: 'top', textAlign: isNumeric ? 'center' : 'left', ...evalStyle }} onClick={() => toggleZona(zonaName)}>
+                                    {value}
+                                  </td>
+                                )
+                              }
+                              return (
+                                <td key={col.key} rowSpan={span} style={{ ...cellStyle, width: columnWidths[col.key] || 100, verticalAlign: 'top', textAlign: isNumeric ? 'center' : 'left', ...evalStyle }}>
+                                  {value}
+                                </td>
+                              )
+                            }
+
+                            const bgStyle = (isEvaluationField && row.nr) ? { backgroundColor: getRiskColor(row.nr).bg, color: getRiskColor(row.nr).text } : {}
+                            return (
+                              <td key={col.key} style={{ ...cellStyle, width: columnWidths[col.key] || 100, textAlign: isNumeric ? 'center' : 'left', verticalAlign: 'top', ...bgStyle }}>
+                                {value}
+                              </td>
+                            )
+                          })}
+                        </tr>
+                      )
+                    }
+                    i = end
+                  }
+                  return elements
+                })()
               )}
             </tbody>
           </table>
