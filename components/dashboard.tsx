@@ -4,6 +4,7 @@ import React, { useMemo, useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { useAuth } from '@/lib/auth-context'
 import ConfirmModal from './confirm-modal'
+import { MatrixPreview } from './matrix-preview'
 import { exportMatrizToExcel } from '@/lib/matriz-excel-export'
 import type { Riesgo } from '@/lib/types'
 
@@ -112,6 +113,7 @@ export function Dashboard() {
   const [confirmOpen, setConfirmOpen] = useState(false)
   const [duplicateSuccess, setDuplicateSuccess] = useState(false)
   const [duplicateSuccessTitle, setDuplicateSuccessTitle] = useState('')
+  const [previewMatrixId, setPreviewMatrixId] = useState<string|null>(null)
 
   useEffect(() => {
     const load = async () => {
@@ -527,6 +529,9 @@ export function Dashboard() {
                   </div>
                 </div>
                 <div className="mcard-actions" onClick={e => e.stopPropagation()}>
+                  <button className="ibt" title="Preview" onClick={(e) => { e.stopPropagation(); setPreviewMatrixId(m.id) }}>
+                    <svg width="13" height="13" viewBox="0 0 12 12" fill="none"><path d="M6 2c-2.2 0-4 1.8-4 4s1.8 4 4 4 4-1.8 4-4-1.8-4-4-4z" stroke="currentColor" strokeWidth="1.2"/><circle cx="6" cy="6" r="1.5" fill="currentColor"/></svg>
+                  </button>
                   <button className="ibt" title="Descargar" onClick={(e) => { e.stopPropagation(); handleDownloadMatrix(m.id) }}>
                     <svg width="13" height="13" viewBox="0 0 12 12" fill="none"><path d="M6 8.5v-5M3.5 6L6 8.5l2.5-2.5" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round"/><path d="M1 10.5h10" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round"/></svg>
                   </button>
@@ -567,6 +572,13 @@ export function Dashboard() {
         message={`La matriz "${duplicateSuccessTitle}" ha sido duplicada exitosamente.`}
         confirmLabel="Aceptar"
       />
+
+      {previewMatrixId && (
+        <MatrixPreview
+          matrizId={previewMatrixId}
+          onClose={() => setPreviewMatrixId(null)}
+        />
+      )}
     </div>
   )
 }
