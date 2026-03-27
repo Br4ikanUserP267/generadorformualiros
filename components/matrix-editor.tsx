@@ -541,13 +541,21 @@ export default function MatrixEditor({ id }: { id?: string }) {
                             return (
                               <div key={z.id} className={`border rounded ${selected.zonaId===z.id? 'bg-slate-50':''}`}>
                                 <div className={`flex items-center justify-between p-2 cursor-pointer ${selected.zonaId===z.id? 'bg-slate-100':''}`} onClick={() => setSelected({ procesoId: p.id, zonaId: z.id })}>
-                                  <div className="flex items-center gap-2">
-                                    <button onClick={(e:any)=>{ e.stopPropagation(); setExpandedZonaIds(s=>({...s, [z.id]: !expanded})) }} className="text-slate-500">{expanded ? '▾' : '▸'}</button>
-                                    <div className="text-sm bg-[#2d7a40] text-white px-2 py-1 rounded">{z.nombre}</div>                                      <button onClick={(e:any)=>{ e.stopPropagation(); editZonaItem(p.id, z) }} className="text-slate-400 hover:text-slate-700 ml-1" title="Editar zona">
+                                    <div className="flex items-center gap-2">
+                                      <div
+                                        className="text-sm bg-[#2d7a40] text-white px-2 py-1 rounded cursor-pointer"
+                                        onClick={(e:any) => { e.stopPropagation(); setExpandedZonaIds(s=>({...s, [z.id]: !expanded})); setSelected({ procesoId: p.id, zonaId: z.id }) }}
+                                        title={expanded ? 'Ocultar actividades' : 'Mostrar actividades'}
+                                      >
+                                        {z.nombre}
+                                      </div>
+                                      <button onClick={(e:any)=>{ e.stopPropagation(); editZonaItem(p.id, z) }} className="text-slate-400 hover:text-slate-700 ml-1" title="Editar zona">
                                         <PencilIcon size={12} />
-                                      </button>                                      <button onClick={(e:any)=>{ e.stopPropagation(); removeZona(p.id, z.id) }} className="text-red-400 hover:text-red-700 ml-1" title="Eliminar zona">
+                                      </button>
+                                      <button onClick={(e:any)=>{ e.stopPropagation(); removeZona(p.id, z.id) }} className="text-red-400 hover:text-red-700 ml-1" title="Eliminar zona">
                                         <TrashIcon size={12} />
-                                      </button>                                  </div>
+                                      </button>
+                                    </div>
                                 </div>
                                 {expanded && (
                                   <div className="pl-6 pr-2 pb-2">
