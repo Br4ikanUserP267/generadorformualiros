@@ -307,14 +307,23 @@ export function Dashboard() {
             })
           }
 
+          const isoDate = m.fecha_elaboracion || m.fecha_actualizacion || ''
+          let d = isoDate || ''
+          if (isoDate && isoDate.includes('-')) {
+            const parts = isoDate.split('T')[0].split('-')
+            if (parts.length === 3) d = `${parts[2]}/${parts[1]}/${parts[0]}`
+          }
+
           return {
             id: m.id,
-            title: m.area || 'Sin área',
-            date: m.fecha_elaboracion ? m.fecha_elaboracion : 'N/A',
+            title: m.area || m.responsable || 'Matriz sin área',
+            date: d,
+            isoDate: isoDate ? isoDate.split('T')[0] : '',
             responsable: m.responsable || '',
             tipos: Array.from(tagsSet),
-            clasifs: Array.from(clasifSet),
-            counts
+            clasificaciones: Array.from(clasifSet),
+            counts,
+            totalPeligros
           }
         })
         setMatrices(mapped)
