@@ -87,6 +87,8 @@ export function MatrixPreview({ matrizId, onClose }: MatrixPreviewProps) {
 
     const handleMouseUp = () => {
       setResizingColumn(null)
+      try { document.body.style.userSelect = '' } catch {}
+      try { document.body.style.cursor = '' } catch {}
     }
 
     if (resizingColumn) {
@@ -119,6 +121,7 @@ export function MatrixPreview({ matrizId, onClose }: MatrixPreviewProps) {
   const tableStyle = {
     width: '100%',
     borderCollapse: 'collapse' as const,
+    tableLayout: 'fixed' as const,
     fontSize: '12px',
     fontFamily: 'Arial, sans-serif'
   }
@@ -187,14 +190,17 @@ export function MatrixPreview({ matrizId, onClose }: MatrixPreviewProps) {
             e.preventDefault()
             setResizingColumn(column.key)
             setResizeStartX(e.clientX)
+            try { document.body.style.userSelect = 'none' } catch {}
+            try { document.body.style.cursor = 'col-resize' } catch {}
           }}
           style={{
-            width: '4px',
-            height: '20px',
+            width: '8px',
+            height: '26px',
             cursor: 'col-resize',
-            backgroundColor: 'rgba(255,255,255,0.5)',
-            marginLeft: '4px',
-            borderRadius: '2px'
+            backgroundColor: 'transparent',
+            marginLeft: '6px',
+            borderRadius: '2px',
+            display: 'inline-block'
           }}
         />
       </div>
