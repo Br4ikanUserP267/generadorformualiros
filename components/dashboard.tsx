@@ -245,6 +245,39 @@ export function Dashboard() {
     }
   }
 
+  async function handleDuplicateMatrix(matrizId: string) {
+    try {
+      const res = await fetch(`/api/riesgos/${matrizId}`)
+      if (!res.ok) throw new Error('No se pudo obtener la matriz')
+      const matrizData = await res.json()
+
+      const duplicateData = {
+        area: `${matrizData.area} (Copia)`,
+        responsable: matrizData.responsable,
+        fecha_elaboracion: new Date().toISOString().split('T')[0],
+        fecha_actualizacion: new Date().toISOString().split('T')[0],
+        files: matrizData.files || [],
+        procesos: matrizData.procesos || []
+      }
+
+      const createRes = await fetch('/api/riesgos', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(duplicateData)
+      })
+
+      if (!createRes.ok) throw new Error('No se pudo crear la copia')
+      const newMatriz = await createRes.json()
+      
+      setMatrices((prev) => [...prev, { ...matrizData, id: newMatriz.id, area: duplicateData.area, fecha_actualizacion: duplicateData.fecha_actualizacion }])
+      alert('Matriz duplicada exitosamente')
+    } catch (error) {
+      console.error('Error duplicating matrix:', error)
+      const errorMsg = error instanceof Error ? error.message : String(error)
+      alert(`Error al duplicar la matriz: ${errorMsg}`)
+    }
+  }
+
   return (
     <div className="min-h-screen bg-var-background-tertiary">
       <style dangerouslySetInnerHTML={{__html: `
@@ -359,7 +392,7 @@ export function Dashboard() {
             </div>
             <div className="scard">
               <span className="scard-num" style={{color:'var(--color-text-primary)'}}>{stats.totP}</span>
-              <span className="scard-lbl">Total peligros</span>
+              <span className="scard-lbl">Total riesgos</span>
               <div className="scard-bar" style={{background:'var(--color-border-secondary)'}}></div>
             </div>
             <div className="scard">
@@ -435,6 +468,9 @@ export function Dashboard() {
                 <div className="mcard-actions" onClick={e => e.stopPropagation()}>
                   <button className="ibt" title="Descargar" onClick={(e) => { e.stopPropagation(); handleDownloadMatrix(m.id) }}>
                     <svg width="13" height="13" viewBox="0 0 12 12" fill="none"><path d="M6 8.5v-5M3.5 6L6 8.5l2.5-2.5" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round"/><path d="M1 10.5h10" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round"/></svg>
+                  </button>
+                  <button className="ibt" title="Duplicar" onClick={(e) => { e.stopPropagation(); handleDuplicateMatrix(m.id) }}>
+                    <svg width="13" height="13" viewBox="0 0 12 12" fill="none"><path d="M2 4h6v6H2V4zM4 2h6v6" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round"/></svg>
                   </button>
                   <button className="ibt" title="Editar" onClick={(e) => { e.stopPropagation(); router.push('/matriz/' + m.id) }}>
                     <svg width="13" height="13" viewBox="0 0 12 12" fill="none"><path d="M8 2l2 2-6 6H2V8l6-6z" stroke="currentColor" strokeWidth="1.2" strokeLinejoin="round"/></svg>

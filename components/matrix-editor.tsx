@@ -11,7 +11,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Switch } from "@/components/ui/switch"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Badge } from "@/components/ui/badge"
-import { PencilIcon, TrashIcon } from 'lucide-react'
+import { PencilIcon, TrashIcon, CopyIcon } from 'lucide-react'
 
 function makeId(prefix = '') { return prefix + Math.random().toString(36).slice(2,9) }
 
@@ -319,7 +319,19 @@ export default function MatrixEditor({ id }: { id?: string }) {
       return m
     })
   }
-  function updatePeligroField(procesoId: string, zonaId: string, actividadId: string, riesgoId: string, path: string[], value: any) {
+  function duplicatePeligro(procesoId: string, zonaId: string, actividadId: string, peligroId: string) {
+    updateMatrix((m:any)=>{
+      const a = m.procesos.find((x:any)=>x.id===procesoId).zonas.find((y:any)=>y.id===zonaId).actividades.find((aa:any)=>aa.id===actividadId)
+      const peligroToDuplicate = a.peligros.find((p:any)=> p.id === peligroId)
+      if (!peligroToDuplicate) return m
+      const newPeligro = JSON.parse(JSON.stringify(peligroToDuplicate))
+      newPeligro.id = makeId('r-')
+      newPeligro._ui = { expanded: false, activeTab: 0 }
+      a.peligros.push(newPeligro)
+      return m
+    })
+    toast({ title: 'Éxito', description: 'Peligro duplicado correctamente' })
+  }  function updatePeligroField(procesoId: string, zonaId: string, actividadId: string, riesgoId: string, path: string[], value: any) {
     updateMatrix((m: any) => {
       const a = m.procesos.find((x: any)=> x.id===procesoId).zonas.find((y:any)=>y.id===zonaId).actividades.find((aa:any)=>aa.id===actividadId)
       const r = a.peligros.find((p: any) => p.id === riesgoId)
@@ -661,7 +673,8 @@ export default function MatrixEditor({ id }: { id?: string }) {
                             </div>
                             <div className="flex items-center gap-2">
                               <div style={{width:14,height:14,background: interpNivelRiesgo(Number(r.evaluacion?.nr||0)).color, borderRadius:999}}></div>
-                              <Button size="sm" variant="destructive" onClick={(e:any)=>{ e.stopPropagation(); removePeligro(currentProceso.id, currentZona.id, currentActividad.id, r.id) }}>Eliminar</Button>
+                              <button onClick={(e:any)=>{ e.stopPropagation(); duplicatePeligro(currentProceso.id, currentZona.id, currentActividad.id, r.id) }} className="text-slate-500 hover:text-slate-700" aria-label="Duplicar peligro"><CopyIcon size={14} /></button>
+                              <button onClick={(e:any)=>{ e.stopPropagation(); removePeligro(currentProceso.id, currentZona.id, currentActividad.id, r.id) }} className="text-red-400 hover:text-red-700" aria-label="Eliminar peligro"><TrashIcon size={14} /></button>
                             </div>
                           </div>
 

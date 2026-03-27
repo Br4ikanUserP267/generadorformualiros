@@ -46,6 +46,10 @@ COPY --from=builder /app/node_modules/@prisma ./node_modules/@prisma
 COPY --from=builder /app/.next ./.next
 COPY --from=builder /app/public ./public
 
+# Ensure uploads path exists with proper permissions
+RUN mkdir -p /app/public/uploads/matrices && \
+	chmod -R 755 /app/public/uploads
+
 # Create non-root user for security
 RUN addgroup -g 1001 -S nodejs && adduser -S nextjs -u 1001
 

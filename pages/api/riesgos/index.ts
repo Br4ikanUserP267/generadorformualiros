@@ -1,5 +1,6 @@
 import { NextApiRequest, NextApiResponse } from 'next'
 import prisma from '@/lib/prisma'
+import { persistFilesToDisk } from '@/lib/server-upload'
 
 export const config = {
   api: {
@@ -119,6 +120,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       const body = req.body
       if (!body || typeof body !== 'object') return res.status(400).json({ error: 'Invalid payload' })
 
+      const persistedFiles = await persistFilesToDisk(body.files || [])
+
       // Get any valid user to act as foreign key
       const firstUser = await prisma.usuario.findFirst()
       if (!firstUser) {
@@ -130,11 +133,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           usuarioId: firstUser.id,
           area: body.area,
           archivos: {
-            create: (body.files || []).map((f: any) => ({
+            create: persistedFiles.map((f: any) => ({
               nombreOriginal: f.name || 'file',
               nombreAlmacenado: f.name || 'file',
               tipoMime: f.type || '',
-              url: f.data || ''
+              url: f.url || ''
             }))
           },
           responsable: body.responsable,

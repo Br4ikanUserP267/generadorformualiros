@@ -14,3 +14,7 @@ node_modules/
 tsconfig.tsbuildinfo
 tsconfig.tsbuildinfo
 .next
+
+# Uploaded files
+public/uploads/matrices/*
+!public/uploads/matrices/.gitkeep
