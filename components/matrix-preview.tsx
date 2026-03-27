@@ -193,14 +193,15 @@ export function MatrixPreview({ matrizId, onClose }: MatrixPreviewProps) {
             try { document.body.style.userSelect = 'none' } catch {}
             try { document.body.style.cursor = 'col-resize' } catch {}
           }}
+          title="Arrastrar para cambiar ancho"
           style={{
-            width: '8px',
-            height: '26px',
+            width: '10px',
+            height: '100%',
             cursor: 'col-resize',
-            backgroundColor: 'transparent',
+            background: 'linear-gradient(90deg, rgba(255,255,255,0) 0%, rgba(0,0,0,0.08) 50%, rgba(255,255,255,0) 100%)',
             marginLeft: '6px',
-            borderRadius: '2px',
-            display: 'inline-block'
+            display: 'inline-block',
+            borderLeft: '1px solid rgba(255,255,255,0.12)'
           }}
         />
       </div>
@@ -267,6 +268,22 @@ export function MatrixPreview({ matrizId, onClose }: MatrixPreviewProps) {
     })
   }
 
+  // Compute rowSpans for consecutive identical values on selected keys
+  const mergeKeys = ['proceso', 'zona', 'actividad', 'tareas', 'cargo', 'rutinario', 'numExpuestos']
+  const rowSpans: Record<string, number[]> = {}
+  for (const key of mergeKeys) {
+    rowSpans[key] = new Array(rows.length).fill(0)
+    let i = 0
+    while (i < rows.length) {
+      let j = i + 1
+      while (j < rows.length && String(rows[j][key]) === String(rows[i][key])) j++
+      const span = j - i
+      rowSpans[key][i] = span
+      for (let k = i + 1; k < j; k++) rowSpans[key][k] = 0
+      i = j
+    }
+  }
+
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-0">
       <div className="bg-white w-screen h-screen flex flex-col">
@@ -311,13 +328,22 @@ export function MatrixPreview({ matrizId, onClose }: MatrixPreviewProps) {
                       const value = row[col.key as keyof typeof row]
                       const isNumeric = ['nd', 'ne', 'nc', 'nr', 'numExpuestos'].includes(col.key)
                       const isEvaluationField = ['nd', 'ne', 'nc', 'nr', 'interpNr', 'aceptabilidad'].includes(col.key)
-                      
-                      let cellBackgroundStyle = {}
-                      if (isEvaluationField && row.nr) {
-                        const colors = getRiskColor(row.nr)
-                        cellBackgroundStyle = { backgroundColor: colors.bg, color: colors.text }
+
+                      // handle merging for selected keys
+                      if (mergeKeys.includes(col.key)) {
+                        const span = rowSpans[col.key][idx] || 0
+                        if (span === 0) return null
+                        const isEval = isEvaluationField && row.nr
+                        const evalStyle = isEval ? { backgroundColor: getRiskColor(row.nr).bg, color: getRiskColor(row.nr).text } : {}
+                        return (
+                          <td key={col.key} rowSpan={span} style={{ ...cellStyle, width: columnWidths[col.key] || 100, verticalAlign: 'top', textAlign: isNumeric ? 'center' : 'left', ...evalStyle }}>
+                            {value}
+                          </td>
+                        )
                       }
-                      
+
+                      // non-merged columns
+                      const bgStyle = (isEvaluationField && row.nr) ? { backgroundColor: getRiskColor(row.nr).bg, color: getRiskColor(row.nr).text } : {}
                       return (
                         <td
                           key={col.key}
@@ -325,7 +351,8 @@ export function MatrixPreview({ matrizId, onClose }: MatrixPreviewProps) {
                             ...cellStyle,
                             width: columnWidths[col.key] || 100,
                             textAlign: isNumeric ? 'center' : 'left',
-                            ...cellBackgroundStyle
+                            verticalAlign: 'top',
+                            ...bgStyle
                           }}
                         >
                           {value}
