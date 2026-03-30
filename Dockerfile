@@ -53,10 +53,11 @@ RUN mkdir -p /app/public/uploads/matrices && \
 # Create non-root user for security
 RUN addgroup -g 1001 -S nodejs && adduser -S nextjs -u 1001
 
-# Ensure proper permissions for nextjs user
+# Ensure proper permissions for nextjs user (though we run as root to avoid bind-mount permission issues)
 RUN chown -R nextjs:nodejs /app
 
-USER nextjs
+# Temporarily disabled running as non-root to allow write access to the host bind-mounted volume
+# USER nextjs
 
 EXPOSE 4597
 
