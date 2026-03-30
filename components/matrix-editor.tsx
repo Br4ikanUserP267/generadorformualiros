@@ -376,14 +376,47 @@ export default function MatrixEditor({ id }: { id?: string }) {
 
   async function saveMatrix() {
     try {
-      const isNew = String(matrix.id).startsWith('m-') || id === 'nuevo'
+      let currentMatrix = { ...matrix }
+      
+      // Step 1: Pre-upload base64 files to decouple them from the main save payload
+      if (currentMatrix.files && currentMatrix.files.length > 0) {
+        const base64Files = currentMatrix.files.filter((f: any) => f.data && f.data.startsWith('data:'))
+        if (base64Files.length > 0) {
+          const uploadRes = await fetch('/api/upload', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ files: base64Files })
+          })
+
+          if (!uploadRes.ok) {
+            const errBody = await uploadRes.json().catch(() => ({}))
+            throw new Error(errBody.error || 'Error al subir los archivos')
+          }
+          
+          const uploaded = await uploadRes.json()
+          
+          currentMatrix.files = currentMatrix.files.map((f: any) => {
+            if (f.data && f.data.startsWith('data:')) {
+              const updated = uploaded.find((uf: any) => uf.name === f.name)
+              if (updated) {
+                return { ...f, data: updated.url }
+              }
+            }
+            return f
+          })
+          
+          setMatrix(currentMatrix)
+        }
+      }
+
+      const isNew = String(currentMatrix.id).startsWith('m-') || id === 'nuevo'
       const method = isNew ? 'POST' : 'PUT'
-      const url = isNew ? '/api/riesgos' : `/api/riesgos/${matrix.id}`
+      const url = isNew ? '/api/riesgos' : `/api/riesgos/${currentMatrix.id}`
 
       const res = await fetch(url, {
         method,
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(matrix)
+        body: JSON.stringify(currentMatrix)
       })
 
       if (!res.ok) {
