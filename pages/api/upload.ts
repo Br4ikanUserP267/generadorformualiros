@@ -26,6 +26,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     // Return the files with their physical disk URLs
     return res.status(200).json(persistedFiles.map(f => ({
       name: f.name,
+      originalName: f.originalName,
       type: f.type,
       url: f.url
     })))

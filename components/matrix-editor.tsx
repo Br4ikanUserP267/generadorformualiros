@@ -397,9 +397,9 @@ export default function MatrixEditor({ id }: { id?: string }) {
           
           currentMatrix.files = currentMatrix.files.map((f: any) => {
             if (f.data && f.data.startsWith('data:')) {
-              const updated = uploaded.find((uf: any) => uf.name === f.name)
+              const updated = uploaded.find((uf: any) => uf.originalName === f.name || uf.name === f.name)
               if (updated) {
-                return { ...f, data: updated.url }
+                return { ...f, data: updated.url, name: updated.name }
               }
             }
             return f

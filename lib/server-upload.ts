@@ -12,8 +12,9 @@ type IncomingFile = {
   url?: string
 }
 
-type PersistedFile = {
+export type PersistedFile = {
   name: string
+  originalName?: string
   type: string
   url: string
 }
@@ -69,12 +70,12 @@ export async function persistFilesToDisk(files: IncomingFile[] = []): Promise<Pe
     if (!rawData) continue
 
     if (rawData.startsWith('/uploads/matrices/')) {
-      persisted.push({ name: sanitizedName, type, url: rawData })
+      persisted.push({ name: sanitizedName, originalName, type, url: rawData })
       continue
     }
 
     if (rawData.startsWith('http://') || rawData.startsWith('https://') || (rawData.startsWith('/') && !rawData.startsWith('/uploads/matrices/'))) {
-      persisted.push({ name: sanitizedName, type, url: rawData })
+      persisted.push({ name: sanitizedName, originalName, type, url: rawData })
       continue
     }
 
@@ -90,7 +91,7 @@ export async function persistFilesToDisk(files: IncomingFile[] = []): Promise<Pe
     await fs.writeFile(filePath, parsed.buffer)
 
     const url = `/uploads/matrices/${fileName}`
-    persisted.push({ name: sanitizedName, type: type || parsed.mime, url })
+    persisted.push({ name: sanitizedName, originalName, type: type || parsed.mime, url })
   }
 
   return persisted
