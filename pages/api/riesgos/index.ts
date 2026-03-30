@@ -5,7 +5,7 @@ import { persistFilesToDisk } from '@/lib/server-upload'
 export const config = {
   api: {
     bodyParser: {
-      sizeLimit: '10mb',
+      sizeLimit: '50mb',
     },
   },
 }
