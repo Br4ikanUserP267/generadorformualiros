@@ -20,8 +20,10 @@ services:
       interval: 30s
       timeout: 10s
       retries: 3
-      start_period: 40s
+      start_period: 60s
     restart: unless-stopped
+    volumes:
+      - /data/coolify/matriz-riesgo/uploads:/app/public/uploads/matrices
 
   nginx:
     build:
@@ -45,3 +47,6 @@ services:
 networks:
   matriz-network:
     driver: bridge
+
+volumes:
+  postgres_data:
