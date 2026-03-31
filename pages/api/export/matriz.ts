@@ -343,10 +343,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       { col: 'M', text: 'Individuo' },
       { col: 'N', text: 'Nivel Deficiencia' },
       { col: 'O', text: 'Nivel Exposición' },
-      { col: 'P', text: 'Nivel Probabilidad (ND*NE)' },
+      { col: 'P', text: 'Nivel Probabilidad' },
       { col: 'Q', text: 'Interpretación Nivel Probabilidad' },
       { col: 'R', text: 'Nivel Consecuencia' },
-      { col: 'S', text: 'Nivel de Riesgo e intervención (NR)' },
+      { col: 'S', text: 'Nivel de Riesgo' },
       { col: 'T', text: 'Interpretación Nivel de Riesgo' },
       // U is merged from row 8
       { col: 'V', text: 'N° Expuestos' },
@@ -361,17 +361,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       { col: 'AE', text: 'Fecha Ejecución' }
     ]
 
-    const getHeaderColor = (col: string) => {
-      const tealCols = ['N','O','P','Q','R','S','T','U','V','W','X','Y','Z','AA','AB','AC','AD','AE'];
-      return tealCols.includes(col) ? 'FF006666' : 'FF00B050';
-    }
-
     for (const h of headers) {
       if (h.merge) ws.mergeCells(h.merge)
       const cell = ws.getCell(`${h.col}8`)
       cell.value = h.text
       cell.font = { bold: true, color: { argb: 'FFFFFFFF' }, name: 'Arial', size: 9 }
-      cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: getHeaderColor(h.col) } }
+      cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF00B050' } }
       cell.alignment = { horizontal: 'center', vertical: 'middle', wrapText: true }
       applyStandardBorder(cell)
     }
@@ -380,7 +375,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       const cell = ws.getCell(`${sh.col}9`)
       cell.value = sh.text
       cell.font = { bold: true, color: { argb: 'FFFFFFFF' }, name: 'Arial', size: 9 }
-      cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: getHeaderColor(sh.col) } }
+      cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF00B050' } }
       cell.alignment = { horizontal: 'center', vertical: 'middle', wrapText: true }
       applyStandardBorder(cell)
     }
@@ -475,16 +470,19 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
             for (let c = 2; c <= 31; c++) {
               const cell = row.getCell(c)
               cell.font = { name: 'Arial', size: 9 }
-              cell.alignment = { wrapText: true, vertical: 'middle', horizontal: 'left' }
+              
+              if (c === 4 || c === 5) {
+                // Actividades (D=4) y Tareas (E=5) -> centrado y arriba
+                cell.alignment = { wrapText: true, vertical: 'top', horizontal: 'center' }
+              } else {
+                // El resto -> centrado y en el medio
+                cell.alignment = { wrapText: true, vertical: 'middle', horizontal: 'center' }
+              }
+              
               applyStandardBorder(cell)
 
-              // Center alignment for specific columns
-              if ([7, 14, 15, 16, 17, 18, 19, 20, 21, 22, 24].includes(c)) {
-                cell.alignment = { ...cell.alignment, horizontal: 'center' }
-              }
-
-              // Color risk columns
-              if (c === 19 || c === 20 || c === 21) {
+              // Color risk columns ( Evaluaciones N(14) to U(21) )
+              if (c >= 14 && c <= 21) {
                 if (nr > 0) {
                   cell.fill = getRiskColorFill(nr)
                   const fontColor = getRiskColorFont(nr).color
@@ -504,6 +502,19 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
             mergeRanges.push(`E${startR}:E${endR}`)
             mergeRanges.push(`F${startR}:F${endR}`)
             mergeRanges.push(`G${startR}:G${endR}`)
+            
+            // Requisito Legal Merge Check (Column X)
+            let mergeReq = true
+            const valX = ws.getCell(`X${startR}`).value
+            for (let r = startR + 1; r <= endR; r++) {
+              if (ws.getCell(`X${r}`).value !== valX) {
+                mergeReq = false
+                break
+              }
+            }
+            if (mergeReq) {
+              mergeRanges.push(`X${startR}:X${endR}`)
+            }
           }
         }
 
