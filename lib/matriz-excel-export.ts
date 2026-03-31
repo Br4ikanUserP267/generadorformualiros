@@ -169,7 +169,7 @@ export async function exportMatrizToExcel(matrizData: MatrizData): Promise<void>
     });
 
     if (!response.ok) {
-      throw new Error(`Error en la exportación: ${response.statusText}`);
+      throw new Error(`Error en la exportaciÃ³n: ${response.statusText}`);
     }
 
     // Process the blob download
