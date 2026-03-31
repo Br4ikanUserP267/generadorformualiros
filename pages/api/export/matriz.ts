@@ -413,7 +413,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
             ]
 
             const row = ws.addRow(rowData)
-            row.height = -1 // auto fit
+            // Removed row.height = -1 as it causes rows to collapse in Excel properly 
 
             // Styling for data cells
             for (let c = 2; c <= 31; c++) {
