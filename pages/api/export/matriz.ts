@@ -366,7 +366,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       const cell = ws.getCell(`${h.col}8`)
       cell.value = h.text
       cell.font = { bold: true, color: { argb: 'FFFFFFFF' }, name: 'Arial', size: 9 }
-      cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF00B050' } }
+      cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF1A5C2A' } }
       cell.alignment = { horizontal: 'center', vertical: 'middle', wrapText: true }
       applyStandardBorder(cell)
     }
@@ -375,7 +375,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       const cell = ws.getCell(`${sh.col}9`)
       cell.value = sh.text
       cell.font = { bold: true, color: { argb: 'FFFFFFFF' }, name: 'Arial', size: 9 }
-      cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF00B050' } }
+      cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF1A5C2A' } }
       cell.alignment = { horizontal: 'center', vertical: 'middle', wrapText: true }
       applyStandardBorder(cell)
     }
@@ -502,19 +502,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
             mergeRanges.push(`E${startR}:E${endR}`)
             mergeRanges.push(`F${startR}:F${endR}`)
             mergeRanges.push(`G${startR}:G${endR}`)
-            
-            // Requisito Legal Merge Check (Column X)
-            let mergeReq = true
-            const valX = ws.getCell(`X${startR}`).value
-            for (let r = startR + 1; r <= endR; r++) {
-              if (ws.getCell(`X${r}`).value !== valX) {
-                mergeReq = false
-                break
-              }
-            }
-            if (mergeReq) {
-              mergeRanges.push(`X${startR}:X${endR}`)
-            }
           }
         }
 
@@ -536,6 +523,20 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
               }
               currentValue = nextValue
               mergeStart = rowIdx
+            }
+          }
+
+          let currentValueX = ws.getCell(`X${zonaRowStart}`).value
+          let mergeStartX = zonaRowStart
+
+          for (let rowIdx = zonaRowStart + 1; rowIdx <= zonaRowEnd + 1; rowIdx++) {
+            const nextValue = rowIdx <= zonaRowEnd ? ws.getCell(`X${rowIdx}`).value : null
+            if (nextValue !== currentValueX) {
+              if (rowIdx - 1 > mergeStartX) {
+                mergeRanges.push(`X${mergeStartX}:X${rowIdx - 1}`)
+              }
+              currentValueX = nextValue
+              mergeStartX = rowIdx
             }
           }
         }
