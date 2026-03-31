@@ -361,12 +361,17 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       { col: 'AE', text: 'Fecha Ejecución' }
     ]
 
+    const getHeaderColor = (col: string) => {
+      const tealCols = ['N','O','P','Q','R','S','T','U','V','W','X','Y','Z','AA','AB','AC','AD','AE'];
+      return tealCols.includes(col) ? 'FF006666' : 'FF00B050';
+    }
+
     for (const h of headers) {
       if (h.merge) ws.mergeCells(h.merge)
       const cell = ws.getCell(`${h.col}8`)
       cell.value = h.text
       cell.font = { bold: true, color: { argb: 'FFFFFFFF' }, name: 'Arial', size: 9 }
-      cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF00B050' } } // Green
+      cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: getHeaderColor(h.col) } }
       cell.alignment = { horizontal: 'center', vertical: 'middle', wrapText: true }
       applyStandardBorder(cell)
     }
@@ -375,7 +380,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       const cell = ws.getCell(`${sh.col}9`)
       cell.value = sh.text
       cell.font = { bold: true, color: { argb: 'FFFFFFFF' }, name: 'Arial', size: 9 }
-      cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF00B050' } } // Green
+      cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: getHeaderColor(sh.col) } }
       cell.alignment = { horizontal: 'center', vertical: 'middle', wrapText: true }
       applyStandardBorder(cell)
     }
@@ -433,7 +438,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
               '', // A: empty
               pName, // B
               zName, // C
-              aName + (aDesc ? `\n${aDesc}` : ''), // D
+              aDesc || aName, // D
               aTareas, // E
               aCargo, // F
               aRut, // G
@@ -535,8 +540,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     for (const range of mergeRanges) {
       try { ws.mergeCells(range) } catch (e) { /* ignore */ }
     }
-
-    ws.views = [{ state: 'frozen', ySplit: 10 }]
 
     // ========== FOTOGRAFIAS SHEET ==========
     const photoSheet = wb.addWorksheet('Fotografias')
