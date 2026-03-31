@@ -104,7 +104,7 @@ export default function MatrixEditor({ id }: { id?: string }) {
         area: '',
         responsable: '',
         fecha_elaboracion: new Date().toISOString().split('T')[0],
-        fecha_actualizacion: new Date().toISOString().split('T')[0],
+        fecha_actualizacion: '',
         procesos: []
       })
     }
@@ -538,7 +538,7 @@ export default function MatrixEditor({ id }: { id?: string }) {
             <div className="text-xs font-medium">Fecha Elaboración</div>
             <Input type="date" style={{background: '#f4faf4', border: '0.5px solid #c8dfc8', color: '#1a5c2a'}} value={matrix.fecha_elaboracion} onChange={(e:any)=> updateMatrix((m:any)=>{ m.fecha_elaboracion = e.target.value; return m })} />
             <div className="text-xs font-medium">Fecha Actualización</div>
-            <Input type="date" style={{background: '#f4faf4', border: '0.5px solid #c8dfc8', color: '#1a5c2a'}} value={matrix.fecha_actualizacion} onChange={(e:any)=> updateMatrix((m:any)=>{ m.fecha_actualizacion = e.target.value; return m })} />
+            <Input type="date" style={{background: '#f4faf4', border: '0.5px solid #c8dfc8', color: '#1a5c2a'}} value={matrix.fecha_actualizacion || ''} onChange={(e:any)=> updateMatrix((m:any)=>{ m.fecha_actualizacion = e.target.value; return m })} />
         
         </div>
         <div className="flex items-center gap-2">

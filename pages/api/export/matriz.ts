@@ -264,7 +264,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     ws.getCell('AD4').value = 'Fecha:'
     ws.getCell('AD4').font = { bold: true, name: 'Arial', size: 10 }
-    ws.getCell('AE4').value = formatDate(matrizData.fecha_elaboracion) || '26/4/2019'
+    ws.getCell('AE4').value = '26/4/2019'
     ws.getCell('AE4').alignment = { horizontal: 'center' }
 
     // Row 5
@@ -280,19 +280,39 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     ws.getCell('B7').fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF1A5C2A' } }
     ws.getCell('B7').alignment = { horizontal: 'center', vertical: 'middle' }
 
-    ws.mergeCells('D7:H7')
+    ws.mergeCells('D7:G7')
     ws.getCell('D7').value = matrizData.area || ''
     ws.getCell('D7').alignment = { horizontal: 'center', vertical: 'middle' }
 
+    ws.mergeCells('I7:J7')
+    ws.getCell('I7').value = 'RESPONSABLE'
+    ws.getCell('I7').font = { bold: true, color: { argb: 'FFFFFFFF' }, name: 'Arial', size: 10 }
+    ws.getCell('I7').fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF1A5C2A' } }
+    ws.getCell('I7').alignment = { horizontal: 'center', vertical: 'middle' }
+
     ws.mergeCells('K7:L7')
-    ws.getCell('K7').value = 'RESPONSABLE'
-    ws.getCell('K7').font = { bold: true, color: { argb: 'FFFFFFFF' }, name: 'Arial', size: 10 }
-    ws.getCell('K7').fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF1A5C2A' } }
+    ws.getCell('K7').value = matrizData.responsable || ''
     ws.getCell('K7').alignment = { horizontal: 'center', vertical: 'middle' }
 
-    ws.mergeCells('M7:Q7')
-    ws.getCell('M7').value = matrizData.responsable || ''
-    ws.getCell('M7').alignment = { horizontal: 'center', vertical: 'middle' }
+    ws.mergeCells('N7:P7')
+    ws.getCell('N7').value = 'FECHA ELABORACIÓN'
+    ws.getCell('N7').font = { bold: true, color: { argb: 'FFFFFFFF' }, name: 'Arial', size: 10 }
+    ws.getCell('N7').fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF1A5C2A' } }
+    ws.getCell('N7').alignment = { horizontal: 'center', vertical: 'middle' }
+
+    ws.mergeCells('Q7:T7')
+    ws.getCell('Q7').value = matrizData.fecha_elaboracion ? formatDate(matrizData.fecha_elaboracion) : ''
+    ws.getCell('Q7').alignment = { horizontal: 'center', vertical: 'middle' }
+
+    ws.mergeCells('V7:X7')
+    ws.getCell('V7').value = 'FECHA ACTUALIZACIÓN'
+    ws.getCell('V7').font = { bold: true, color: { argb: 'FFFFFFFF' }, name: 'Arial', size: 10 }
+    ws.getCell('V7').fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF1A5C2A' } }
+    ws.getCell('V7').alignment = { horizontal: 'center', vertical: 'middle' }
+
+    ws.mergeCells('Y7:AE7')
+    ws.getCell('Y7').value = matrizData.fecha_actualizacion ? formatDate(matrizData.fecha_actualizacion) : ''
+    ws.getCell('Y7').alignment = { horizontal: 'center', vertical: 'middle' }
 
     // Apply borders to rows 2-5 and 7
     for (let r = 2; r <= 5; r++) {

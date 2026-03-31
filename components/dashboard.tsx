@@ -259,7 +259,7 @@ export function Dashboard() {
         area: `${matrizData.area} (Copia)`,
         responsable: matrizData.responsable,
         fecha_elaboracion: new Date().toISOString().split('T')[0],
-        fecha_actualizacion: new Date().toISOString().split('T')[0],
+        fecha_actualizacion: '',
         files: matrizData.files || [],
         procesos: matrizData.procesos || []
       }
