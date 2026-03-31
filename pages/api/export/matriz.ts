@@ -310,7 +310,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     ws.getCell('V7').fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF1A5C2A' } }
     ws.getCell('V7').alignment = { horizontal: 'center', vertical: 'middle' }
 
-    ws.mergeCells('Y7:AE7')
+    ws.mergeCells('Y7:AA7')
     ws.getCell('Y7').value = matrizData.fecha_actualizacion ? formatDate(matrizData.fecha_actualizacion) : ''
     ws.getCell('Y7').alignment = { horizontal: 'center', vertical: 'middle' }
 
@@ -334,29 +334,29 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         };
     }
 
-    // Column Headers (Row 8 & 9)
-    const headerRow8 = ws.getRow(8)
+    // Column Headers (Row 9 & 10)
     const headerRow9 = ws.getRow(9)
+    const headerRow10 = ws.getRow(10)
 
-    headerRow8.height = 30
-    headerRow9.height = 60
+    headerRow9.height = 30
+    headerRow10.height = 60
 
     // Setup headers
     const headers = [
-      { col: 'B', text: 'PROCESO', merge: 'B8:B9' },
-      { col: 'C', text: 'ZONA / LUGAR', merge: 'C8:C9' },
-      { col: 'D', text: 'ACTIVIDADES', merge: 'D8:D9' },
-      { col: 'E', text: 'TAREAS', merge: 'E8:E9' },
-      { col: 'F', text: 'CARGO\n(Personal involucrado expuesto)', merge: 'F8:F9' },
-      { col: 'G', text: 'RUTINARIO (SI O NO)', merge: 'G8:G9' },
-      { col: 'H', text: 'PELIGROS', merge: 'H8:I8' },
-      { col: 'J', text: 'EFECTOS POSIBLES', merge: 'J8:J9' },
-      { col: 'K', text: 'CONTROLES EXISTENTES', merge: 'K8:M8' },
-      { col: 'N', text: 'EVALUACIÓN DEL RIESGO', merge: 'N8:T8' },
-      { col: 'U', text: 'VALORACIÓN DEL RIESGO', merge: 'U8:U9' },
-      { col: 'V', text: 'CRITERIOS PARA ESTABLECER CONTROLES', merge: 'V8:X8' },
-      { col: 'Y', text: 'MEDIDAS DE INTERVENCIÓN', merge: 'Y8:AC8' },
-      { col: 'AD', text: 'SEGUIMIENTO CONTROLES', merge: 'AD8:AE8' }
+      { col: 'B', text: 'PROCESO', merge: 'B9:B10' },
+      { col: 'C', text: 'ZONA / LUGAR', merge: 'C9:C10' },
+      { col: 'D', text: 'ACTIVIDADES', merge: 'D9:D10' },
+      { col: 'E', text: 'TAREAS', merge: 'E9:E10' },
+      { col: 'F', text: 'CARGO\n(Personal involucrado expuesto)', merge: 'F9:F10' },
+      { col: 'G', text: 'RUTINARIO (SI O NO)', merge: 'G9:G10' },
+      { col: 'H', text: 'PELIGROS', merge: 'H9:I9' },
+      { col: 'J', text: 'EFECTOS POSIBLES', merge: 'J9:J10' },
+      { col: 'K', text: 'CONTROLES EXISTENTES', merge: 'K9:M9' },
+      { col: 'N', text: 'EVALUACIÓN DEL RIESGO', merge: 'N9:T9' },
+      { col: 'U', text: 'VALORACIÓN DEL RIESGO', merge: 'U9:U10' },
+      { col: 'V', text: 'CRITERIOS PARA ESTABLECER CONTROLES', merge: 'V9:X9' },
+      { col: 'Y', text: 'MEDIDAS DE INTERVENCIÓN', merge: 'Y9:AC9' },
+      { col: 'AD', text: 'SEGUIMIENTO CONTROLES', merge: 'AD9:AE9' }
     ]
 
     const subHeaders = [
@@ -372,7 +372,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       { col: 'R', text: 'Nivel Consecuencia' },
       { col: 'S', text: 'Nivel de Riesgo' },
       { col: 'T', text: 'Interpretación Nivel de Riesgo' },
-      // U is merged from row 8
+      // U is merged from row 9
       { col: 'V', text: 'N° Expuestos' },
       { col: 'W', text: 'Peor Consecuencia' },
       { col: 'X', text: 'Asociado a Requisito Legal' },
@@ -387,7 +387,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     for (const h of headers) {
       if (h.merge) ws.mergeCells(h.merge)
-      const cell = ws.getCell(`${h.col}8`)
+      const cell = ws.getCell(`${h.col}9`)
       cell.value = h.text
       cell.font = { bold: true, color: { argb: 'FFFFFFFF' }, name: 'Arial', size: 9 }
       cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF1A5C2A' } }
@@ -407,8 +407,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     // Apply borders to all header cells
     for (let c = 2; c <= 31; c++) {
       const colLetter = ws.getColumn(c).letter
-      applyStandardBorder(ws.getCell(`${colLetter}8`))
       applyStandardBorder(ws.getCell(`${colLetter}9`))
+      applyStandardBorder(ws.getCell(`${colLetter}10`))
     }
 
     // Data rows
