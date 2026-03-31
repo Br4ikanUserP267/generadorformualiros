@@ -396,7 +396,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     }
 
     for (const sh of subHeaders) {
-      const cell = ws.getCell(`${sh.col}9`)
+      const cell = ws.getCell(`${sh.col}10`)
       cell.value = sh.text
       cell.font = { bold: true, color: { argb: 'FFFFFFFF' }, name: 'Arial', size: 9 }
       cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF1A5C2A' } }
@@ -412,7 +412,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     }
 
     // Data rows
-    let currentRow = 10
+    let currentRow = 11
     const mergeRanges: string[] = []
 
     const procesos = matrizData.procesos || []
