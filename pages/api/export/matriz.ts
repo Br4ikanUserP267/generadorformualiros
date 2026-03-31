@@ -217,47 +217,98 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     // Header structure rows
     // Row 1
-    ws.mergeCells('B1:F4')
-    ws.getCell('B1').value = 'LOGO' // Placeholder for logo
-    ws.getCell('B1').alignment = { horizontal: 'center', vertical: 'middle' }
-    applyStandardBorder(ws.getCell('B1'))
+    ws.getRow(1).height = 10
 
-    ws.mergeCells('G1:T4')
-    ws.getCell('G1').value = 'MATRIZ DE IDENTIFICACIÓN DE PELIGROS, EVALUACIÓN Y VALORACIÓN DE LOS RIESGOS'
-    ws.getCell('G1').font = { bold: true, name: 'Arial', size: 14 }
-    ws.getCell('G1').alignment = { horizontal: 'center', vertical: 'middle', wrapText: true }
-    applyStandardBorder(ws.getCell('G1'))
+    // Row 2
+    ws.mergeCells('B2:C5')
+    ws.getCell('B2').value = '' 
+    ws.getCell('B2').alignment = { horizontal: 'center', vertical: 'middle' }
+    try {
+      const logoPath = path.join(process.cwd(), 'public', 'logo_csm.png')
+      const logoBuffer = await fs.readFile(logoPath)
+      const logoId = wb.addImage({
+        buffer: logoBuffer as any,
+        extension: 'png'
+      })
+      ws.addImage(logoId, 'B2:C5')
+    } catch (err) {
+      ws.getCell('B2').value = 'LOGO' // Fallback
+    }
 
-    ws.mergeCells('U1:AC1')
-    ws.getCell('U1').value = 'ELABORACIÓN: 28/01/2021'
-    ws.getCell('U1').font = { name: 'Arial', size: 10 }
-    ws.getCell('U1').alignment = { horizontal: 'center', vertical: 'middle' }
-    applyStandardBorder(ws.getCell('U1'))
+    ws.mergeCells('D2:AC2')
+    ws.getCell('D2').value = 'SISTEMAS INTEGRADOS GESTIÓN'
+    ws.getCell('D2').alignment = { horizontal: 'center', vertical: 'middle' }
+    ws.getCell('D2').font = { bold: true, name: 'Arial', size: 10 }
 
-    ws.mergeCells('U2:AC2')
-    ws.getCell('U2').value = 'CÓDIGO: F-GTH-SST-003'
-    ws.getCell('U2').font = { name: 'Arial', size: 10 }
-    ws.getCell('U2').alignment = { horizontal: 'center', vertical: 'middle' }
-    applyStandardBorder(ws.getCell('U2'))
+    ws.getCell('AD2').value = 'Código:'
+    ws.getCell('AD2').font = { bold: true, name: 'Arial', size: 10 }
+    ws.getCell('AE2').value = '45.17-FOR-38'
+    ws.getCell('AE2').alignment = { horizontal: 'center' }
 
-    ws.mergeCells('U3:AC3')
-    ws.getCell('U3').value = 'VERSIÓN: 00'
-    ws.getCell('U3').font = { name: 'Arial', size: 10 }
-    ws.getCell('U3').alignment = { horizontal: 'center', vertical: 'middle' }
-    applyStandardBorder(ws.getCell('U3'))
+    // Row 3
+    ws.mergeCells('D3:AC3')
+    ws.getCell('D3').value = 'CLINICA SANTA MARIA S.A.S.'
+    ws.getCell('D3').alignment = { horizontal: 'center', vertical: 'middle' }
+    ws.getCell('D3').font = { bold: true, name: 'Arial', size: 10 }
 
-    ws.mergeCells('U4:AC4')
-    ws.getCell('U4').value = 'VIGENCIA: 28/01/2021'
-    ws.getCell('U4').font = { name: 'Arial', size: 10 }
-    ws.getCell('U4').alignment = { horizontal: 'center', vertical: 'middle' }
-    applyStandardBorder(ws.getCell('U4'))
+    ws.getCell('AD3').value = 'Versión:'
+    ws.getCell('AD3').font = { bold: true, name: 'Arial', size: 10 }
+    ws.getCell('AE3').value = '02'
+    ws.getCell('AE3').alignment = { horizontal: 'center' }
 
-    // Info row
-    ws.mergeCells('B6:J6')
-    const infoStr = `ÁREA: ${matrizData.area || ''}     RESPONSABLE: ${matrizData.responsable || ''}     FECHA ELABORACIÓN: ${formatDate(matrizData.fecha_elaboracion)}     FECHA ACTUALIZACIÓN: ${formatDate(matrizData.fecha_actualizacion)}`
-    ws.getCell('B6').value = infoStr
-    ws.getCell('B6').font = { bold: true, name: 'Arial', size: 10 }
-    ws.getCell('B6').alignment = { horizontal: 'left', vertical: 'middle' }
+    // Row 4
+    ws.mergeCells('D4:AC5')
+    ws.getCell('D4').value = 'MATRIZ DE IDENTIFICACIÓN DE PELIGROS Y VALORACIÓN DE RIESGOS'
+    ws.getCell('D4').alignment = { horizontal: 'center', vertical: 'middle', wrapText: true }
+    ws.getCell('D4').font = { bold: true, name: 'Arial', size: 10 }
+
+    ws.getCell('AD4').value = 'Fecha:'
+    ws.getCell('AD4').font = { bold: true, name: 'Arial', size: 10 }
+    ws.getCell('AE4').value = formatDate(matrizData.fecha_elaboracion) || '26/4/2019'
+    ws.getCell('AE4').alignment = { horizontal: 'center' }
+
+    // Row 5
+    ws.getCell('AD5').value = 'Página:'
+    ws.getCell('AD5').font = { bold: true, name: 'Arial', size: 10 }
+    ws.getCell('AE5').value = '1 de 1'
+    ws.getCell('AE5').alignment = { horizontal: 'center' }
+
+    // Row 7 (Info row)
+    ws.mergeCells('B7:C7')
+    ws.getCell('B7').value = 'ÁREA / PROCESO'
+    ws.getCell('B7').font = { bold: true, name: 'Arial', size: 10 }
+
+    ws.mergeCells('D7:H7')
+    ws.getCell('D7').value = matrizData.area || ''
+    ws.getCell('D7').alignment = { horizontal: 'center' }
+
+    ws.mergeCells('I7:J7')
+    ws.getCell('I7').value = 'RESPONSABLE'
+    ws.getCell('I7').font = { bold: true, name: 'Arial', size: 10 }
+
+    ws.mergeCells('K7:M7')
+    ws.getCell('K7').value = matrizData.responsable || ''
+    ws.getCell('K7').alignment = { horizontal: 'center' }
+
+    // Apply borders to rows 2-5 and 7
+    for (let r = 2; r <= 5; r++) {
+        for (let c = 2; c <= 31; c++) {
+            const letter = ws.getColumn(c).letter;
+            const cell = ws.getCell(letter + r);
+            if (!cell.border) cell.border = {
+                top: { style: 'thin' }, left: { style: 'thin' },
+                bottom: { style: 'thin' }, right: { style: 'thin' }
+            };
+        }
+    }
+    for (let c = 2; c <= 31; c++) {
+        const letter = ws.getColumn(c).letter;
+        const cell = ws.getCell(letter + '7');
+        if (!cell.border && cell.value !== null && cell.value !== '') cell.border = {
+            top: { style: 'thin' }, left: { style: 'thin' },
+            bottom: { style: 'thin' }, right: { style: 'thin' }
+        };
+    }
 
     // Column Headers (Row 8 & 9)
     const headerRow8 = ws.getRow(8)

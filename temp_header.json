@@ -1,0 +1,200 @@
+[
+  {
+    "row": 2,
+    "addr": "D2",
+    "val": "SISTEMAS INTEGRADOS GESTIÓN",
+    "merge": "D2:AC2"
+  },
+  {
+    "row": 2,
+    "addr": "AD2",
+    "val": "Código:",
+    "merge": null
+  },
+  {
+    "row": 2,
+    "addr": "AE2",
+    "val": "45.17-FOR-38",
+    "merge": null
+  },
+  {
+    "row": 3,
+    "addr": "D3",
+    "val": "CLINICA SANTA MARIA S.A.S.",
+    "merge": "D3:AC3"
+  },
+  {
+    "row": 3,
+    "addr": "AD3",
+    "val": "Versión:",
+    "merge": null
+  },
+  {
+    "row": 3,
+    "addr": "AE3",
+    "val": "02",
+    "merge": null
+  },
+  {
+    "row": 4,
+    "addr": "D4",
+    "val": "MATRIZ DE IDENTIFICACIÓN DE PELIGROS Y VALORACIÓN DE RIESGOS",
+    "merge": "D4:AC5"
+  },
+  {
+    "row": 4,
+    "addr": "AD4",
+    "val": "Fecha:",
+    "merge": null
+  },
+  {
+    "row": 4,
+    "addr": "AE4",
+    "val": "26/4/2019",
+    "merge": null
+  },
+  {
+    "row": 5,
+    "addr": "AD5",
+    "val": "Página:",
+    "merge": null
+  },
+  {
+    "row": 5,
+    "addr": "AE5",
+    "val": "1 de 1",
+    "merge": null
+  },
+  {
+    "row": 7,
+    "addr": "B7",
+    "val": "ÁREA / PROCESO",
+    "merge": "B7:C7"
+  },
+  {
+    "row": 7,
+    "addr": "D7",
+    "val": "HOSPITALIZACION SAGRADA FAMILIA",
+    "merge": "D7:G7"
+  },
+  {
+    "row": 7,
+    "addr": "I7",
+    "val": "RESPONSABLE",
+    "merge": "I7:J7"
+  },
+  {
+    "row": 7,
+    "addr": "K7",
+    "val": "Erika Novoa Hernandez",
+    "merge": "K7:L7"
+  },
+  {
+    "row": 7,
+    "addr": "N7",
+    "val": "FECHA ELABORACIÓN",
+    "merge": "N7:P7"
+  },
+  {
+    "row": 7,
+    "addr": "Q7",
+    "val": "03/04/2022",
+    "merge": "Q7:T7"
+  },
+  {
+    "row": 7,
+    "addr": "V7",
+    "val": "FECHA DE ACTUALIZACIÓN",
+    "merge": "V7:X7"
+  },
+  {
+    "row": 7,
+    "addr": "Y7",
+    "val": "07/08/2024",
+    "merge": "Y7:AA7"
+  },
+  {
+    "row": 9,
+    "addr": "B9",
+    "val": "PROCESO",
+    "merge": "B9:B10"
+  },
+  {
+    "row": 9,
+    "addr": "C9",
+    "val": "ZONA/LUGAR",
+    "merge": "C9:C10"
+  },
+  {
+    "row": 9,
+    "addr": "D9",
+    "val": "ACTIVIDADES",
+    "merge": "D9:D10"
+  },
+  {
+    "row": 9,
+    "addr": "E9",
+    "val": "TAREAS",
+    "merge": "E9:E10"
+  },
+  {
+    "row": 9,
+    "addr": "F9",
+    "val": "CARGO",
+    "merge": "F9:F10"
+  },
+  {
+    "row": 9,
+    "addr": "G9",
+    "val": "RUTINARIO\nSI O NO",
+    "merge": "G9:G10"
+  },
+  {
+    "row": 9,
+    "addr": "H9",
+    "val": "PELIGROS",
+    "merge": "H9:I9"
+  },
+  {
+    "row": 9,
+    "addr": "J9",
+    "val": "EFECTOS POSIBLES",
+    "merge": "J9:J10"
+  },
+  {
+    "row": 9,
+    "addr": "K9",
+    "val": "CONTROLES EXISTENTES",
+    "merge": "K9:M9"
+  },
+  {
+    "row": 9,
+    "addr": "N9",
+    "val": "EVALUACIÓN DEL RIESGO",
+    "merge": "N9:T9"
+  },
+  {
+    "row": 9,
+    "addr": "U9",
+    "val": "VALORACIÓN\nDEL RIESGO",
+    "merge": "U9:U10"
+  },
+  {
+    "row": 9,
+    "addr": "V9",
+    "val": "CRITERIOS PARA ESTABLECER CONTROLES",
+    "merge": "V9:X9"
+  },
+  {
+    "row": 9,
+    "addr": "Y9",
+    "val": "MEDIDAS DE INTERVENCIÓN",
+    "merge": "Y9:AC9"
+  },
+  {
+    "row": 9,
+    "addr": "AD9",
+    "val": "SEGUIMIENTO MEDIDAS\nDE INTERVENCIÓN",
+    "merge": "AD9:AE9"
+  }
+]
