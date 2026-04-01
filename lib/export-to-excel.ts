@@ -2,6 +2,7 @@
 
 import ExcelJS from 'exceljs'
 import type { Riesgo } from './types'
+import { apiFetch } from './utils'
 
 // Helper: Convert column number to Excel letter (1->A, 27->AA)
 function colNumberToLetter(n: number): string {
@@ -357,7 +358,7 @@ async function cloneTemplateAndFillData(
  */
 async function loadTemplateFromPublic(): Promise<ExcelJS.Workbook | null> {
   try {
-    const response = await fetch('/api/load-template')
+    const response = await apiFetch('/api/load-template')
     if (!response.ok) {
       console.warn('Could not load template from API')
       return null

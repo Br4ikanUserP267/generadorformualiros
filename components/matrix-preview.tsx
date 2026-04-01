@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
+import { apiFetch } from '@/lib/utils'
 
 interface MatrixPreviewProps {
   matrizId: string
@@ -65,7 +66,7 @@ export function MatrixPreview({ matrizId, onClose }: MatrixPreviewProps) {
   useEffect(() => {
     const loadMatriz = async () => {
       try {
-        const res = await fetch(`/api/riesgos/${matrizId}`)
+        const res = await apiFetch(`/api/riesgos/${matrizId}`)
         if (res.ok) {
           const data = await res.json()
           setMatrizData(data)

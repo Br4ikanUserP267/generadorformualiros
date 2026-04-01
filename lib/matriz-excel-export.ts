@@ -1,6 +1,7 @@
 "use client"
 
 import ExcelJS from 'exceljs'
+import { apiFetch } from './utils'
 
 // ============================================================================
 // Type Definitions for Nested Matrix Structure
@@ -160,7 +161,7 @@ function formatDate(dateStr?: string): string {
 
 export async function exportMatrizToExcel(matrizData: MatrizData): Promise<void> {
   try {
-    const response = await fetch('/api/export/matriz', {
+    const response = await apiFetch('/api/export/matriz', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

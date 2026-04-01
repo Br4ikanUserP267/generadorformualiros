@@ -22,6 +22,20 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       return res.status(401).json({ error: 'Credenciales inválidas' })
     }
 
+    const sessionPayload = {
+      id: user.id,
+      email: user.email,
+      nombre: user.nombre,
+      cargo: 'Director de Seguridad',
+      exp: Date.now() + 24 * 60 * 60 * 1000,
+    }
+
+    const token = Buffer.from(JSON.stringify(sessionPayload)).toString('base64')
+    res.setHeader(
+      'Set-Cookie',
+      `auth_token=${token}; Path=/; HttpOnly; SameSite=Lax; Max-Age=86400`
+    )
+
     return res.status(200).json({
       id: user.id,
       email: user.email,

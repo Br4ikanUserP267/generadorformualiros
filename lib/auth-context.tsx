@@ -1,6 +1,8 @@
 "use client"
 
-import { createContext, useContext, useState, useCallback, type ReactNode } from "react"
+import { createContext, useContext, useState, useCallback, useEffect, type ReactNode } from "react"
+import { useRouter } from "next/navigation"
+import { apiFetch } from "@/lib/utils"
 
 interface User {
   id: string
@@ -25,17 +27,51 @@ const MOCK_USERS = [
 ]
 
 export function AuthProvider({ children }: { children: ReactNode }) {
+  const router = useRouter()
   const [user, setUser] = useState<User | null>(null)
-  const [isLoading, setIsLoading] = useState(false)
+  const [isLoading, setIsLoading] = useState(true)
+
+  useEffect(() => {
+    let isMounted = true
+
+    const checkSession = async () => {
+      try {
+        const res = await apiFetch('/api/auth/me', { redirectOn401: false })
+        if (!isMounted) return
+
+        if (res.ok) {
+          const data = await res.json()
+          setUser({
+            id: data.id,
+            email: data.email,
+            nombre: data.nombre,
+            cargo: data.cargo || 'Usuario',
+          })
+        } else {
+          setUser(null)
+        }
+      } catch {
+        if (isMounted) setUser(null)
+      } finally {
+        if (isMounted) setIsLoading(false)
+      }
+    }
+
+    checkSession()
+    return () => {
+      isMounted = false
+    }
+  }, [])
 
   const login = useCallback(async (email: string, password: string): Promise<boolean> => {
     setIsLoading(true)
     
     try {
-      const res = await fetch('/api/auth/login', {
+      const res = await apiFetch('/api/auth/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password })
+        body: JSON.stringify({ email, password }),
+        redirectOn401: false,
       })
 
       if (res.ok) {
@@ -47,6 +83,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           cargo: data.cargo || 'Usuario'
         })
         setIsLoading(false)
+        router.push('/dashboard')
         return true
       }
     } catch (err) {
@@ -55,11 +92,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     
     setIsLoading(false)
     return false
-  }, [])
+  }, [router])
 
-  const logout = useCallback(() => {
+  const logout = useCallback(async () => {
+    try {
+      await apiFetch('/api/auth/logout', {
+        method: 'POST',
+      })
+    } catch {
+      // Ignore network errors and clear local state regardless
+    }
+
     setUser(null)
-  }, [])
+    router.push('/matriz-riesgos')
+  }, [router])
 
   return (
     <AuthContext.Provider value={{ 

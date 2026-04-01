@@ -7,6 +7,7 @@ import ConfirmModal from './confirm-modal'
 import { MatrixPreview } from './matrix-preview'
 import { exportMatrizToExcel } from '@/lib/matriz-excel-export'
 import type { Riesgo } from '@/lib/types'
+import { apiFetch } from '@/lib/utils'
 
 const Icons = {
   asistencial: <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M6 2a2 2 0 100 4 2 2 0 000-4z" stroke="currentColor" strokeWidth="1.1"/><path d="M2 10c0-2.2 1.8-4 4-4s4 1.8 4 4" stroke="currentColor" strokeWidth="1.1" strokeLinecap="round"/></svg>,
@@ -118,7 +119,7 @@ export function Dashboard() {
   useEffect(() => {
     const load = async () => {
       try {
-        const res = await fetch('/api/riesgos')
+        const res = await apiFetch('/api/riesgos')
         if (res.ok) {
           const js = await res.json()
           const mapped = (js || []).map((m: any) => {
@@ -224,7 +225,7 @@ export function Dashboard() {
 
   function confirmDeleteAction() {
     if (!deleteTarget) return
-    fetch(`/api/riesgos/${deleteTarget}`, { method: 'DELETE' }).then(() => { 
+    apiFetch(`/api/riesgos/${deleteTarget}`, { method: 'DELETE' }).then(() => { 
       setMatrices((prev) => prev.filter(p => p.id !== deleteTarget))
       setConfirmOpen(false)
       setDeleteTarget(null)
@@ -236,7 +237,7 @@ export function Dashboard() {
 
   async function handleDownloadMatrix(matrizId: string) {
     try {
-      const res = await fetch(`/api/riesgos/${matrizId}`)
+      const res = await apiFetch(`/api/riesgos/${matrizId}`)
       if (!res.ok) throw new Error('Failed to fetch matrix')
       const matrizData = await res.json()
       
@@ -251,7 +252,7 @@ export function Dashboard() {
 
   async function handleDuplicateMatrix(matrizId: string) {
     try {
-      const res = await fetch(`/api/riesgos/${matrizId}`)
+      const res = await apiFetch(`/api/riesgos/${matrizId}`)
       if (!res.ok) throw new Error('No se pudo obtener la matriz')
       const matrizData = await res.json()
 
@@ -264,7 +265,7 @@ export function Dashboard() {
         procesos: matrizData.procesos || []
       }
 
-      const createRes = await fetch('/api/riesgos', {
+      const createRes = await apiFetch('/api/riesgos', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(duplicateData)
@@ -273,7 +274,7 @@ export function Dashboard() {
       if (!createRes.ok) throw new Error('No se pudo crear la copia')
       
       // Reload matrices list to ensure all fields are properly structured
-      const reloadRes = await fetch('/api/riesgos')
+      const reloadRes = await apiFetch('/api/riesgos')
       if (reloadRes.ok) {
         const js = await reloadRes.json()
         // Use same mapping logic as initial load

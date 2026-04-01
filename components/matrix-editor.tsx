@@ -12,6 +12,7 @@ import { Switch } from "@/components/ui/switch"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Badge } from "@/components/ui/badge"
 import { PencilIcon, TrashIcon, CopyIcon } from 'lucide-react'
+import { apiFetch } from '@/lib/utils'
 
 function makeId(prefix = '') { return prefix + Math.random().toString(36).slice(2,9) }
 
@@ -80,7 +81,7 @@ export default function MatrixEditor({ id }: { id?: string }) {
 
   useEffect(() => {
     if (id && id !== 'nuevo') {
-      fetch(`/api/riesgos/${id}`)
+      apiFetch(`/api/riesgos/${id}`)
         .then(r => r.json())
         .then(data => {
           if (data.error) {
@@ -382,7 +383,7 @@ export default function MatrixEditor({ id }: { id?: string }) {
       if (currentMatrix.files && currentMatrix.files.length > 0) {
         const base64Files = currentMatrix.files.filter((f: any) => f.data && f.data.startsWith('data:'))
         if (base64Files.length > 0) {
-          const uploadRes = await fetch('/api/upload', {
+          const uploadRes = await apiFetch('/api/upload', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ files: base64Files })
@@ -413,7 +414,7 @@ export default function MatrixEditor({ id }: { id?: string }) {
       const method = isNew ? 'POST' : 'PUT'
       const url = isNew ? '/api/riesgos' : `/api/riesgos/${currentMatrix.id}`
 
-      const res = await fetch(url, {
+      const res = await apiFetch(url, {
         method,
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(currentMatrix)
@@ -439,7 +440,7 @@ export default function MatrixEditor({ id }: { id?: string }) {
       }
       
       // Fetch the full matrix data from API
-      const res = await fetch(`/api/riesgos/${matrix.id}`)
+      const res = await apiFetch(`/api/riesgos/${matrix.id}`)
       if (!res.ok) throw new Error('No se pudo obtener los datos de la matriz')
       const matrizData = await res.json()
       
