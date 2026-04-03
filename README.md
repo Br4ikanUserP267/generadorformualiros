@@ -1,12 +1,9 @@
-# Sistema de Matriz de Riesgos - Clínica Santa María S.A.S.
+# Sistema de Matriz de Riesgos
 
 ## 1. Nombre y descripción general del sistema
 
 ### Nombre completo del sistema
-Sistema de Matriz de Riesgos - Clínica Santa María S.A.S.
-
-### Organización para la que fue desarrollado
-El sistema fue desarrollado para Clínica Santa María S.A.S.
+Sistema de Matriz de Riesgos
 
 ### Propósito principal
 La plataforma centraliza la gestión de matrices de riesgos para la organización. Su objetivo es permitir el registro, consulta, edición, evaluación, exportación y seguimiento de matrices de riesgo bajo una estructura jerárquica de procesos, zonas, actividades, peligros, controles, criterios e intervenciones.
@@ -297,4 +294,4 @@ docs/
 
 ## Nota final
 
-Este repositorio concentra una solución funcional de gestión de matriz de riesgos para Clínica Santa María S.A.S., con autenticación, persistencia relacional, interfaz de edición jerárquica y exportación institucional a Excel. La base técnica ya está preparada para ampliar el sistema con nuevos módulos sin alterar el flujo actual.
+Este repositorio concentra una solución funcional de gestión de matriz de riesgos, con autenticación, persistencia relacional, interfaz de edición jerárquica y exportación institucional a Excel. La base técnica ya está preparada para ampliar el sistema con nuevos módulos sin alterar el flujo actual.
