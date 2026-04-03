@@ -1,297 +1,154 @@
 # Sistema de Matriz de Riesgos
 
-## 1. Nombre y descripción general del sistema
+## Descripción general
 
-### Nombre completo del sistema
-Sistema de Matriz de Riesgos
+El Sistema de Matriz de Riesgos es una plataforma para la gestión institucional de riesgos operativos, asistenciales y administrativos. Permite centralizar la identificación de peligros, la valoración de riesgos, la definición de controles y el seguimiento documental en un solo entorno de trabajo.
 
-### Propósito principal
-La plataforma centraliza la gestión de matrices de riesgos para la organización. Su objetivo es permitir el registro, consulta, edición, evaluación, exportación y seguimiento de matrices de riesgo bajo una estructura jerárquica de procesos, zonas, actividades, peligros, controles, criterios e intervenciones.
+Su diseño prioriza la trazabilidad, la consistencia de la información y la generación de reportes en formatos de uso organizacional.
 
-El sistema está orientado a la operación documental y técnica de la matriz de riesgos institucional, con soporte para autenticación, persistencia en base de datos, adjuntos y exportación a Excel.
+## Propósito del proyecto y organización objetivo
 
-## 2. Módulos actuales del sistema
+Este proyecto fue desarrollado para apoyar la operación de la Clínica Santa María S.A.S. en la administración de matrices de riesgos, facilitando procesos de control interno, gestión documental y apoyo a auditorías.
 
-### Autenticación y acceso
-El sistema cuenta con un módulo de acceso basado en sesión. La pantalla de entrada principal se encuentra en la ruta pública `/matriz-riesgos`. Desde allí el usuario puede iniciar sesión con credenciales y acceder al dashboard.
+El propósito principal es estandarizar la forma en que se registran y actualizan los riesgos de la organización, reduciendo la dispersión de información y fortaleciendo la toma de decisiones basada en evidencia.
 
-Funciones visibles:
-- Formulario de inicio de sesión con correo y contraseña.
-- Validación de credenciales contra la API del sistema.
-- Redirección automática al dashboard después de iniciar sesión.
+## Módulos funcionales disponibles
+
+### 1. Acceso a la plataforma
+
+Permite el ingreso de usuarios autorizados al entorno de trabajo institucional.
+
+Capacidades generales:
+
+- Inicio de acceso al sistema.
 - Cierre de sesión desde la interfaz.
 
-### Dashboard de matrices
-El dashboard centraliza la consulta de matrices existentes y permite trabajar con ellas desde una vista resumen.
+### 2. Dashboard de matrices
 
-Funciones visibles:
-- Listado de matrices registradas.
-- Búsqueda por texto.
-- Filtros por tipo y clasificación.
-- Resumen de conteos por nivel de riesgo.
-- Creación de una nueva matriz.
-- Duplicación de una matriz existente.
-- Eliminación lógica de matrices.
-- Previsualización de una matriz.
-- Descarga/exportación a Excel.
+Consolida la información general y el estado de las matrices creadas.
 
-### Editor de matriz
-Es el módulo operativo principal del sistema. Permite construir y mantener la matriz con una estructura jerárquica completa.
+Capacidades generales:
 
-Estructura funcional:
-- Matriz.
-- Procesos.
-- Zonas.
-- Actividades.
-- Peligros.
+- Visualizar matrices registradas.
+- Buscar y filtrar información.
+- Consultar indicadores resumidos.
+- Crear nuevas matrices.
+- Duplicar y eliminar registros de trabajo.
 
-Capacidades del editor:
-- Crear, editar y eliminar procesos.
-- Crear, editar y eliminar zonas.
-- Crear, editar y eliminar actividades.
-- Registrar peligros por actividad.
-- Diligenciar descripción, clasificación, efectos y controles existentes.
-- Registrar criterios de evaluación y niveles de riesgo.
-- Registrar intervenciones y responsables.
-- Gestionar archivos adjuntos asociados a la matriz.
-- Guardar, actualizar y exportar la matriz.
+### 3. Editor de matriz
 
-### Previsualización de matriz
-El sistema incluye una vista de previsualización tabular para revisar la información antes de exportarla o validarla.
+Es el módulo operativo central para la construcción y mantenimiento de cada matriz.
 
-Funciones visibles:
-- Visualización de la matriz en formato tabular.
-- Columnas ampliadas para lectura de información técnica.
-- Desplazamiento horizontal para matrices extensas.
-- Representación visual de los niveles de riesgo.
-- Vista útil para revisión y control de calidad.
+Capacidades generales:
 
-### Exportación a Excel
-La plataforma incorpora exportación estructurada a Excel con plantilla y formato institucional.
+- Crear y actualizar la estructura de trabajo por procesos, zonas y actividades.
+- Registrar peligros, efectos y controles.
+- Documentar criterios de evaluación e intervenciones.
+- Gestionar el contenido técnico de cada matriz de forma continua.
 
-Funciones visibles:
-- Exportación de matrices completas.
-- Exportación con formato preservado.
-- Mapeo de campos jerárquicos a columnas de hoja de cálculo.
-- Colores asociados a la aceptabilidad del riesgo.
-- Conservación de encabezados, anchos, celdas combinadas y estilos.
-- Uso de plantilla institucional cuando está disponible en `public/templates/MATRIZ_IPVR_TEMPLATE.xlsx`.
+### 4. Previsualización
 
-### Adjuntos y carga de archivos
-El sistema soporta la carga de archivos asociados a las matrices.
+Brinda una vista de revisión antes de la salida documental final.
 
-Funciones visibles:
-- Subida de archivos desde la interfaz.
-- Persistencia de archivos en disco.
-- Asociación de adjuntos a la matriz correspondiente.
-- Inclusión de archivos en el flujo de exportación.
+Capacidades generales:
 
-### Integración de autocompletado con IA
-Existe infraestructura backend para autocompletado con IA mediante un endpoint proxy.
+- Revisar la matriz en formato tabular.
+- Validar consistencia y completitud de la información.
 
-Capacidades presentes:
-- Recepción de prompts desde el frontend.
-- Enrutamiento hacia un proveedor configurado por variables de entorno.
-- Soporte para integración con Gemini u otros proveedores compatibles.
+### 5. Exportación de información
 
-### Gestión de riesgos con persistencia relacional
-El backend organiza la información de riesgos en una estructura relacional completa.
+Permite generar documentos en formato de hoja de cálculo para circulación institucional.
 
-Capacidades visibles:
-- Persistencia por matriz, proceso, zona, actividad y peligro.
-- Relación de controles, evaluación, criterios e intervención por peligro.
-- Soft delete en entidades principales.
-- Consultas estructuradas para reconstruir el árbol de información en el frontend.
+Capacidades generales:
 
-## 3. Tecnologías utilizadas
+- Exportar matrices completas.
+- Conservar estructura y formato de presentación.
 
-### Framework y lenguaje
-- Next.js 16.1.6.
-- React 19.2.4.
-- TypeScript 5.7.3.
+### 6. Gestión de adjuntos
 
-### Estilo e interfaz
-- Tailwind CSS.
-- PostCSS.
-- Componentes UI basados en Radix UI.
-- Lucide React para íconos.
-- Sonner para notificaciones.
-- next-themes para soporte visual temático.
+Permite asociar evidencia documental a los registros de trabajo.
 
-### Persistencia y base de datos
-- Prisma 5.22.0 como capa ORM.
-- PostgreSQL como base de datos.
-- Esquema relacional con entidades Usuario, Matriz, Proceso, Zona, Actividad, Peligro, Control, Evaluacion, Criterio, Intervencion y Archivo.
+Capacidades generales:
 
-### Autenticación y sesiones
-- Sesión basada en cookie HttpOnly llamada `auth_token`.
-- Validación de sesión en middleware.
-- Revalidación de sesión con endpoint `GET /api/auth/me`.
-- Logout mediante endpoint `POST /api/auth/logout`.
+- Cargar archivos de soporte.
+- Vincular adjuntos a la matriz correspondiente.
 
-### Exportación y documentos
-- ExcelJS para exportación de hojas de cálculo.
-- Sistema de plantilla Excel para conservar el formato institucional.
+## Tecnologías y stack general
 
-### Infraestructura y despliegue
-- Docker.
-- Docker Compose.
-- Nginx como proxy inverso.
-- Node.js 20 en contenedores de producción.
+El sistema está construido con un stack web moderno orientado a productividad, mantenibilidad y escalabilidad.
 
-## 4. Arquitectura del proyecto
+- Framework principal: Next.js.
+- Lenguaje: TypeScript.
+- Biblioteca de interfaz: React.
+- Base de datos: PostgreSQL.
+- Capa de acceso a datos: Prisma.
+- Estilos de interfaz: Tailwind CSS.
+- Despliegue y contenedorización: Docker y Docker Compose.
 
-### Estructura general de carpetas
-- `app/`: rutas de la interfaz principal construidas con App Router.
-- `components/`: componentes visuales y funcionales reutilizables.
-- `lib/`: utilidades compartidas, acceso a datos, autenticación y exportaciones.
-- `pages/api/`: rutas backend tradicionales de Next.js para autenticación, riesgos, exportación, carga de archivos e IA.
-- `prisma/`: esquema y migraciones de base de datos.
-- `public/`: recursos estáticos y archivos subidos.
-- `docs/`: documentación técnica adicional.
+## Estructura general del proyecto
 
-### Enrutamiento
-El proyecto usa el sistema de rutas de Next.js.
+La solución se organiza por dominios funcionales para facilitar su evolución.
 
-Rutas relevantes identificadas:
-- `/` redirige a `/matriz-riesgos`.
-- `/matriz-riesgos` es la ruta pública de acceso y login.
-- `/dashboard` es una vista protegida del dashboard.
-- `/matriz/[id]` es el editor protegido de una matriz específica.
-- `/matriz-riesgos/dashboard` y `/matriz-riesgos/matriz/[id]` son variantes protegidas equivalentes dentro de la misma base funcional.
+- app: vistas y composición de páginas de la aplicación.
+- components: componentes reutilizables de interfaz y módulos visuales.
+- lib: utilidades y servicios compartidos.
+- pages: endpoints de backend de la aplicación.
+- prisma: modelo y migraciones de base de datos.
+- public: recursos estáticos y archivos públicos.
+- docs: documentación complementaria del proyecto.
 
-### Autenticación y protección de rutas
-La protección se implementa en varios niveles:
-
-- El middleware bloquea rutas protegidas si no existe una sesión válida.
-- La cookie `auth_token` se valida antes de permitir acceso a páginas y APIs protegidas.
-- Los componentes protegidos usan un guard de interfaz para evitar que el contenido se renderice mientras se valida la sesión.
-- El contexto de autenticación vuelve a verificar la sesión al cargar la página.
-- Los requests que reciben `401 Unauthorized` se redirigen nuevamente a `/matriz-riesgos`.
-
-Este enfoque evita que el dashboard o el editor se muestren siquiera de forma parcial cuando no hay sesión activa.
-
-## 5. Instalación y configuración
+## Instalación y configuración básica
 
 ### Requisitos previos
+
 - Node.js 20 o superior.
 - npm.
-- Base de datos PostgreSQL.
-- Opcional: Docker y Docker Compose para despliegue en contenedores.
+- Instancia de PostgreSQL disponible.
 
-### Instalación local
-1. Instalar dependencias.
+### Pasos de instalación local
+
+1. Instalar dependencias:
 
 ```bash
 npm install
 ```
 
-2. Configurar el archivo `.env.local` en la raíz del proyecto con al menos la conexión a base de datos.
+2. Configurar variables de entorno del proyecto en un archivo local de entorno, de acuerdo con el estándar interno del equipo.
 
-```env
-DATABASE_URL="postgresql://usuario:password@localhost:5432/nombre_base_datos"
-```
-
-3. Si se usará la integración de IA, agregar las variables correspondientes.
-
-```env
-GEMINI_KEY=tu_clave_gemini
-# o bien
-GEN_AI_KEY=tu_token
-GEN_AI_ENDPOINT=https://tu-endpoint
-```
-
-4. Generar el cliente de Prisma.
+3. Preparar la base de datos y generar artefactos de acceso a datos:
 
 ```bash
 npx prisma generate
-```
-
-5. Aplicar migraciones o sincronizar el esquema según el entorno de trabajo.
-
-```bash
 npx prisma migrate dev
 ```
 
-6. Iniciar el entorno de desarrollo.
+4. Ejecutar la aplicación en modo desarrollo:
 
 ```bash
 npm run dev
 ```
 
-### Ejecución con Docker
-El proyecto incluye configuración de contenedores para despliegue:
-- `docker-compose.yaml`
-- `Dockerfile`
-- `Dockerfile.nginx`
+### Ejecución en contenedores
 
-El servicio principal expone la aplicación en el puerto `4597`.
+También es posible iniciar el proyecto mediante contenedores:
 
 ```bash
 docker-compose up -d --build
 ```
 
-### Variables de entorno identificadas
-- `DATABASE_URL`: conexión a PostgreSQL.
-- `GEMINI_KEY`: clave para integración con proveedor Gemini.
-- `GEN_AI_KEY`: token tipo bearer para proveedor generativo.
-- `GEN_AI_ENDPOINT`: endpoint del proveedor generativo.
-- `PORT`: puerto del contenedor en despliegue Docker.
+## Roles de usuario y capacidades generales
 
-## 6. Roles y permisos
+El sistema contempla perfiles de uso con enfoque operativo y de supervisión. A nivel general, las capacidades funcionales incluyen:
 
-El código no implementa un sistema formal de roles RBAC con permisos diferenciados. Lo que sí existe es un perfil funcional de autenticación basado en el campo `cargo` del usuario.
+- Consultar matrices e indicadores.
+- Crear y actualizar contenido técnico.
+- Revisar información consolidada.
+- Exportar reportes para gestión institucional.
 
-### Roles o perfiles observados
-- `Director de Seguridad`: perfil principal que aparece en el flujo de autenticación de demostración.
-- `Usuario`: valor de respaldo utilizado por el contexto cuando no se recibe un cargo explícito.
+La asignación específica de responsabilidades se define según la política organizacional y los lineamientos internos de operación.
 
-### Alcance de permisos actual
-- El acceso al sistema se habilita únicamente con sesión válida.
-- Una vez autenticado, el usuario puede consultar, editar, duplicar, exportar y eliminar matrices según la interfaz disponible.
-- No se detectó una matriz separada de permisos por módulo en el código actual.
+## Próximamente: Matrices de Calidad
 
-## 7. Módulos en desarrollo — Próximamente
+El módulo de Matrices de Calidad se encuentra previsto como siguiente etapa funcional del sistema y estará disponible próximamente.
 
-### Matrices de Calidad
-El siguiente paso funcional del sistema es el módulo de Matrices de Calidad. En el estado actual del repositorio no existe una implementación separada para este módulo, pero su incorporación forma parte natural de la evolución de la plataforma y estará disponible próximamente.
-
-La intención de esta fase es ampliar el sistema desde la gestión de riesgos hacia una estructura complementaria para matrices de calidad, manteniendo el mismo enfoque institucional de:
-- captura estructurada de información,
-- trazabilidad documental,
-- exportación a Excel,
-- y control centralizado desde la misma plataforma.
-
-## 8. Consideraciones de seguridad
-
-### Protección de rutas
-- Las rutas protegidas no se renderizan sin una sesión válida.
-- El middleware valida la cookie de autenticación antes de permitir acceso a páginas o APIs protegidas.
-- Los archivos estáticos y recursos públicos permanecen accesibles y no son bloqueados por la protección.
-
-### Manejo de sesiones y tokens
-- La sesión se almacena en una cookie HttpOnly llamada `auth_token`.
-- El valor del token contiene datos de sesión serializados junto con expiración.
-- La verificación se repite al cargar la aplicación y después de cada refresh.
-- El cierre de sesión elimina la cookie y limpia el estado local.
-
-### Protección de endpoints del backend
-- Las rutas API protegidas devuelven `401 Unauthorized` cuando no existe una sesión válida.
-- El frontend intercepta estas respuestas y redirige a `/matriz-riesgos`.
-- Este comportamiento evita la visualización de dashboards vacíos o parcialmente cargados cuando la sesión está ausente o expirada.
-
-## Estructura de alto nivel
-
-```text
-app/
-components/
-lib/
-pages/api/
-prisma/
-public/
-docs/
-```
-
-## Nota final
-
-Este repositorio concentra una solución funcional de gestión de matriz de riesgos, con autenticación, persistencia relacional, interfaz de edición jerárquica y exportación institucional a Excel. La base técnica ya está preparada para ampliar el sistema con nuevos módulos sin alterar el flujo actual.
+Su incorporación ampliará el alcance de la plataforma, complementando la gestión de riesgos con un enfoque integrado de calidad, continuidad y mejora institucional.
