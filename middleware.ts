@@ -12,32 +12,31 @@ function isValidToken(token?: string) {
 }
 
 export function middleware(request: NextRequest) {
-  const { pathname } = request.nextUrl
+  const pathname = request.nextUrl.pathname
+  const appPath = pathname.startsWith('/matriz-riesgos') ? pathname.replace('/matriz-riesgos', '') || '/' : pathname
   const token = request.cookies.get('auth_token')?.value
   const hasValidSession = isValidToken(token)
 
-  // With basePath set to /matriz-riesgos, Next.js passes the pathname without the basePath
-  // so a request to /matriz-riesgos/dashboard comes here as /dashboard
-  
+  // Use appPath for all path checks to ignore basePath existence safely
   if (
-    pathname.startsWith('/_next') ||
-    pathname.startsWith('/public') ||
-    pathname.match(/\.(jpg|jpeg|png|gif|svg|ico|webp)$/)
+    appPath.startsWith('/_next') ||
+    appPath.startsWith('/public') ||
+    appPath.match(/\.(jpg|jpeg|png|gif|svg|ico|webp)$/)
   ) {
     return NextResponse.next()
   }
 
-  const isAuthApi = pathname === '/api/auth/login' || pathname === '/api/auth/me' || pathname === '/api/auth/logout'
+  const isAuthApi = appPath === '/api/auth/login' || appPath === '/api/auth/me' || appPath === '/api/auth/logout'
   if (isAuthApi) {
     return NextResponse.next()
   }
 
-  if (pathname.startsWith('/api')) {
+  if (appPath.startsWith('/api')) {
     if (!hasValidSession) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     return NextResponse.next()
   }
 
-  if (pathname === '/' || pathname === '') {
+  if (appPath === '/' || appPath === '') {
     if (hasValidSession) return NextResponse.redirect(new URL('/matriz-riesgos/dashboard', request.url))
     return NextResponse.next()
   }
