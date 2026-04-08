@@ -104,7 +104,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
 
     setUser(null)
-    router.push('/matriz-riesgos')
+    router.push('/')
   }, [router])
 
   return (

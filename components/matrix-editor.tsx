@@ -527,7 +527,7 @@ export default function MatrixEditor({ id }: { id?: string }) {
       {/* Top bar */}
       <div className="sticky top-0 px-4 py-3 flex items-center gap-4 z-10" style={{background:'#ffffff', borderBottom: '0.5px solid #d4e8d4'}}>
         <div className="flex items-center gap-2">
-          <img src="/csmLOGO_1_.png" style={{ height: '38px', objectFit: 'contain' }} alt="Logo" />
+          <img src="/matriz-riesgos/csmLOGO_1_.png" style={{ height: '38px', objectFit: 'contain' }} alt="Logo" />
           <div style={{ width: '0.5px', height: '30px', background: '#c8dfc8', margin: '0 4px' }} />
           <Button variant="ghost" style={{color: '#1a5c2a'}} onClick={() => router.push('/dashboard')}>Volver</Button>
         </div>

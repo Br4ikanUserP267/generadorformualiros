@@ -10,7 +10,7 @@ export function AuthGuard({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     if (!isLoading && !isAuthenticated) {
-      router.replace('/matriz-riesgos')
+      router.replace('/')
     }
   }, [isAuthenticated, isLoading, router])
 

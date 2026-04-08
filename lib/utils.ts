@@ -11,7 +11,14 @@ type ApiFetchOptions = RequestInit & {
 
 export async function apiFetch(input: RequestInfo | URL, options: ApiFetchOptions = {}) {
   const { redirectOn401 = true, ...init } = options
-  const response = await fetch(input, {
+  
+  // Automatically prefix API calls with the basePath if it's a relative path
+  let url = input instanceof URL ? input.href : input as string
+  if (url.startsWith('/') && !url.startsWith('/matriz-riesgos')) {
+    url = `/matriz-riesgos${url}`
+  }
+
+  const response = await fetch(url, {
     credentials: 'include',
     ...init,
   })

@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from "next/server"
 
 function isValidToken(token?: string) {
   if (!token) return false
@@ -12,11 +12,13 @@ function isValidToken(token?: string) {
 }
 
 export function middleware(request: NextRequest) {
-  const pathname = request.nextUrl.pathname
+  const { pathname } = request.nextUrl
   const token = request.cookies.get('auth_token')?.value
   const hasValidSession = isValidToken(token)
 
-  // Don't redirect static files and API routes
+  // With basePath set to /matriz-riesgos, Next.js passes the pathname without the basePath
+  // so a request to /matriz-riesgos/dashboard comes here as /dashboard
+  
   if (
     pathname.startsWith('/_next') ||
     pathname.startsWith('/public') ||
@@ -25,38 +27,23 @@ export function middleware(request: NextRequest) {
     return NextResponse.next()
   }
 
-  // Public auth APIs
-  if (pathname === '/api/auth/login' || pathname === '/api/auth/me' || pathname === '/api/auth/logout') {
+  const isAuthApi = pathname === '/api/auth/login' || pathname === '/api/auth/me' || pathname === '/api/auth/logout'
+  if (isAuthApi) {
     return NextResponse.next()
   }
 
-  // Protect all non-auth APIs
   if (pathname.startsWith('/api')) {
-    if (!hasValidSession) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+    if (!hasValidSession) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     return NextResponse.next()
   }
 
-  // Redirect root to /matriz-riesgos
-  if (pathname === '/') {
-    return NextResponse.redirect(new URL('/matriz-riesgos', request.url))
-  }
-
-  // Public login route only
-  if (pathname === '/matriz-riesgos' || pathname === '/matriz-riesgos/') {
+  if (pathname === '/' || pathname === '') {
+    if (hasValidSession) return NextResponse.redirect(new URL('/matriz-riesgos/dashboard', request.url))
     return NextResponse.next()
   }
 
-  // Protect all other pages
   if (!hasValidSession) {
     return NextResponse.redirect(new URL('/matriz-riesgos', request.url))
-  }
-
-  // Rewrite all other routes to be under /matriz-riesgos if not already
-  if (!pathname.startsWith('/matriz-riesgos')) {
-    const newPathname = `/matriz-riesgos${pathname}`
-    return NextResponse.rewrite(new URL(newPathname, request.url))
   }
 
   return NextResponse.next()

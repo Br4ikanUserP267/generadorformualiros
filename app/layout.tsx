@@ -12,9 +12,9 @@ export const metadata: Metadata = {
   description: 'Sistema de gestión de matriz de riesgos para Clínica Santa María S.A.S',
   generator: 'v0.app',
   icons: {
-    icon: '/csmLOGO_1_.png',
-    shortcut: '/csmLOGO_1_.png',
-    apple: '/csmLOGO_1_.png',
+    icon: '/matriz-riesgos/csmLOGO_1_.png',
+    shortcut: '/matriz-riesgos/csmLOGO_1_.png',
+    apple: '/matriz-riesgos/csmLOGO_1_.png',
   },
 }
 

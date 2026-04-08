@@ -35,7 +35,7 @@ export function LoginForm() {
       <div className="w-full max-w-md">
         <div className="flex flex-col items-center mb-8">
           <img
-            src="/csmLOGO_1_.png"
+            src="/matriz-riesgos/csmLOGO_1_.png"
             alt="Clínica Santa María S.A.S"
             className="h-32 w-auto mb-4 object-contain"
           />

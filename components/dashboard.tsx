@@ -432,7 +432,7 @@ export function Dashboard() {
       <div className="html-wrapper">
         <div className="topbar">
           <div className="logo">
-            <img src="/csmLOGO_1_.png" alt="Logo" style={{height: '38px', objectFit: 'contain'}} />
+            <img src="/matriz-riesgos/csmLOGO_1_.png" alt="Logo" style={{height: '38px', objectFit: 'contain'}} />
             <div className="logo-divider"></div>
             <div>
               <div className="logo-text">Matriz de Riesgos</div>
