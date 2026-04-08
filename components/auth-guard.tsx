@@ -15,7 +15,7 @@ export function AuthGuard({ children }: { children: ReactNode }) {
   }, [isAuthenticated, isLoading, router])
 
   if (isLoading) {
-    return <div className="flex items-center justify-center min-h-screen">Cargando...</div>
+    return <div className="flex items-center justify-center min-h-screen">Cargando prueba 11111111...</div>
   }
 
   if (!isAuthenticated) {
