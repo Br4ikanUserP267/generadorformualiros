@@ -7,8 +7,11 @@ services:
       dockerfile: Dockerfile
     container_name: matriz-riesgo-app
     environment:
-      - NODE_ENV=production
+      - HOSTNAME=0.0.0.0
+      - HOST=0.0.0.0
       - PORT=4597
+      - NODE_ENV=production
+      - HOSTNAME=0.0.0.0
     ports:
       - "4597:4597"
     expose:
@@ -16,11 +19,11 @@ services:
     networks:
       - matriz-network
     healthcheck:
-      test: ["CMD", "wget", "-qO-", "http://localhost:4597/matriz-riesgos"]
+      test: ["CMD-SHELL", "wget -qO- http://0.0.0.0:4597/matriz-riesgos || exit 1"]
       interval: 30s
       timeout: 10s
-      retries: 3
-      start_period: 60s
+      retries: 5
+      start_period: 120s
     restart: unless-stopped
     volumes:
       - /data/coolify/matriz-riesgo/uploads:/app/public/uploads/matrices
