@@ -23,8 +23,27 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Credenciales inválidas' }, { status: 401 })
     }
 
-    const match = await bcrypt.compare(password, user.passwordHash)
-    if (!match) {
+    const stored = String(user.passwordHash || '')
+    let passwordMatches = false
+
+    // Detect if stored password is a bcrypt hash (legacy DB may contain plaintext)
+    const isBcrypt = /^\$2[aby]\$/.test(stored)
+    if (isBcrypt) {
+      passwordMatches = await bcrypt.compare(password, stored)
+    } else {
+      // Legacy plaintext password: accept it and migrate to bcrypt
+      if (password === stored) {
+        passwordMatches = true
+        try {
+          const newHash = await bcrypt.hash(password, 10)
+          await prisma.usuario.update({ where: { id: user.id }, data: { passwordHash: newHash } })
+        } catch (e) {
+          console.warn('Failed to migrate plaintext password to bcrypt for user', user.id)
+        }
+      }
+    }
+
+    if (!passwordMatches) {
       return NextResponse.json({ error: 'Credenciales inválidas' }, { status: 401 })
     }
 
