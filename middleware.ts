@@ -17,9 +17,16 @@ export function middleware(request: NextRequest) {
   const token = request.cookies.get('auth_token')?.value
   const hasValidSession = isValidToken(token)
   
-  if (appPath.startsWith('/api')) {
-    // If the original pathname includes basePath, rewrite it to strip the basePath
-    if (pathname !== appPath) {
+  // If the original pathname includes the basePath, and the stripped path
+  // targets API, uploads, or static assets, rewrite so the Next server
+  // receives the path it expects (without the basePath).
+  if (pathname !== appPath) {
+    if (
+      appPath.startsWith('/api') ||
+      appPath.startsWith('/uploads') ||
+      appPath.startsWith('/_next') ||
+      appPath.match(/\.(jpg|jpeg|png|gif|svg|ico|webp)$/)
+    ) {
       return NextResponse.rewrite(new URL(appPath, request.url))
     }
   }
