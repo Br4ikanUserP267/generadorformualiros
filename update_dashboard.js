@@ -262,8 +262,11 @@ export function Dashboard() {
             </div>
           </div>
           <div className="user-pill">
-            <div className="user-dot">{(user?.nombre||'U')[0]}</div>
-            <span>{user?.nombre || 'Usuario'} &nbsp;·&nbsp; {user?.cargo || 'Rol'}</span>
+            <div className="user-dot">{(user?.nombre || 'U')[0]}</div>
+            <span>
+              {user?.nombre || ''}
+              {user?.cargo ? <><>&nbsp;·&nbsp;</>{user.cargo}</> : null}
+            </span>
             <span style={{opacity:'.3', margin:'0 4px'}}>|</span>
             <span style={{cursor:'pointer', opacity:'.7'}} onClick={() => { logout(); router.push('/') }}>Cerrar sesión</span>
           </div>

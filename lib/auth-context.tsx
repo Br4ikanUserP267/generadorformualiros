@@ -42,7 +42,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             id: data.id,
             email: data.email,
             nombre: data.nombre,
-            cargo: data.cargo || 'Usuario',
+            cargo: data.cargo || '',
           })
         } else {
           setUser(null)
@@ -71,14 +71,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         redirectOn401: false,
       })
 
-      if (res.ok) {
-        const data = await res.json()
-        setUser({
-          id: data.id,
-          email: data.email,
-          nombre: data.nombre,
-          cargo: data.cargo || 'Usuario'
-        })
+        if (res.ok) {
+          const data = await res.json()
+          setUser({
+            id: data.id,
+            email: data.email,
+            nombre: data.nombre,
+            cargo: data.cargo || ''
+          })
         setIsLoading(false)
         router.push('/dashboard')
         return true

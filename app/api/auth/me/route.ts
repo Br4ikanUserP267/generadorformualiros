@@ -28,7 +28,7 @@ export async function GET(request: NextRequest) {
       id: decoded.id,
       email: decoded.email,
       nombre: decoded.nombre,
-      cargo: decoded.cargo || 'Usuario',
+      cargo: decoded.cargo || '',
     })
   } catch {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
