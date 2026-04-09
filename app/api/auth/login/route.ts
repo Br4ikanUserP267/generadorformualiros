@@ -51,7 +51,7 @@ export async function POST(request: NextRequest) {
       id: user.id,
       email: user.email,
       nombre: user.nombre,
-      cargo: user.cargo || '',
+      cargo: '',
       exp: Date.now() + 24 * 60 * 60 * 1000,
     }
 
@@ -61,7 +61,7 @@ export async function POST(request: NextRequest) {
       id: user.id,
       email: user.email,
       nombre: user.nombre,
-      cargo: user.cargo || ''
+      cargo: ''
     })
 
     response.cookies.set('auth_token', token, {

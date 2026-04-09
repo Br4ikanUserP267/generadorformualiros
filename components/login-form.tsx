@@ -51,7 +51,7 @@ export function LoginForm() {
               Ingrese sus credenciales para acceder al sistema
             </CardDescription>
           </CardHeader>
-          <CardContent>
+          <CardContent className="py-6">
             <form onSubmit={handleSubmit} className="space-y-4">
               <FieldGroup>
                 <Field>
@@ -102,10 +102,6 @@ export function LoginForm() {
                 )}
               </Button>
             </form>
-
-            <div className="mt-6 pt-4 border-t border-border">
-              <p className="text-xs text-muted-foreground text-center mb-2">&nbsp;</p>
-            </div>
           </CardContent>
         </Card>
       </div>
