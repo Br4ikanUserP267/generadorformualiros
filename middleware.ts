@@ -16,8 +16,17 @@ export function middleware(request: NextRequest) {
   const appPath = pathname.startsWith('/matriz-riesgos') ? pathname.replace('/matriz-riesgos', '') || '/' : pathname
   const token = request.cookies.get('auth_token')?.value
   const hasValidSession = isValidToken(token)
+  
+  if (appPath.startsWith('/api')) {
+    console.log('[MIDDLEWARE] API request:', { pathname, appPath, hasToken: !!token, hasValidSession })
+    // If the original pathname includes basePath, rewrite it to strip the basePath
+    if (pathname !== appPath) {
+      console.log('[MIDDLEWARE] Rewriting API path from', pathname, 'to', appPath)
+      return NextResponse.rewrite(new URL(appPath, request.url))
+    }
+  }
 
-  // Use appPath for all path checks to ignore basePath existence safely
+  // Don't modify static files or Next.js internals
   if (
     appPath.startsWith('/_next') ||
     appPath.startsWith('/public') ||

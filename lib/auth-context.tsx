@@ -35,12 +35,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     let isMounted = true
 
     const checkSession = async () => {
+      console.log('[AUTH] checkSession starting')
       try {
-        const res = await apiFetch('/api/auth/me', { redirectOn401: false })
+        console.log('[AUTH] Calling apiFetch /api/auth/me')
+        const startTime = Date.now()
+        const res = await Promise.race([
+          apiFetch('/api/auth/me', { redirectOn401: false }),
+          new Promise((_, reject) => setTimeout(() => reject(new Error('API timeout after 5s')), 5000))
+        ])
+        console.log('[AUTH] Got response after', Date.now() - startTime, 'ms, status:', res.status)
         if (!isMounted) return
 
         if (res.ok) {
           const data = await res.json()
+          console.log('[AUTH] Session valid, user:', data.email)
           setUser({
             id: data.id,
             email: data.email,
@@ -48,11 +56,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             cargo: data.cargo || 'Usuario',
           })
         } else {
+          console.log('[AUTH] Response not OK, status:', res.status)
           setUser(null)
         }
-      } catch {
+      } catch (err) {
+        console.error('[AUTH] Error in checkSession:', err)
         if (isMounted) setUser(null)
       } finally {
+        console.log('[AUTH] Setting isLoading to false')
         if (isMounted) setIsLoading(false)
       }
     }
