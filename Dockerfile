@@ -42,8 +42,9 @@ COPY prisma ./prisma
 COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma
 COPY --from=builder /app/node_modules/@prisma ./node_modules/@prisma
 
-# Copy built application from builder
-COPY --from=builder /app/.next ./.next
+# Copy built application from builder (standalone mode)
+COPY --from=builder /app/.next/standalone ./
+COPY --from=builder /app/.next/static ./.next/static
 COPY --from=builder /app/public ./public
 
 # Ensure uploads path exists with proper permissions
@@ -61,4 +62,4 @@ RUN chown -R nextjs:nodejs /app
 
 EXPOSE 4597
 
-CMD ["npm", "start"]
+CMD ["node", "server.js"]

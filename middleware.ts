@@ -18,10 +18,8 @@ export function middleware(request: NextRequest) {
   const hasValidSession = isValidToken(token)
   
   if (appPath.startsWith('/api')) {
-    console.log('[MIDDLEWARE] API request:', { pathname, appPath, hasToken: !!token, hasValidSession })
     // If the original pathname includes basePath, rewrite it to strip the basePath
     if (pathname !== appPath) {
-      console.log('[MIDDLEWARE] Rewriting API path from', pathname, 'to', appPath)
       return NextResponse.rewrite(new URL(appPath, request.url))
     }
   }
