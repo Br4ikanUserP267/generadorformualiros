@@ -69,8 +69,14 @@ export async function persistFilesToDisk(files: IncomingFile[] = []): Promise<Pe
 
     if (!rawData) continue
 
-    if (rawData.startsWith('/uploads/matrices/')) {
-      persisted.push({ name: sanitizedName, originalName, type, url: rawData })
+    const BASE_PATH = String(process.env.NEXT_PUBLIC_BASE_PATH || '')
+    const normBase = BASE_PATH === '/' ? '' : BASE_PATH.replace(/\/$/, '')
+
+    // accept existing URLs with or without basePath
+    if (rawData.startsWith(`${normBase}/uploads/matrices/`) || rawData.startsWith('/uploads/matrices/')) {
+      // ensure returned url includes basePath
+      const returned = rawData.startsWith('/uploads/matrices/') && normBase ? `${normBase}${rawData}` : rawData
+      persisted.push({ name: sanitizedName, originalName, type, url: returned })
       continue
     }
 
@@ -90,7 +96,8 @@ export async function persistFilesToDisk(files: IncomingFile[] = []): Promise<Pe
     const filePath = path.join(UPLOADS_DIR, fileName)
     await fs.writeFile(filePath, parsed.buffer)
 
-    const url = `/uploads/matrices/${fileName}`
+    const urlPath = `/uploads/matrices/${fileName}`
+    const url = normBase ? `${normBase}${urlPath}` : urlPath
     persisted.push({ name: sanitizedName, originalName, type: type || parsed.mime, url })
   }
 
