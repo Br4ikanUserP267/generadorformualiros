@@ -1,17 +1,99 @@
 import { NextApiRequest, NextApiResponse } from 'next'
-import fs from 'fs/promises'
-import path from 'path'
 import ExcelJS from 'exceljs'
+import prisma from '@/lib/prisma'
 
-const DATA_FILE = path.join(process.cwd(), 'data', 'riesgos.json')
+// Fetch and flatten data from the database into the same shape
+// that the legacy `data/riesgos.json` provided to the exporter.
+async function fetchDataFromDb() {
+  const rows = await prisma.matriz.findMany({
+    where: { deletedAt: null },
+    include: {
+      archivos: true,
+      procesos: {
+        include: {
+          zonas: {
+            include: {
+              actividades: {
+                include: {
+                  peligros: {
+                    include: {
+                      control: true,
+                      evaluacion: true,
+                      criterio: true,
+                      intervencion: true
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    orderBy: { createdAt: 'asc' }
+  })
 
-async function readData() {
-  try {
-    const raw = await fs.readFile(DATA_FILE, 'utf-8')
-    return JSON.parse(raw)
-  } catch (e) {
-    return []
+  const items: any[] = []
+  let counter = 1
+  for (const m of rows) {
+    const baseFecha = m.fechaElaboracion ? m.fechaElaboracion.toISOString().split('T')[0] : ''
+    for (const p of (m.procesos || [])) {
+      const tipo_proceso = (p as any).tipo || 'ASISTENCIAL'
+      for (const z of (p.zonas || [])) {
+        for (const a of (z.actividades || [])) {
+          for (const pel of (a.peligros || [])) {
+            const nd = pel.evaluacion?.nivelDeficiencia ?? ''
+            const ne = pel.evaluacion?.nivelExposicion ?? ''
+            const nc = pel.evaluacion?.nivelConsecuencia ?? ''
+
+            const controlesArr = []
+            if (pel.control?.fuente) controlesArr.push(pel.control.fuente)
+            if (pel.control?.medio) controlesArr.push(pel.control.medio)
+            if (pel.control?.individuo) controlesArr.push(pel.control.individuo)
+
+            const interv: any = (pel as any).intervencion || {}
+
+            items.push({
+              id: counter++,
+              proceso: p.nombre || '',
+              tipo_proceso: tipo_proceso || 'ASISTENCIAL',
+              zona: z.nombre || '',
+              actividad: a.nombre || '',
+              tarea: a.tareas || '',
+              cargo: (a as any).cargo || (z as any).cargo || '',
+              rutinario: !!a.rutinario,
+              clasificacion: pel.clasificacion || '',
+              peligro_desc: pel.descripcion || '',
+              efectos: pel.efectosPosibles || '',
+              deficiencia: nd,
+              exposicion: ne,
+              consecuencia: nc,
+              controles: controlesArr.join('\n'),
+              control_eliminacion: interv.eliminacion || '',
+              control_sustitucion: interv.sustitucion || '',
+              control_ingenieria: interv.controlesIngenieria || '',
+              control_admin: interv.controlesAdministrativos || '',
+              epp: interv.epp || '',
+              intervencion: interv.eliminacion || interv.sustitucion || interv.controlesIngenieria || interv.controlesAdministrativos || '',
+              fecha: baseFecha || '',
+              seguimiento: '',
+              probabilidad: pel.evaluacion?.nivelProbabilidad ?? '',
+              interpretacion_probabilidad: pel.evaluacion?.interpProbabilidad || '',
+              nivel_riesgo: pel.evaluacion?.nivelRiesgo ?? '',
+              interpretacion_nivel_riesgo: pel.evaluacion?.interpRiesgo || '',
+              aceptabilidad: pel.evaluacion?.aceptabilidad || '',
+              num_expuestos: pel.criterio?.numExpuestos ?? '',
+              peor_consecuencia: pel.criterio?.peorConsecuencia || '',
+              requisito_legal: !!pel.criterio?.requisitoLegal,
+              archivos: (m.archivos || []).map((a2: any) => ({ name: a2.nombreOriginal, type: a2.tipoMime, data: a2.url }))
+            })
+          }
+        }
+      }
+    }
   }
+
+  return items
 }
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
@@ -20,7 +102,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     return res.status(405).end('Method Not Allowed')
   }
 
-  const data = await readData()
+  const data = await fetchDataFromDb()
   // Optionally accept ids in POST body to export only a subset
   let items = data
   if (req.method === 'POST') {
@@ -31,6 +113,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     }
   }
 
+  console.log('Export records:', items.length)
   const wb = new ExcelJS.Workbook()
   wb.creator = 'Matriz de Riesgos'
 
