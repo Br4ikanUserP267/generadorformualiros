@@ -11,20 +11,16 @@ type ApiFetchOptions = RequestInit & {
 
 export async function apiFetch(input: RequestInfo | URL, options: ApiFetchOptions = {}) {
   const { redirectOn401 = true, ...init } = options
-  
-  // Automatically prefix API calls with the basePath if it's a relative path
-  let url = input instanceof URL ? input.href : input as string
-  if (url.startsWith('/') && !url.startsWith('/matriz-riesgos')) {
-    url = `/matriz-riesgos${url}`
-  }
 
-  const response = await fetch(url, {
+  // When basePath is set, Next.js automatically handles routing
+  // Just pass the URL as-is; the browser context already respects basePath
+  const response = await fetch(input, {
     credentials: 'include',
     ...init,
   })
 
   if (redirectOn401 && response.status === 401 && typeof window !== 'undefined') {
-    window.location.href = '/matriz-riesgos'
+    window.location.href = '/'
   }
 
   return response
