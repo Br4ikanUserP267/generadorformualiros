@@ -104,12 +104,7 @@ export function LoginForm() {
             </form>
 
             <div className="mt-6 pt-4 border-t border-border">
-              <p className="text-xs text-muted-foreground text-center mb-2">
-                Credenciales de demostración:
-              </p>
-              <div className="text-xs text-muted-foreground text-center">
-                <p><strong>Admin:</strong> admin@clinicasantamaria.com / admin123</p>
-              </div>
+              <p className="text-xs text-muted-foreground text-center mb-2">&nbsp;</p>
             </div>
           </CardContent>
         </Card>

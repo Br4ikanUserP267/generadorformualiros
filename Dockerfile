@@ -6,8 +6,10 @@ RUN apk add --no-cache openssl
 WORKDIR /app
 
 # Install all dependencies (including dev dependencies for build)
+# Use `npm install` here so the builder can succeed if package-lock.json
+# is out of sync with package.json (we changed deps in the repo).
 COPY package.json package-lock.json* ./
-RUN npm ci
+RUN npm install --no-audit --no-fund
 
 # Copy source and prisma schema
 COPY . .
@@ -33,7 +35,8 @@ ENV PORT=4597
 COPY package.json package-lock.json* ./
 
 # Install production dependencies
-RUN npm ci --only=production && npm cache clean --force
+# Use npm install in production stage as well to avoid lockfile mismatch
+RUN npm install --only=production --no-audit --no-fund && npm cache clean --force
 
 # Copy prisma schema - needed before client copy
 COPY prisma ./prisma

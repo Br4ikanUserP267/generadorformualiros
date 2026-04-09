@@ -21,10 +21,7 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
 
-// Mock admin user for demo
-const MOCK_USERS = [
-  { id: "1", email: "admin@clinicasantamaria.com", password: "admin123", nombre: "Dr. Carlos Mendoza", cargo: "Director de Seguridad" },
-]
+// Authentication provider uses server-side endpoints; no demo users here.
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const router = useRouter()

@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from 'next/server'
-import prisma from '@/lib/prisma'
 
 export async function POST(request: NextRequest) {
   try {
@@ -10,11 +9,22 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Faltan credenciales' }, { status: 400 })
     }
 
-    const user = await prisma.usuario.findUnique({
-      where: { email }
-    })
+    if (!process.env.DATABASE_URL) {
+      console.error('DATABASE_URL not configured')
+      return NextResponse.json({ error: 'Database not configured' }, { status: 500 })
+    }
 
-    if (!user || user.passwordHash !== password) {
+    const { default: prisma } = await import('@/lib/prisma')
+    const bcrypt = (await import('bcryptjs')).default
+
+    const user = await prisma.usuario.findUnique({ where: { email } })
+
+    if (!user) {
+      return NextResponse.json({ error: 'Credenciales inválidas' }, { status: 401 })
+    }
+
+    const match = await bcrypt.compare(password, user.passwordHash)
+    if (!match) {
       return NextResponse.json({ error: 'Credenciales inválidas' }, { status: 401 })
     }
 
@@ -27,19 +37,19 @@ export async function POST(request: NextRequest) {
     }
 
     const token = Buffer.from(JSON.stringify(sessionPayload)).toString('base64')
-    
+
     const response = NextResponse.json({
       id: user.id,
       email: user.email,
       nombre: user.nombre,
       cargo: 'Director de Seguridad'
     })
-    
+
     response.cookies.set('auth_token', token, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'lax',
-      maxAge: 86400, // 24 hours
+      maxAge: 86400,
       path: '/',
     })
 
