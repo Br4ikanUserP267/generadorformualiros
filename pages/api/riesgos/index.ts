@@ -78,10 +78,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
                 tareas: a.tareas || '',
                 cargo: a.cargo || '',
                 rutinario: !!a.rutinario,
-                peligros: a.peligros.map(pel => ({
+                peligros: a.peligros.map((pel: any) => ({
                   id: pel.id,
                   descripcion: pel.descripcion || '',
                   clasificacion: pel.clasificacion || '',
+                  numero: pel.numero || 0,
                   orden: pel.orden || 0,
                   efectos: pel.efectosPosibles || '',
                   controles: {
@@ -169,6 +170,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
                       orden: typeof a.orden === 'number' ? a.orden : aIdx,
                       peligros: {
                         create: (a.peligros || []).map((pel: any, pelIdx: number) => ({
+                          numero: (typeof pel.numero === 'number' && pel.numero > 0)
+                            ? pel.numero
+                            : (() => {
+                                const labelMatch = String(pel?._ui?.stableLabel || '').match(/\b(\d+)\b/)
+                                return labelMatch ? Number(labelMatch[1]) : (pelIdx + 1)
+                              })(),
                           descripcion: pel.descripcion,
                           clasificacion: pel.clasificacion,
                           efectosPosibles: pel.efectos,

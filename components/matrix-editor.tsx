@@ -668,7 +668,25 @@ export default function MatrixEditor({ id }: { id?: string }) {
                 z.actividades.forEach((a: any, aIdx: number) => {
                   a.orden = aIdx
                   if (a.peligros && Array.isArray(a.peligros)) {
-                    a.peligros.forEach((pel: any, pelIdx: number) => { pel.orden = pelIdx })
+                    a.peligros.forEach((pel: any, pelIdx: number) => {
+                      pel.orden = pelIdx
+
+                      // Keep label identity stable: only backfill numero when missing.
+                      // We recover it from existing stable label first ("Peligro N"), not from current position.
+                      if (!(typeof pel.numero === 'number' && pel.numero > 0)) {
+                        const label = String(pel?._ui?.stableLabel || '')
+                        const match = label.match(/\b(\d+)\b/)
+                        if (match) pel.numero = Number(match[1])
+                      }
+                      if (!(typeof pel.numero === 'number' && pel.numero > 0)) {
+                        pel.numero = pelIdx + 1
+                      }
+
+                      pel._ui = {
+                        ...(pel._ui || {}),
+                        stableLabel: `Peligro ${pel.numero}`
+                      }
+                    })
                   }
                 })
               }
