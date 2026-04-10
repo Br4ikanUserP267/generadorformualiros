@@ -130,6 +130,7 @@ export default function MatrixEditor({ id }: { id?: string }) {
   const [uploadedFiles, setUploadedFiles] = useState<Array<{name:string,type:string,size:number,data:string}>>([])
   const [selectedPreviewIndex, setSelectedPreviewIndex] = useState<number | null>(null)
   const fileInputRef = useRef<HTMLInputElement | null>(null)
+  const isDraggingRef = useRef(false)
 
   // helpers to mutate matrix immutably
   function updateMatrix(fn: (m: any) => any) {
@@ -427,6 +428,7 @@ export default function MatrixEditor({ id }: { id?: string }) {
   }
 
   function onPeligroDragStart(e: React.DragEvent, procesoId: string, zonaId: string, actividadId: string, peligroId: string) {
+    isDraggingRef.current = true
     e.stopPropagation()
     try { e.dataTransfer.setData('application/json', JSON.stringify({ type: 'peligro', procesoId, zonaId, actividadId, peligroId })) } catch (e) {}
     try { e.dataTransfer.setData('text/plain', peligroId) } catch (e) {}
@@ -893,7 +895,7 @@ export default function MatrixEditor({ id }: { id?: string }) {
                           onDragLeave={() => onPeligroDragLeave()}
                           onDrop={(e) => { e.stopPropagation(); onPeligroDrop(e, currentProceso.id, currentZona.id, currentActividad.id, r.id) }}
                         >
-                          <div className="p-3 flex items-center justify-between cursor-pointer" onClick={() => updatePeligroField(currentProceso.id, currentZona.id, currentActividad.id, r.id, ['_ui','expanded'], !r._ui?.expanded)}>
+                          <div className="p-3 flex items-center justify-between cursor-pointer" onClick={() => { if (isDraggingRef.current) { isDraggingRef.current = false; return } updatePeligroField(currentProceso.id, currentZona.id, currentActividad.id, r.id, ['_ui','expanded'], !r._ui?.expanded) }}>
                             <div className="flex items-center gap-3">
                               <div
                                 className="mr-2 p-1 cursor-move rounded hover:bg-slate-100"
