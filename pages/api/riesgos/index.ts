@@ -1,6 +1,11 @@
 import { NextApiRequest, NextApiResponse } from 'next'
+import { Prisma } from '@prisma/client'
 import prisma from '@/lib/prisma'
 import { persistFilesToDisk } from '@/lib/server-upload'
+
+const prismaSupportsPeligroNumero = !!Prisma.dmmf.datamodel.models
+  .find((m) => m.name === 'Peligro')
+  ?.fields.some((f) => f.name === 'numero')
 
 export const config = {
   api: {
@@ -170,12 +175,14 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
                       orden: typeof a.orden === 'number' ? a.orden : aIdx,
                       peligros: {
                         create: (a.peligros || []).map((pel: any, pelIdx: number) => ({
-                          numero: (typeof pel.numero === 'number' && pel.numero > 0)
-                            ? pel.numero
-                            : (() => {
-                                const labelMatch = String(pel?._ui?.stableLabel || '').match(/\b(\d+)\b/)
-                                return labelMatch ? Number(labelMatch[1]) : (pelIdx + 1)
-                              })(),
+                          ...(prismaSupportsPeligroNumero ? {
+                            numero: (typeof pel.numero === 'number' && pel.numero > 0)
+                              ? pel.numero
+                              : (() => {
+                                  const labelMatch = String(pel?._ui?.stableLabel || '').match(/\b(\d+)\b/)
+                                  return labelMatch ? Number(labelMatch[1]) : (pelIdx + 1)
+                                })(),
+                          } : {}),
                           descripcion: pel.descripcion,
                           clasificacion: pel.clasificacion,
                           efectosPosibles: pel.efectos,

@@ -702,7 +702,9 @@ export default function MatrixEditor({ id }: { id?: string }) {
       })
 
       if (!res.ok) {
-        throw new Error('Error al guardar en el servidor')
+        const errBody = await res.json().catch(() => ({}))
+        const details = [errBody?.error, errBody?.details].filter(Boolean).join(' - ')
+        throw new Error(details || 'Error al guardar en el servidor')
       }
 
       toast({ title: 'Éxito', description: 'La matriz se ha guardado correctamente en la base de datos.' })
