@@ -20,6 +20,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         include: {
           archivos: true,
           procesos: {
+            orderBy: { orden: 'asc' },
             include: {
               zonas: {
                 include: {
@@ -31,11 +32,14 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
                           criterio: true,
                           evaluacion: true,
                           intervencion: true
-                        }
+                        },
+                        orderBy: { orden: 'asc' }
                       }
-                    }
+                    },
+                    orderBy: { orden: 'asc' }
                   }
-                }
+                },
+                orderBy: { orden: 'asc' }
               }
             }
           }
@@ -59,14 +63,17 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           procesos: m.procesos.map(p => ({
             id: p.id,
             nombre: p.nombre,
+            orden: p.orden || 0,
             zonas: p.zonas.map(z => ({
               id: z.id,
               nombre: z.nombre,
+              orden: z.orden || 0,
               cargo: '', // From actividad or fallback
               rutinario: false,
               actividades: z.actividades.map(a => ({
                 id: a.id,
                 nombre: a.nombre,
+                orden: a.orden || 0,
                 descripcion: a.descripcion || '',
                 tareas: a.tareas || '',
                 cargo: a.cargo || '',
@@ -75,6 +82,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
                   id: pel.id,
                   descripcion: pel.descripcion || '',
                   clasificacion: pel.clasificacion || '',
+                  orden: pel.orden || 0,
                   efectos: pel.efectosPosibles || '',
                   controles: {
                     fuente: pel.control?.fuente || '',
@@ -144,23 +152,27 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           fechaElaboracion: body.fecha_elaboracion ? new Date(body.fecha_elaboracion) : null,
           fechaActualizacion: body.fecha_actualizacion ? new Date(body.fecha_actualizacion) : null,
           procesos: {
-            create: (body.procesos || []).map((p: any) => ({
+            create: (body.procesos || []).map((p: any, pIdx: number) => ({
               nombre: p.nombre,
+              orden: typeof p.orden === 'number' ? p.orden : pIdx,
               zonas: {
-                create: (p.zonas || []).map((z: any) => ({
+                create: (p.zonas || []).map((z: any, zIdx: number) => ({
                   nombre: z.nombre,
+                  orden: typeof z.orden === 'number' ? z.orden : zIdx,
                   actividades: {
-                    create: (z.actividades || []).map((a: any) => ({
+                    create: (z.actividades || []).map((a: any, aIdx: number) => ({
                       nombre: a.nombre,
                       descripcion: a.descripcion,
                       tareas: a.tareas,
                       cargo: z.cargo || a.cargo, // Frontend fallback pattern
                       rutinario: a.rutinario || z.rutinario || false,
+                      orden: typeof a.orden === 'number' ? a.orden : aIdx,
                       peligros: {
-                        create: (a.peligros || []).map((pel: any) => ({
+                        create: (a.peligros || []).map((pel: any, pelIdx: number) => ({
                           descripcion: pel.descripcion,
                           clasificacion: pel.clasificacion,
                           efectosPosibles: pel.efectos,
+                          orden: typeof pel.orden === 'number' ? pel.orden : pelIdx,
                           control: pel.controles ? { create: { fuente: pel.controles.fuente, medio: pel.controles.medio, individuo: pel.controles.individuo } } : undefined,
                           evaluacion: pel.evaluacion ? { create: { 
                             nivelDeficiencia: Number(pel.evaluacion.nd) || null,

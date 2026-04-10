@@ -16,12 +16,15 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const mid = String(id) // UUID string
     if (!mid || mid === 'undefined') return res.status(400).json({ error: 'Invalid id' })
 
-    if (req.method === 'GET') {
+    const method = (req.method || '').toUpperCase()
+
+    if (method === 'GET') {
       const m = await prisma.matriz.findUnique({
         where: { id: mid },
         include: {
           archivos: true,
           procesos: {
+            orderBy: { orden: 'asc' },
             include: {
               zonas: {
                 include: {
@@ -33,11 +36,14 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
                           criterio: true,
                           evaluacion: true,
                           intervencion: true
-                        }
+                        },
+                        orderBy: { orden: 'asc' }
                       }
-                    }
+                    },
+                    orderBy: { orden: 'asc' }
                   }
-                }
+                },
+                orderBy: { orden: 'asc' }
               }
             }
           }
@@ -45,7 +51,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       })
       if (!m || m.deletedAt) return res.status(404).json({ error: 'Not found' })
 
-      const mapped = {
+      const mapped: any = {
         id: m.id,
         area: m.area || '',
         responsable: m.responsable || '',
@@ -56,25 +62,29 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           type: a.tipoMime || '',
           data: a.url || ''
         })),
-        procesos: m.procesos.map(p => ({
+        procesos: (m.procesos || []).map(p => ({
           id: p.id,
           nombre: p.nombre,
-          zonas: p.zonas.map(z => ({
+          orden: p.orden || 0,
+          zonas: (p.zonas || []).map(z => ({
             id: z.id,
             nombre: z.nombre,
-            cargo: '', // Loaded below or empty since we map to Actividad directly now
+            orden: z.orden || 0,
+            cargo: '',
             rutinario: false,
-            actividades: z.actividades.map(a => ({
+            actividades: (z.actividades || []).map(a => ({
               id: a.id,
               nombre: a.nombre,
+              orden: a.orden || 0,
               descripcion: a.descripcion || '',
               tareas: a.tareas || '',
               cargo: a.cargo || '',
               rutinario: !!a.rutinario,
-              peligros: a.peligros.map(pel => ({
+              peligros: (a.peligros || []).map(pel => ({
                 id: pel.id,
                 descripcion: pel.descripcion || '',
                 clasificacion: pel.clasificacion || '',
+                orden: pel.orden || 0,
                 efectos: pel.efectosPosibles || '',
                 controles: {
                   fuente: pel.control?.fuente || '',
@@ -115,7 +125,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       return res.status(200).json(mapped)
     }
 
-    if (req.method === 'PUT' || req.method === 'PATCH') {
+    if (method === 'PUT' || method === 'PATCH') {
       const body = req.body
       if (!body || typeof body !== 'object') return res.status(400).json({ error: 'Invalid payload' })
 
@@ -139,23 +149,27 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           fechaActualizacion: body.fecha_actualizacion ? new Date(body.fecha_actualizacion) : null,
           procesos: {
             deleteMany: {}, // Clean up existing completely (cascades down due to schema rules)
-            create: (body.procesos || []).map((p: any) => ({
+            create: (body.procesos || []).map((p: any, pIdx: number) => ({
               nombre: p.nombre,
+              orden: typeof p.orden === 'number' ? p.orden : pIdx,
               zonas: {
-                create: (p.zonas || []).map((z: any) => ({
+                create: (p.zonas || []).map((z: any, zIdx: number) => ({
                   nombre: z.nombre,
+                  orden: typeof z.orden === 'number' ? z.orden : zIdx,
                   actividades: {
-                    create: (z.actividades || []).map((a: any) => ({
+                    create: (z.actividades || []).map((a: any, aIdx: number) => ({
                       nombre: a.nombre,
                       descripcion: a.descripcion,
                       tareas: a.tareas,
                       cargo: z.cargo || a.cargo,
                       rutinario: a.rutinario || z.rutinario || false,
+                      orden: typeof a.orden === 'number' ? a.orden : aIdx,
                       peligros: {
-                        create: (a.peligros || []).map((pel: any) => ({
+                        create: (a.peligros || []).map((pel: any, pelIdx: number) => ({
                           descripcion: pel.descripcion,
                           clasificacion: pel.clasificacion,
                           efectosPosibles: pel.efectos,
+                          orden: typeof pel.orden === 'number' ? pel.orden : pelIdx,
                           control: pel.controles ? { create: { fuente: pel.controles.fuente, medio: pel.controles.medio, individuo: pel.controles.individuo } } : undefined,
                           evaluacion: pel.evaluacion ? { create: { 
                             nivelDeficiencia: Number(pel.evaluacion.nd) || null,
@@ -195,7 +209,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       return res.status(200).json({ id: updated.id })
     }
 
-    if (req.method === 'DELETE') {
+    if (method === 'DELETE') {
       await prisma.matriz.update({
         where: { id: mid },
         data: { deletedAt: new Date() }
