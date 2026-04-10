@@ -508,7 +508,7 @@ export default function MatrixEditor({ id }: { id?: string }) {
     setDragOverPeligroId(null)
     const resolved = resolvePeligroDropTarget(e)
     const dropTargetId = targetPeligroId || resolved.targetPeligroId
-    const dropEdge = dragOverPeligroEdge || resolved.edge
+    const dropEdge = resolved.edge || dragOverPeligroEdge
     setDragOverPeligroEdge(null)
 
     console.log('[Peligro DnD] drop', {
