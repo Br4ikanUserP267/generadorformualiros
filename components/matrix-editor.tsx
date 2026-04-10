@@ -126,6 +126,7 @@ export default function MatrixEditor({ id }: { id?: string }) {
   const [expandedZonaIds, setExpandedZonaIds] = useState<Record<string, boolean>>({})
   const [dragOverActividadId, setDragOverActividadId] = useState<string | null>(null)
   const [dragOverPeligroId, setDragOverPeligroId] = useState<string | null>(null)
+  const [dragOverPeligroEdge, setDragOverPeligroEdge] = useState<'before' | 'after' | null>(null)
   const [showFilesModal, setShowFilesModal] = useState(false)
   const [uploadedFiles, setUploadedFiles] = useState<Array<{name:string,type:string,size:number,data:string}>>([])
   const [selectedPreviewIndex, setSelectedPreviewIndex] = useState<number | null>(null)
@@ -445,17 +446,27 @@ export default function MatrixEditor({ id }: { id?: string }) {
     e.preventDefault()
     e.stopPropagation()
     setDragOverPeligroId(targetPeligroId)
+    if (!targetPeligroId) {
+      setDragOverPeligroEdge(null)
+    } else {
+      const rect = (e.currentTarget as HTMLElement).getBoundingClientRect()
+      const edge: 'before' | 'after' = e.clientY < rect.top + rect.height / 2 ? 'before' : 'after'
+      setDragOverPeligroEdge(edge)
+    }
     e.dataTransfer.dropEffect = 'move'
   }
 
   function onPeligroDragLeave() {
     setDragOverPeligroId(null)
+    setDragOverPeligroEdge(null)
   }
 
   function onPeligroDrop(e: React.DragEvent, procesoId: string, zonaId: string, actividadId: string, targetPeligroId: string | null) {
     e.preventDefault()
     e.stopPropagation()
     setDragOverPeligroId(null)
+    const dropEdge = dragOverPeligroEdge
+    setDragOverPeligroEdge(null)
 
     let src: any = peligroDragSourceRef.current
     if (!src) {
@@ -480,6 +491,11 @@ export default function MatrixEditor({ id }: { id?: string }) {
     }
 
     if (!src || !src.peligroId) return
+    if (src.procesoId === procesoId && src.zonaId === zonaId && src.actividadId === actividadId && targetPeligroId === src.peligroId) {
+      peligroDragSourceRef.current = null
+      setTimeout(() => { isDraggingPeligroRef.current = false }, 0)
+      return
+    }
 
     updateMatrix((m: any) => {
       const srcP = m.procesos.find((p: any) => p.id === src.procesoId)
@@ -497,9 +513,13 @@ export default function MatrixEditor({ id }: { id?: string }) {
       const dstA = dstZ?.actividades?.find((aa: any) => aa.id === actividadId)
       if (!dstA) return m
 
-      const destIdx = targetPeligroId ? dstA.peligros.findIndex((pp: any) => pp.id === targetPeligroId) : -1
-      if (destIdx === -1) dstA.peligros.push(peligroObj)
-      else dstA.peligros.splice(destIdx, 0, peligroObj)
+      const targetIdx = targetPeligroId ? dstA.peligros.findIndex((pp: any) => pp.id === targetPeligroId) : -1
+      if (targetIdx === -1) {
+        dstA.peligros.push(peligroObj)
+      } else {
+        const insertIdx = dropEdge === 'after' ? targetIdx + 1 : targetIdx
+        dstA.peligros.splice(insertIdx, 0, peligroObj)
+      }
 
       setSelected({ procesoId, zonaId, actividadId })
       return m
@@ -911,7 +931,7 @@ export default function MatrixEditor({ id }: { id?: string }) {
                       {currentActividad.peligros.map((r: any, idx: number) => (
                         <div
                           key={r.id}
-                          className={`border rounded bg-[#fafcfa] ${dragOverPeligroId===r.id ? 'bg-slate-100' : ''}`}
+                          className={`border rounded bg-[#fafcfa] ${dragOverPeligroId===r.id ? 'bg-slate-100' : ''} ${dragOverPeligroId===r.id && dragOverPeligroEdge==='before' ? 'border-t-2 border-t-[#2d7a40]' : ''} ${dragOverPeligroId===r.id && dragOverPeligroEdge==='after' ? 'border-b-2 border-b-[#2d7a40]' : ''}`}
                           onDragOver={(e) => onPeligroDragOver(e, r.id)}
                           onDragLeave={onPeligroDragLeave}
                           onDrop={(e) => onPeligroDrop(e, currentProceso.id, currentZona.id, currentActividad.id, r.id)}
@@ -927,6 +947,7 @@ export default function MatrixEditor({ id }: { id?: string }) {
                                 onDragStart={(e) => onPeligroDragStart(e, currentProceso.id, currentZona.id, currentActividad.id, r.id)}
                                 onDragEnd={() => {
                                   setDragOverPeligroId(null)
+                                  setDragOverPeligroEdge(null)
                                   peligroDragSourceRef.current = null
                                   setTimeout(() => { isDraggingPeligroRef.current = false }, 0)
                                 }}
