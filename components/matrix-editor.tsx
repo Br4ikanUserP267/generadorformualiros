@@ -125,7 +125,6 @@ export default function MatrixEditor({ id }: { id?: string }) {
   const [zonaModalActivities, setZonaModalActivities] = useState<Array<{id:string,nombre:string,tareas:string}>>([])
   const [expandedZonaIds, setExpandedZonaIds] = useState<Record<string, boolean>>({})
   const [dragOverActividadId, setDragOverActividadId] = useState<string | null>(null)
-  const [dragOverPeligroId, setDragOverPeligroId] = useState<string | null>(null)
   const [showFilesModal, setShowFilesModal] = useState(false)
   const [uploadedFiles, setUploadedFiles] = useState<Array<{name:string,type:string,size:number,data:string}>>([])
   const [selectedPreviewIndex, setSelectedPreviewIndex] = useState<number | null>(null)
@@ -425,77 +424,6 @@ export default function MatrixEditor({ id }: { id?: string }) {
       if (destIdx === -1) dstZ.actividades.push(actividadObj)
       else dstZ.actividades.splice(destIdx, 0, actividadObj)
 
-      return m
-    })
-  }
-
-  function onPeligroDragStart(e: React.DragEvent, procesoId: string, zonaId: string, actividadId: string, peligroId: string) {
-    isDraggingRef.current = true
-    e.stopPropagation()
-    try { e.dataTransfer.setData('application/json', JSON.stringify({ type: 'peligro', procesoId, zonaId, actividadId, peligroId })) } catch (e) {}
-    try { e.dataTransfer.setData('text/plain', peligroId) } catch (e) {}
-    e.dataTransfer.effectAllowed = 'move'
-  }
-
-  function onPeligroDragOver(e: React.DragEvent, targetPeligroId: string) {
-    e.preventDefault()
-    setDragOverPeligroId(targetPeligroId)
-    e.dataTransfer.dropEffect = 'move'
-  }
-
-  function onPeligroDragLeave() { setDragOverPeligroId(null) }
-
-  function onPeligroDrop(e: React.DragEvent, procesoId: string, zonaId: string, actividadId: string, targetPeligroId: string | null) {
-    e.preventDefault()
-    isDraggingRef.current = false
-    setDragOverPeligroId(null)
-    let src: any = null
-    try { src = JSON.parse(e.dataTransfer.getData('application/json')) } catch (err) { }
-    // fallback: some browsers strip custom MIME types; try text/plain and locate source by id
-    if (!src || src.type !== 'peligro') {
-      try {
-        const txt = e.dataTransfer.getData('text/plain') || ''
-        if (txt) {
-          const id = txt
-          if (matrix && matrix.procesos) {
-            for (const p of matrix.procesos) {
-              for (const z of p.zonas || []) {
-                for (const a of z.actividades || []) {
-                  const idx = (a.peligros || []).findIndex((pp: any) => pp.id === id)
-                  if (idx !== -1) {
-                    src = { type: 'peligro', procesoId: p.id, zonaId: z.id, actividadId: a.id, peligroId: id }
-                    break
-                  }
-                }
-                if (src) break
-              }
-              if (src) break
-            }
-          }
-        }
-      } catch (err) {}
-    }
-    if (!src || src.type !== 'peligro') return
-
-    updateMatrix((m: any) => {
-      const srcP = m.procesos.find((p: any) => p.id === src.procesoId)
-      const srcZ = srcP?.zonas?.find((z: any) => z.id === src.zonaId)
-      const srcA = srcZ?.actividades?.find((aa: any) => aa.id === src.actividadId)
-      if (!srcA) return m
-      const srcIdx = srcA.peligros.findIndex((pp: any) => pp.id === src.peligroId)
-      if (srcIdx === -1) return m
-      const pel = srcA.peligros.splice(srcIdx, 1)[0]
-
-      const dstP = m.procesos.find((p: any) => p.id === procesoId)
-      const dstZ = dstP?.zonas?.find((z: any) => z.id === zonaId)
-      const dstA = dstZ?.actividades?.find((aa: any) => aa.id === actividadId)
-      if (!dstA) return m
-      const destIdx = targetPeligroId ? dstA.peligros.findIndex((pp: any) => pp.id === targetPeligroId) : -1
-      if (destIdx === -1) dstA.peligros.push(pel)
-      else dstA.peligros.splice(destIdx, 0, pel)
-
-      // ensure selection moves to destination activity so UI shows the item
-      setSelected({ procesoId, zonaId, actividadId })
       return m
     })
   }
@@ -894,33 +822,14 @@ export default function MatrixEditor({ id }: { id?: string }) {
                   {(!currentActividad || !currentActividad.peligros || currentActividad.peligros.length===0) ? (
                     <div className="p-6 border-dashed border rounded text-slate-500">No hay peligros en esta actividad.</div>
                   ) : (
-                    <div className="space-y-3" onDragOver={(e)=>{ e.preventDefault(); setDragOverPeligroId(null); e.dataTransfer.dropEffect='move' }} onDrop={(e)=> onPeligroDrop(e, currentProceso.id, currentZona.id, currentActividad.id, null)}>
+                    <div className="space-y-3">
                       {currentActividad.peligros.map((r: any, idx: number) => (
                         <div
                           key={r.id}
-                          className={`border rounded bg-[#fafcfa] ${dragOverPeligroId===r.id? 'bg-slate-100':''}`}
-                          onDragStart={(e) => e.stopPropagation()}
-                          onDragOver={(e) => { e.stopPropagation(); onPeligroDragOver(e, r.id) }}
-                          onDragLeave={() => onPeligroDragLeave()}
-                          onDrop={(e) => { e.stopPropagation(); onPeligroDrop(e, currentProceso.id, currentZona.id, currentActividad.id, r.id) }}
+                          className="border rounded bg-[#fafcfa]"
                         >
-                          <div className="p-3 flex items-center justify-between cursor-pointer" onClick={() => { if (isDraggingRef.current) { isDraggingRef.current = false; return } updatePeligroField(currentProceso.id, currentZona.id, currentActividad.id, r.id, ['_ui','expanded'], !r._ui?.expanded) }}>
+                          <div className="p-3 flex items-center justify-between cursor-pointer" onClick={() => updatePeligroField(currentProceso.id, currentZona.id, currentActividad.id, r.id, ['_ui','expanded'], !r._ui?.expanded)}>
                             <div className="flex items-center gap-3">
-                              <div
-                                className="mr-2 p-1 cursor-move rounded hover:bg-slate-100"
-                                draggable
-                                onDragStart={(e) => onPeligroDragStart(e, currentProceso.id, currentZona.id, currentActividad.id, r.id)}
-                                onDragEnd={() => { setTimeout(() => { isDraggingRef.current = false }, 0) }}
-                                onClick={(e:any) => e.stopPropagation()}
-                                onMouseDown={(e:any) => e.stopPropagation()}
-                                title="Reordenar peligro"
-                              >
-                                <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4 text-slate-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                  <path d="M4 7h16"></path>
-                                  <path d="M4 12h16"></path>
-                                  <path d="M4 17h16"></path>
-                                </svg>
-                              </div>
                               <div className="font-medium">Peligro {idx+1}</div>
                             </div>
                             <div className="flex items-center gap-2">
