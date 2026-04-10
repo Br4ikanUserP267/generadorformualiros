@@ -125,11 +125,14 @@ export default function MatrixEditor({ id }: { id?: string }) {
   const [zonaModalActivities, setZonaModalActivities] = useState<Array<{id:string,nombre:string,tareas:string}>>([])
   const [expandedZonaIds, setExpandedZonaIds] = useState<Record<string, boolean>>({})
   const [dragOverActividadId, setDragOverActividadId] = useState<string | null>(null)
+  const [dragOverPeligroId, setDragOverPeligroId] = useState<string | null>(null)
   const [showFilesModal, setShowFilesModal] = useState(false)
   const [uploadedFiles, setUploadedFiles] = useState<Array<{name:string,type:string,size:number,data:string}>>([])
   const [selectedPreviewIndex, setSelectedPreviewIndex] = useState<number | null>(null)
   const fileInputRef = useRef<HTMLInputElement | null>(null)
   const isDraggingRef = useRef(false)
+  const isDraggingPeligroRef = useRef(false)
+  const peligroDragSourceRef = useRef<{ procesoId: string, zonaId: string, actividadId: string, peligroId: string } | null>(null)
 
   // helpers to mutate matrix immutably
   function updateMatrix(fn: (m: any) => any) {
@@ -426,6 +429,84 @@ export default function MatrixEditor({ id }: { id?: string }) {
 
       return m
     })
+  }
+
+  function onPeligroDragStart(e: React.DragEvent, procesoId: string, zonaId: string, actividadId: string, peligroId: string) {
+    isDraggingPeligroRef.current = true
+    const src = { procesoId, zonaId, actividadId, peligroId }
+    peligroDragSourceRef.current = src
+    try { e.dataTransfer.setData('application/json', JSON.stringify({ type: 'peligro', ...src })) } catch (err) {}
+    try { e.dataTransfer.setData('text/plain', peligroId) } catch (err) {}
+    e.dataTransfer.effectAllowed = 'move'
+    e.stopPropagation()
+  }
+
+  function onPeligroDragOver(e: React.DragEvent, targetPeligroId: string | null) {
+    e.preventDefault()
+    e.stopPropagation()
+    setDragOverPeligroId(targetPeligroId)
+    e.dataTransfer.dropEffect = 'move'
+  }
+
+  function onPeligroDragLeave() {
+    setDragOverPeligroId(null)
+  }
+
+  function onPeligroDrop(e: React.DragEvent, procesoId: string, zonaId: string, actividadId: string, targetPeligroId: string | null) {
+    e.preventDefault()
+    e.stopPropagation()
+    setDragOverPeligroId(null)
+
+    let src: any = peligroDragSourceRef.current
+    if (!src) {
+      try { src = JSON.parse(e.dataTransfer.getData('application/json')) } catch (err) {}
+    }
+    if ((!src || !src.peligroId) && matrix && matrix.procesos) {
+      const plain = e.dataTransfer.getData('text/plain') || ''
+      if (plain) {
+        for (const p of matrix.procesos) {
+          for (const z of p.zonas || []) {
+            for (const a of z.actividades || []) {
+              if ((a.peligros || []).some((pp: any) => pp.id === plain)) {
+                src = { procesoId: p.id, zonaId: z.id, actividadId: a.id, peligroId: plain }
+                break
+              }
+            }
+            if (src) break
+          }
+          if (src) break
+        }
+      }
+    }
+
+    if (!src || !src.peligroId) return
+
+    updateMatrix((m: any) => {
+      const srcP = m.procesos.find((p: any) => p.id === src.procesoId)
+      const srcZ = srcP?.zonas?.find((z: any) => z.id === src.zonaId)
+      const srcA = srcZ?.actividades?.find((aa: any) => aa.id === src.actividadId)
+      if (!srcA) return m
+
+      const srcIdx = srcA.peligros.findIndex((pp: any) => pp.id === src.peligroId)
+      if (srcIdx === -1) return m
+
+      const peligroObj = srcA.peligros.splice(srcIdx, 1)[0]
+
+      const dstP = m.procesos.find((p: any) => p.id === procesoId)
+      const dstZ = dstP?.zonas?.find((z: any) => z.id === zonaId)
+      const dstA = dstZ?.actividades?.find((aa: any) => aa.id === actividadId)
+      if (!dstA) return m
+
+      const destIdx = targetPeligroId ? dstA.peligros.findIndex((pp: any) => pp.id === targetPeligroId) : -1
+      if (destIdx === -1) dstA.peligros.push(peligroObj)
+      else dstA.peligros.splice(destIdx, 0, peligroObj)
+
+      setSelected({ procesoId, zonaId, actividadId })
+      return m
+    })
+
+    peligroDragSourceRef.current = null
+    setTimeout(() => { isDraggingPeligroRef.current = false }, 0)
   }
 
   function removeActividad(procesoId: string, zonaId: string, actividadId: string) {
@@ -822,14 +903,43 @@ export default function MatrixEditor({ id }: { id?: string }) {
                   {(!currentActividad || !currentActividad.peligros || currentActividad.peligros.length===0) ? (
                     <div className="p-6 border-dashed border rounded text-slate-500">No hay peligros en esta actividad.</div>
                   ) : (
-                    <div className="space-y-3">
+                    <div
+                      className="space-y-3"
+                      onDragOver={(e) => onPeligroDragOver(e, null)}
+                      onDrop={(e) => onPeligroDrop(e, currentProceso.id, currentZona.id, currentActividad.id, null)}
+                    >
                       {currentActividad.peligros.map((r: any, idx: number) => (
                         <div
                           key={r.id}
-                          className="border rounded bg-[#fafcfa]"
+                          className={`border rounded bg-[#fafcfa] ${dragOverPeligroId===r.id ? 'bg-slate-100' : ''}`}
+                          onDragOver={(e) => onPeligroDragOver(e, r.id)}
+                          onDragLeave={onPeligroDragLeave}
+                          onDrop={(e) => onPeligroDrop(e, currentProceso.id, currentZona.id, currentActividad.id, r.id)}
                         >
-                          <div className="p-3 flex items-center justify-between cursor-pointer" onClick={() => updatePeligroField(currentProceso.id, currentZona.id, currentActividad.id, r.id, ['_ui','expanded'], !r._ui?.expanded)}>
+                          <div className="p-3 flex items-center justify-between cursor-pointer" onClick={() => {
+                            if (isDraggingPeligroRef.current) { isDraggingPeligroRef.current = false; return }
+                            updatePeligroField(currentProceso.id, currentZona.id, currentActividad.id, r.id, ['_ui','expanded'], !r._ui?.expanded)
+                          }}>
                             <div className="flex items-center gap-3">
+                              <div
+                                className="mr-2 p-1 cursor-move rounded hover:bg-slate-100"
+                                draggable
+                                onDragStart={(e) => onPeligroDragStart(e, currentProceso.id, currentZona.id, currentActividad.id, r.id)}
+                                onDragEnd={() => {
+                                  setDragOverPeligroId(null)
+                                  peligroDragSourceRef.current = null
+                                  setTimeout(() => { isDraggingPeligroRef.current = false }, 0)
+                                }}
+                                onMouseDown={(e:any) => e.stopPropagation()}
+                                onClick={(e:any) => e.stopPropagation()}
+                                title="Reordenar peligro"
+                              >
+                                <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4 text-slate-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                  <path d="M4 7h16"></path>
+                                  <path d="M4 12h16"></path>
+                                  <path d="M4 17h16"></path>
+                                </svg>
+                              </div>
                               <div className="font-medium">Peligro {idx+1}</div>
                             </div>
                             <div className="flex items-center gap-2">
