@@ -464,6 +464,7 @@ export default function MatrixEditor({ id }: { id?: string }) {
     isDraggingPeligroRef.current = true
     const src = { procesoId, zonaId, actividadId, peligroId }
     peligroDragSourceRef.current = src
+    console.log('[Peligro DnD] dragstart', src)
     try { e.dataTransfer.setData('application/json', JSON.stringify({ type: 'peligro', ...src })) } catch (err) {}
     try { e.dataTransfer.setData('text/plain', peligroId) } catch (err) {}
     e.dataTransfer.effectAllowed = 'move'
@@ -480,6 +481,7 @@ export default function MatrixEditor({ id }: { id?: string }) {
       const rect = (e.currentTarget as HTMLElement).getBoundingClientRect()
       const edge: 'before' | 'after' = e.clientY < rect.top + rect.height / 2 ? 'before' : 'after'
       setDragOverPeligroEdge(edge)
+      console.log('[Peligro DnD] dragover', { targetPeligroId, edge, clientY: e.clientY, top: rect.top, height: rect.height })
     }
     e.dataTransfer.dropEffect = 'move'
   }
@@ -509,6 +511,14 @@ export default function MatrixEditor({ id }: { id?: string }) {
     const dropEdge = dragOverPeligroEdge || resolved.edge
     setDragOverPeligroEdge(null)
 
+    console.log('[Peligro DnD] drop', {
+      processTarget: { procesoId, zonaId, actividadId },
+      dropTargetId,
+      dropEdge,
+      resolved,
+      currentSource: peligroDragSourceRef.current,
+    })
+
     let src: any = peligroDragSourceRef.current
     if (!src) {
       try { src = JSON.parse(e.dataTransfer.getData('application/json')) } catch (err) {}
@@ -516,11 +526,13 @@ export default function MatrixEditor({ id }: { id?: string }) {
     if ((!src || !src.peligroId) && matrix && matrix.procesos) {
       const plain = e.dataTransfer.getData('text/plain') || ''
       if (plain) {
+        console.log('[Peligro DnD] drop fallback lookup', { plain })
         for (const p of matrix.procesos) {
           for (const z of p.zonas || []) {
             for (const a of z.actividades || []) {
               if ((a.peligros || []).some((pp: any) => pp.id === plain)) {
                 src = { procesoId: p.id, zonaId: z.id, actividadId: a.id, peligroId: plain }
+                console.log('[Peligro DnD] drop source resolved from plain text', src)
                 break
               }
             }
