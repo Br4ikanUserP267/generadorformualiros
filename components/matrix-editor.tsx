@@ -331,8 +331,9 @@ export default function MatrixEditor({ id }: { id?: string }) {
   function addPeligro(procesoId: string, zonaId: string, actividadId: string) {
     updateMatrix((m: any) => {
       const a = m.procesos.find((x: any)=> x.id===procesoId).zonas.find((y:any)=>y.id===zonaId).actividades.find((aa:any)=>aa.id===actividadId)
-      const stableLabel = `Peligro ${a.peligros.length + 1}`
-      a.peligros.push({ id: makeId('r-'), descripcion: '', clasificacion: '', efectos: '', controles: { fuente:'', medio:'', individuo:'' }, evaluacion: { nd: null, ne: null, nc: null, np: null, nr: null, interp_np: '', interp_nr: '', nivel_riesgo: '', aceptabilidad: '' }, criterios: { num_expuestos: null, peor_consecuencia: '', requisito_legal: false }, intervencion: { eliminacion:'', sustitucion:'', controles_ingenieria:'', controles_administrativos:'', epp:'', responsable:'', fecha_ejecucion:'' }, _ui: { expanded: true, activeTab: 0, stableLabel } })
+      const nextNumero = Math.max(0, ...(a.peligros || []).map((p: any) => Number(p.numero) || 0)) + 1
+      const stableLabel = `Peligro ${nextNumero}`
+      a.peligros.push({ id: makeId('r-'), numero: nextNumero, descripcion: '', clasificacion: '', efectos: '', controles: { fuente:'', medio:'', individuo:'' }, evaluacion: { nd: null, ne: null, nc: null, np: null, nr: null, interp_np: '', interp_nr: '', nivel_riesgo: '', aceptabilidad: '' }, criterios: { num_expuestos: null, peor_consecuencia: '', requisito_legal: false }, intervencion: { eliminacion:'', sustitucion:'', controles_ingenieria:'', controles_administrativos:'', epp:'', responsable:'', fecha_ejecucion:'' }, _ui: { expanded: true, activeTab: 0, stableLabel } })
       return m
     })
   }
@@ -352,7 +353,8 @@ export default function MatrixEditor({ id }: { id?: string }) {
       if (!peligroToDuplicate) return m
       const newPeligro = JSON.parse(JSON.stringify(peligroToDuplicate))
       newPeligro.id = makeId('r-')
-      newPeligro._ui = { expanded: false, activeTab: 0, stableLabel: `Peligro ${a.peligros.length + 1}` }
+      newPeligro.numero = Math.max(0, ...(a.peligros || []).map((p: any) => Number(p.numero) || 0)) + 1
+      newPeligro._ui = { expanded: false, activeTab: 0, stableLabel: `Peligro ${newPeligro.numero}` }
       a.peligros.push(newPeligro)
       return m
     })
@@ -666,7 +668,7 @@ export default function MatrixEditor({ id }: { id?: string }) {
                 z.actividades.forEach((a: any, aIdx: number) => {
                   a.orden = aIdx
                   if (a.peligros && Array.isArray(a.peligros)) {
-                    a.peligros.forEach((pel: any, pelIdx: number) => { pel.orden = pelIdx; pel.numero = pelIdx + 1 })
+                    a.peligros.forEach((pel: any, pelIdx: number) => { pel.orden = pelIdx })
                   }
                 })
               }
