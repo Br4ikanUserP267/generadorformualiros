@@ -383,6 +383,28 @@ export default function MatrixEditor({ id }: { id?: string }) {
     setDragOverActividadId(null)
     let src: any = null
     try { src = JSON.parse(e.dataTransfer.getData('application/json')) } catch (err) { }
+    // fallback: some browsers strip custom MIME types; try text/plain and locate source by id
+    if (!src || src.type !== 'actividad') {
+      try {
+        const txt = e.dataTransfer.getData('text/plain') || ''
+        if (txt) {
+          // find actividad location by id scanning current matrix
+          const id = txt
+          if (matrix && matrix.procesos) {
+            for (const p of matrix.procesos) {
+              for (const z of p.zonas || []) {
+                const idx = (z.actividades || []).findIndex((aa: any) => aa.id === id)
+                if (idx !== -1) {
+                  src = { type: 'actividad', procesoId: p.id, zonaId: z.id, actividadId: id }
+                  break
+                }
+              }
+              if (src) break
+            }
+          }
+        }
+      } catch (err) {}
+    }
     if (!src || src.type !== 'actividad') return
 
     updateMatrix((m: any) => {
@@ -424,6 +446,30 @@ export default function MatrixEditor({ id }: { id?: string }) {
     setDragOverPeligroId(null)
     let src: any = null
     try { src = JSON.parse(e.dataTransfer.getData('application/json')) } catch (err) { }
+    // fallback: some browsers strip custom MIME types; try text/plain and locate source by id
+    if (!src || src.type !== 'peligro') {
+      try {
+        const txt = e.dataTransfer.getData('text/plain') || ''
+        if (txt) {
+          const id = txt
+          if (matrix && matrix.procesos) {
+            for (const p of matrix.procesos) {
+              for (const z of p.zonas || []) {
+                for (const a of z.actividades || []) {
+                  const idx = (a.peligros || []).findIndex((pp: any) => pp.id === id)
+                  if (idx !== -1) {
+                    src = { type: 'peligro', procesoId: p.id, zonaId: z.id, actividadId: a.id, peligroId: id }
+                    break
+                  }
+                }
+                if (src) break
+              }
+              if (src) break
+            }
+          }
+        }
+      } catch (err) {}
+    }
     if (!src || src.type !== 'peligro') return
 
     updateMatrix((m: any) => {
