@@ -96,8 +96,10 @@ export default function MatrixEditor({ id }: { id?: string }) {
             ;(withStableLabels.procesos || []).forEach((p: any) => {
               (p.zonas || []).forEach((z: any) => {
                 (z.actividades || []).forEach((a: any) => {
-                  (a.peligros || []).forEach((pel: any, pelIdx: number) => {
-                    pel._ui = { ...(pel._ui || {}), stableLabel: pel._ui?.stableLabel || `Peligro ${pelIdx + 1}` }
+                    (a.peligros || []).forEach((pel: any, pelIdx: number) => {
+                    const persistedNumero = typeof pel.numero === 'number' && pel.numero > 0 ? pel.numero : null
+                    const labelFromNumero = persistedNumero ? `Peligro ${persistedNumero}` : `Peligro ${pelIdx + 1}`
+                    pel._ui = { ...(pel._ui || {}), stableLabel: pel._ui?.stableLabel || labelFromNumero, numero: pel.numero }
                   })
                 })
               })
