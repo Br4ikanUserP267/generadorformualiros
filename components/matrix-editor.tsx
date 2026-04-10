@@ -969,14 +969,17 @@ export default function MatrixEditor({ id }: { id?: string }) {
                         <div
                           key={r.id}
                           className={`border rounded bg-[#fafcfa] ${dragOverPeligroId===r.id ? 'bg-slate-100' : ''} ${dragOverPeligroId===r.id && dragOverPeligroEdge==='before' ? 'border-t-2 border-t-[#2d7a40]' : ''} ${dragOverPeligroId===r.id && dragOverPeligroEdge==='after' ? 'border-b-2 border-b-[#2d7a40]' : ''}`}
-                          onDragOver={(e) => onPeligroDragOver(e, r.id)}
-                          onDragLeave={onPeligroDragLeave}
-                          onDrop={(e) => onPeligroDrop(e, currentProceso.id, currentZona.id, currentActividad.id, r.id)}
                         >
-                          <div className="p-3 flex items-center justify-between cursor-pointer" onClick={() => {
+                          <div
+                            className="p-3 flex items-center justify-between cursor-pointer"
+                            onClick={() => {
                             if (isDraggingPeligroRef.current) { isDraggingPeligroRef.current = false; return }
                             updatePeligroField(currentProceso.id, currentZona.id, currentActividad.id, r.id, ['_ui','expanded'], !r._ui?.expanded)
-                          }}>
+                            }}
+                            onDragOver={(e) => onPeligroDragOver(e, r.id)}
+                            onDragLeave={onPeligroDragLeave}
+                            onDrop={(e) => onPeligroDrop(e, currentProceso.id, currentZona.id, currentActividad.id, r.id)}
+                          >
                             <div className="flex items-center gap-3">
                               <div
                                 className="mr-2 p-1 cursor-move rounded hover:bg-slate-100"
