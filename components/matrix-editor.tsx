@@ -363,6 +363,7 @@ export default function MatrixEditor({ id }: { id?: string }) {
 
   // Drag & drop handlers for reordering actividades and peligros
   function onActividadDragStart(e: React.DragEvent, procesoId: string, zonaId: string, actividadId: string) {
+    isDraggingRef.current = true
     e.stopPropagation()
     try { e.dataTransfer.setData('application/json', JSON.stringify({ type: 'actividad', procesoId, zonaId, actividadId })) } catch (e) {}
     try { e.dataTransfer.setData('text/plain', actividadId) } catch (e) {}
@@ -381,6 +382,7 @@ export default function MatrixEditor({ id }: { id?: string }) {
 
   function onActividadDrop(e: React.DragEvent, procesoId: string, zonaId: string, targetActividadId: string | null) {
     e.preventDefault()
+    isDraggingRef.current = false
     setDragOverActividadId(null)
     let src: any = null
     try { src = JSON.parse(e.dataTransfer.getData('application/json')) } catch (err) { }
@@ -445,6 +447,7 @@ export default function MatrixEditor({ id }: { id?: string }) {
 
   function onPeligroDrop(e: React.DragEvent, procesoId: string, zonaId: string, actividadId: string, targetPeligroId: string | null) {
     e.preventDefault()
+    isDraggingRef.current = false
     setDragOverPeligroId(null)
     let src: any = null
     try { src = JSON.parse(e.dataTransfer.getData('application/json')) } catch (err) { }
@@ -757,7 +760,11 @@ export default function MatrixEditor({ id }: { id?: string }) {
                                         <div
                                           key={a.id}
                                           className={`flex items-center justify-between p-2 rounded cursor-pointer ${selected.actividadId===a.id? 'bg-slate-100':''} ${dragOverActividadId===a.id? 'bg-slate-200':''}`}
-                                          onClick={() => setSelected({ procesoId: p.id, zonaId: z.id, actividadId: a.id })}
+                                          onDragStart={(e) => e.stopPropagation()}
+                                          onClick={() => {
+                                            if (isDraggingRef.current) { isDraggingRef.current = false; return }
+                                            setSelected({ procesoId: p.id, zonaId: z.id, actividadId: a.id })
+                                          }}
                                           onDragOver={(e) => { e.stopPropagation(); onActividadDragOver(e, a.id) }}
                                           onDragLeave={() => onActividadDragLeave()}
                                           onDrop={(e) => { e.stopPropagation(); onActividadDrop(e, p.id, z.id, a.id) }}
@@ -767,6 +774,7 @@ export default function MatrixEditor({ id }: { id?: string }) {
                                               className="mr-2 p-1 cursor-move rounded hover:bg-slate-100"
                                               draggable
                                               onDragStart={(e) => onActividadDragStart(e, p.id, z.id, a.id)}
+                                              onDragEnd={() => { setTimeout(() => { isDraggingRef.current = false }, 0) }}
                                               onClick={(e:any) => e.stopPropagation()}
                                               onMouseDown={(e:any) => e.stopPropagation()}
                                               title="Reordenar actividad"
@@ -891,6 +899,7 @@ export default function MatrixEditor({ id }: { id?: string }) {
                         <div
                           key={r.id}
                           className={`border rounded bg-[#fafcfa] ${dragOverPeligroId===r.id? 'bg-slate-100':''}`}
+                          onDragStart={(e) => e.stopPropagation()}
                           onDragOver={(e) => { e.stopPropagation(); onPeligroDragOver(e, r.id) }}
                           onDragLeave={() => onPeligroDragLeave()}
                           onDrop={(e) => { e.stopPropagation(); onPeligroDrop(e, currentProceso.id, currentZona.id, currentActividad.id, r.id) }}
@@ -901,6 +910,7 @@ export default function MatrixEditor({ id }: { id?: string }) {
                                 className="mr-2 p-1 cursor-move rounded hover:bg-slate-100"
                                 draggable
                                 onDragStart={(e) => onPeligroDragStart(e, currentProceso.id, currentZona.id, currentActividad.id, r.id)}
+                                onDragEnd={() => { setTimeout(() => { isDraggingRef.current = false }, 0) }}
                                 onClick={(e:any) => e.stopPropagation()}
                                 onMouseDown={(e:any) => e.stopPropagation()}
                                 title="Reordenar peligro"
