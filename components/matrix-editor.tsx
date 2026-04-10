@@ -484,6 +484,17 @@ export default function MatrixEditor({ id }: { id?: string }) {
     e.dataTransfer.dropEffect = 'move'
   }
 
+  function resolvePeligroDropTarget(e: React.DragEvent) {
+    const target = e.target as HTMLElement | null
+    const row = target?.closest?.('[data-peligro-id]') as HTMLElement | null
+    if (!row) return { targetPeligroId: null as string | null, edge: null as 'before' | 'after' | null }
+
+    const targetPeligroId = row.getAttribute('data-peligro-id')
+    const rect = row.getBoundingClientRect()
+    const edge: 'before' | 'after' = e.clientY < rect.top + rect.height / 2 ? 'before' : 'after'
+    return { targetPeligroId, edge }
+  }
+
   function onPeligroDragLeave() {
     setDragOverPeligroId(null)
     setDragOverPeligroEdge(null)
@@ -493,11 +504,9 @@ export default function MatrixEditor({ id }: { id?: string }) {
     e.preventDefault()
     e.stopPropagation()
     setDragOverPeligroId(null)
-    let dropEdge = dragOverPeligroEdge
-    if (targetPeligroId && !dropEdge) {
-      const rect = (e.currentTarget as HTMLElement).getBoundingClientRect()
-      dropEdge = e.clientY < rect.top + rect.height / 2 ? 'before' : 'after'
-    }
+    const resolved = resolvePeligroDropTarget(e)
+    const dropTargetId = targetPeligroId || resolved.targetPeligroId
+    const dropEdge = dragOverPeligroEdge || resolved.edge
     setDragOverPeligroEdge(null)
 
     let src: any = peligroDragSourceRef.current
@@ -523,7 +532,7 @@ export default function MatrixEditor({ id }: { id?: string }) {
     }
 
     if (!src || !src.peligroId) return
-    if (src.procesoId === procesoId && src.zonaId === zonaId && src.actividadId === actividadId && targetPeligroId === src.peligroId) {
+    if (src.procesoId === procesoId && src.zonaId === zonaId && src.actividadId === actividadId && dropTargetId === src.peligroId) {
       peligroDragSourceRef.current = null
       setTimeout(() => { isDraggingPeligroRef.current = false }, 0)
       return
@@ -545,7 +554,7 @@ export default function MatrixEditor({ id }: { id?: string }) {
       const dstA = dstZ?.actividades?.find((aa: any) => aa.id === actividadId)
       if (!dstA) return m
 
-      const targetIdx = targetPeligroId ? dstA.peligros.findIndex((pp: any) => pp.id === targetPeligroId) : -1
+      const targetIdx = dropTargetId ? dstA.peligros.findIndex((pp: any) => pp.id === dropTargetId) : -1
       if (targetIdx === -1) {
         dstA.peligros.push(peligroObj)
       } else {
@@ -962,12 +971,20 @@ export default function MatrixEditor({ id }: { id?: string }) {
                   ) : (
                     <div
                       className="space-y-3"
-                      onDragOver={(e) => onPeligroDragOver(e, null)}
+                      onDragOver={(e) => {
+                        const resolved = resolvePeligroDropTarget(e)
+                        onPeligroDragOver(e, resolved.targetPeligroId)
+                      }}
+                      onDragLeave={() => {
+                        setDragOverPeligroId(null)
+                        setDragOverPeligroEdge(null)
+                      }}
                       onDrop={(e) => onPeligroDrop(e, currentProceso.id, currentZona.id, currentActividad.id, null)}
                     >
                       {currentActividad.peligros.map((r: any, idx: number) => (
                         <div
                           key={r.id}
+                          data-peligro-id={r.id}
                           className={`border rounded bg-[#fafcfa] ${dragOverPeligroId===r.id ? 'bg-slate-100' : ''} ${dragOverPeligroId===r.id && dragOverPeligroEdge==='before' ? 'border-t-2 border-t-[#2d7a40]' : ''} ${dragOverPeligroId===r.id && dragOverPeligroEdge==='after' ? 'border-b-2 border-b-[#2d7a40]' : ''}`}
                         >
                           <div
@@ -976,9 +993,6 @@ export default function MatrixEditor({ id }: { id?: string }) {
                             if (isDraggingPeligroRef.current) { isDraggingPeligroRef.current = false; return }
                             updatePeligroField(currentProceso.id, currentZona.id, currentActividad.id, r.id, ['_ui','expanded'], !r._ui?.expanded)
                             }}
-                            onDragOver={(e) => onPeligroDragOver(e, r.id)}
-                            onDragLeave={onPeligroDragLeave}
-                            onDrop={(e) => onPeligroDrop(e, currentProceso.id, currentZona.id, currentActividad.id, r.id)}
                           >
                             <div className="flex items-center gap-3">
                               <div
