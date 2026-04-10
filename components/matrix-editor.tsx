@@ -74,6 +74,10 @@ function shortFileName(n: string, maxBase = 12) {
   return base + ext
 }
 
+function getStablePeligroLabel(peligro: any, fallbackIndex: number) {
+  return peligro?._ui?.stableLabel || `Peligro ${fallbackIndex + 1}`
+}
+
 export default function MatrixEditor({ id }: { id?: string }) {
   const router = useRouter()
   const [matrix, setMatrix] = useState<any>(null)
@@ -88,8 +92,18 @@ export default function MatrixEditor({ id }: { id?: string }) {
             toast({ title: 'Error', variant: 'destructive', description: data.error })
             router.push('/dashboard')
           } else {
-            setMatrix(data)
-            const p = data.procesos?.[0]
+            const withStableLabels = JSON.parse(JSON.stringify(data))
+            ;(withStableLabels.procesos || []).forEach((p: any) => {
+              (p.zonas || []).forEach((z: any) => {
+                (z.actividades || []).forEach((a: any) => {
+                  (a.peligros || []).forEach((pel: any, pelIdx: number) => {
+                    pel._ui = { ...(pel._ui || {}), stableLabel: pel._ui?.stableLabel || `Peligro ${pelIdx + 1}` }
+                  })
+                })
+              })
+            })
+            setMatrix(withStableLabels)
+            const p = withStableLabels.procesos?.[0]
             const z = p?.zonas?.[0]
             const a = z?.actividades?.[0]
             setSelected({ procesoId: p?.id, zonaId: z?.id, actividadId: a?.id })
@@ -315,7 +329,8 @@ export default function MatrixEditor({ id }: { id?: string }) {
   function addPeligro(procesoId: string, zonaId: string, actividadId: string) {
     updateMatrix((m: any) => {
       const a = m.procesos.find((x: any)=> x.id===procesoId).zonas.find((y:any)=>y.id===zonaId).actividades.find((aa:any)=>aa.id===actividadId)
-      a.peligros.push({ id: makeId('r-'), descripcion: '', clasificacion: '', efectos: '', controles: { fuente:'', medio:'', individuo:'' }, evaluacion: { nd: null, ne: null, nc: null, np: null, nr: null, interp_np: '', interp_nr: '', nivel_riesgo: '', aceptabilidad: '' }, criterios: { num_expuestos: null, peor_consecuencia: '', requisito_legal: false }, intervencion: { eliminacion:'', sustitucion:'', controles_ingenieria:'', controles_administrativos:'', epp:'', responsable:'', fecha_ejecucion:'' }, _ui: { expanded: true, activeTab: 0 } })
+      const stableLabel = `Peligro ${a.peligros.length + 1}`
+      a.peligros.push({ id: makeId('r-'), descripcion: '', clasificacion: '', efectos: '', controles: { fuente:'', medio:'', individuo:'' }, evaluacion: { nd: null, ne: null, nc: null, np: null, nr: null, interp_np: '', interp_nr: '', nivel_riesgo: '', aceptabilidad: '' }, criterios: { num_expuestos: null, peor_consecuencia: '', requisito_legal: false }, intervencion: { eliminacion:'', sustitucion:'', controles_ingenieria:'', controles_administrativos:'', epp:'', responsable:'', fecha_ejecucion:'' }, _ui: { expanded: true, activeTab: 0, stableLabel } })
       return m
     })
   }
@@ -335,7 +350,7 @@ export default function MatrixEditor({ id }: { id?: string }) {
       if (!peligroToDuplicate) return m
       const newPeligro = JSON.parse(JSON.stringify(peligroToDuplicate))
       newPeligro.id = makeId('r-')
-      newPeligro._ui = { expanded: false, activeTab: 0 }
+      newPeligro._ui = { expanded: false, activeTab: 0, stableLabel: `Peligro ${a.peligros.length + 1}` }
       a.peligros.push(newPeligro)
       return m
     })
@@ -1027,7 +1042,7 @@ export default function MatrixEditor({ id }: { id?: string }) {
                                   <path d="M4 17h16"></path>
                                 </svg>
                               </div>
-                              <div className="font-medium">Peligro {idx+1}</div>
+                              <div className="font-medium">{getStablePeligroLabel(r, idx)}</div>
                             </div>
                             <div className="flex items-center gap-2">
                               <div style={{width:14,height:14,background: interpNivelRiesgo(Number(r.evaluacion?.nr||0)).color, borderRadius:999}}></div>
