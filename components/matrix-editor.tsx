@@ -493,7 +493,11 @@ export default function MatrixEditor({ id }: { id?: string }) {
     e.preventDefault()
     e.stopPropagation()
     setDragOverPeligroId(null)
-    const dropEdge = dragOverPeligroEdge
+    let dropEdge = dragOverPeligroEdge
+    if (targetPeligroId && !dropEdge) {
+      const rect = (e.currentTarget as HTMLElement).getBoundingClientRect()
+      dropEdge = e.clientY < rect.top + rect.height / 2 ? 'before' : 'after'
+    }
     setDragOverPeligroEdge(null)
 
     let src: any = peligroDragSourceRef.current
