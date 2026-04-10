@@ -666,7 +666,7 @@ export default function MatrixEditor({ id }: { id?: string }) {
                 z.actividades.forEach((a: any, aIdx: number) => {
                   a.orden = aIdx
                   if (a.peligros && Array.isArray(a.peligros)) {
-                    a.peligros.forEach((pel: any, pelIdx: number) => { pel.orden = pelIdx })
+                    a.peligros.forEach((pel: any, pelIdx: number) => { pel.orden = pelIdx; pel.numero = pelIdx + 1 })
                   }
                 })
               }
