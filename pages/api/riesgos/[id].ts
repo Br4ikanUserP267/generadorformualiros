@@ -7,6 +7,64 @@ const prismaSupportsPeligroNumero = !!Prisma.dmmf.datamodel.models
   .find((m) => m.name === 'Peligro')
   ?.fields.some((f) => f.name === 'numero')
 
+function desiredPeligroNumero(pel: any, fallbackIdx: number) {
+  if (typeof pel?.numero === 'number' && pel.numero > 0) return pel.numero
+  const labelMatch = String(pel?._ui?.stableLabel || '').match(/\b(\d+)\b/)
+  return labelMatch ? Number(labelMatch[1]) : (fallbackIdx + 1)
+}
+
+async function loadPeligroNumeroMapByMatrizId(matrizId: string) {
+  try {
+    const rows = await prisma.$queryRaw<Array<{ id: string, numero: number }>>`
+      SELECT pg."id", pg."numero"
+      FROM "peligros" pg
+      INNER JOIN "actividades" a ON a."id" = pg."actividad_id"
+      INNER JOIN "zonas" z ON z."id" = a."zona_id"
+      INNER JOIN "procesos" p ON p."id" = z."proceso_id"
+      WHERE p."matriz_id" = ${matrizId}
+    `
+    const map: Record<string, number> = {}
+    for (const row of rows || []) map[row.id] = Number(row.numero || 0)
+    return map
+  } catch {
+    return {}
+  }
+}
+
+async function persistPeligroNumeroByOrderPath(matrizId: string, procesos: any[]) {
+  try {
+    for (let pIdx = 0; pIdx < (procesos || []).length; pIdx++) {
+      const p = procesos[pIdx]
+      for (let zIdx = 0; zIdx < (p?.zonas || []).length; zIdx++) {
+        const z = p.zonas[zIdx]
+        for (let aIdx = 0; aIdx < (z?.actividades || []).length; aIdx++) {
+          const a = z.actividades[aIdx]
+          for (let pelIdx = 0; pelIdx < (a?.peligros || []).length; pelIdx++) {
+            const pel = a.peligros[pelIdx]
+            const numero = desiredPeligroNumero(pel, pelIdx)
+
+            await prisma.$executeRaw`
+              UPDATE "peligros" AS pg
+              SET "numero" = ${numero}
+              FROM "actividades" ac
+              INNER JOIN "zonas" z ON z."id" = ac."zona_id"
+              INNER JOIN "procesos" p ON p."id" = z."proceso_id"
+              WHERE pg."actividad_id" = ac."id"
+                AND p."matriz_id" = ${matrizId}
+                AND p."orden" = ${pIdx}
+                AND z."orden" = ${zIdx}
+                AND ac."orden" = ${aIdx}
+                AND pg."orden" = ${pelIdx}
+            `
+          }
+        }
+      }
+    }
+  } catch {
+    // If the runtime/database doesn't support numero yet, keep save flow working.
+  }
+}
+
 export const config = {
   api: {
     bodyParser: {
@@ -56,6 +114,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       })
       if (!m || m.deletedAt) return res.status(404).json({ error: 'Not found' })
 
+      const numeroMap = await loadPeligroNumeroMapByMatrizId(mid)
+
       const mapped: any = {
         id: m.id,
         area: m.area || '',
@@ -89,7 +149,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
                 id: pel.id,
                 descripcion: pel.descripcion || '',
                 clasificacion: pel.clasificacion || '',
-                numero: pel.numero || 0,
+                numero: (typeof pel.numero === 'number' ? pel.numero : (numeroMap[pel.id] || 0)),
                 orden: pel.orden || 0,
                 efectos: pel.efectosPosibles || '',
                 controles: {
@@ -219,6 +279,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           }
         }
       })
+
+      if (!prismaSupportsPeligroNumero) {
+        await persistPeligroNumeroByOrderPath(mid, body.procesos || [])
+      }
       
       return res.status(200).json({ id: updated.id })
     }
