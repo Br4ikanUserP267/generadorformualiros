@@ -756,9 +756,9 @@ export default function MatrixEditor({ id }: { id?: string }) {
                                           key={a.id}
                                           className={`flex items-center justify-between p-2 rounded cursor-pointer ${selected.actividadId===a.id? 'bg-slate-100':''} ${dragOverActividadId===a.id? 'bg-slate-200':''}`}
                                           onClick={() => setSelected({ procesoId: p.id, zonaId: z.id, actividadId: a.id })}
-                                          onDragOver={(e) => onActividadDragOver(e, a.id)}
+                                          onDragOver={(e) => { e.stopPropagation(); onActividadDragOver(e, a.id) }}
                                           onDragLeave={() => onActividadDragLeave()}
-                                          onDrop={(e) => onActividadDrop(e, p.id, z.id, a.id)}
+                                          onDrop={(e) => { e.stopPropagation(); onActividadDrop(e, p.id, z.id, a.id) }}
                                         >
                                           <div className="flex items-center gap-2">
                                             <div
@@ -766,6 +766,7 @@ export default function MatrixEditor({ id }: { id?: string }) {
                                               draggable
                                               onDragStart={(e) => onActividadDragStart(e, p.id, z.id, a.id)}
                                               onClick={(e:any) => e.stopPropagation()}
+                                              onMouseDown={(e:any) => e.stopPropagation()}
                                               title="Reordenar actividad"
                                             >
                                               <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4 text-slate-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -888,9 +889,9 @@ export default function MatrixEditor({ id }: { id?: string }) {
                         <div
                           key={r.id}
                           className={`border rounded bg-[#fafcfa] ${dragOverPeligroId===r.id? 'bg-slate-100':''}`}
-                          onDragOver={(e) => onPeligroDragOver(e, r.id)}
+                          onDragOver={(e) => { e.stopPropagation(); onPeligroDragOver(e, r.id) }}
                           onDragLeave={() => onPeligroDragLeave()}
-                          onDrop={(e) => onPeligroDrop(e, currentProceso.id, currentZona.id, currentActividad.id, r.id)}
+                          onDrop={(e) => { e.stopPropagation(); onPeligroDrop(e, currentProceso.id, currentZona.id, currentActividad.id, r.id) }}
                         >
                           <div className="p-3 flex items-center justify-between cursor-pointer" onClick={() => updatePeligroField(currentProceso.id, currentZona.id, currentActividad.id, r.id, ['_ui','expanded'], !r._ui?.expanded)}>
                             <div className="flex items-center gap-3">
@@ -899,6 +900,7 @@ export default function MatrixEditor({ id }: { id?: string }) {
                                 draggable
                                 onDragStart={(e) => onPeligroDragStart(e, currentProceso.id, currentZona.id, currentActividad.id, r.id)}
                                 onClick={(e:any) => e.stopPropagation()}
+                                onMouseDown={(e:any) => e.stopPropagation()}
                                 title="Reordenar peligro"
                               >
                                 <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4 text-slate-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
