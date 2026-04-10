@@ -125,6 +125,7 @@ export default function MatrixEditor({ id }: { id?: string }) {
   const [zonaModalActivities, setZonaModalActivities] = useState<Array<{id:string,nombre:string,tareas:string}>>([])
   const [expandedZonaIds, setExpandedZonaIds] = useState<Record<string, boolean>>({})
   const [dragOverActividadId, setDragOverActividadId] = useState<string | null>(null)
+  const [dragOverActividadEdge, setDragOverActividadEdge] = useState<'before' | 'after' | null>(null)
   const [dragOverPeligroId, setDragOverPeligroId] = useState<string | null>(null)
   const [dragOverPeligroEdge, setDragOverPeligroEdge] = useState<'before' | 'after' | null>(null)
   const [showFilesModal, setShowFilesModal] = useState(false)
@@ -132,6 +133,7 @@ export default function MatrixEditor({ id }: { id?: string }) {
   const [selectedPreviewIndex, setSelectedPreviewIndex] = useState<number | null>(null)
   const fileInputRef = useRef<HTMLInputElement | null>(null)
   const isDraggingRef = useRef(false)
+  const actividadDragSourceRef = useRef<{ procesoId: string, zonaId: string, actividadId: string } | null>(null)
   const isDraggingPeligroRef = useRef(false)
   const peligroDragSourceRef = useRef<{ procesoId: string, zonaId: string, actividadId: string, peligroId: string } | null>(null)
 
@@ -367,30 +369,45 @@ export default function MatrixEditor({ id }: { id?: string }) {
   // Drag & drop handlers for reordering actividades and peligros
   function onActividadDragStart(e: React.DragEvent, procesoId: string, zonaId: string, actividadId: string) {
     isDraggingRef.current = true
+    actividadDragSourceRef.current = { procesoId, zonaId, actividadId }
     e.stopPropagation()
     try { e.dataTransfer.setData('application/json', JSON.stringify({ type: 'actividad', procesoId, zonaId, actividadId })) } catch (e) {}
     try { e.dataTransfer.setData('text/plain', actividadId) } catch (e) {}
     e.dataTransfer.effectAllowed = 'move'
   }
 
-  function onActividadDragOver(e: React.DragEvent, targetActividadId: string) {
+  function onActividadDragOver(e: React.DragEvent, targetActividadId: string | null) {
     e.preventDefault()
+    e.stopPropagation()
     setDragOverActividadId(targetActividadId)
+    if (!targetActividadId) {
+      setDragOverActividadEdge(null)
+    } else {
+      const rect = (e.currentTarget as HTMLElement).getBoundingClientRect()
+      const edge: 'before' | 'after' = e.clientY < rect.top + rect.height / 2 ? 'before' : 'after'
+      setDragOverActividadEdge(edge)
+    }
     e.dataTransfer.dropEffect = 'move'
   }
 
   function onActividadDragLeave() {
     setDragOverActividadId(null)
+    setDragOverActividadEdge(null)
   }
 
   function onActividadDrop(e: React.DragEvent, procesoId: string, zonaId: string, targetActividadId: string | null) {
     e.preventDefault()
+    e.stopPropagation()
     isDraggingRef.current = false
+    const dropEdge = dragOverActividadEdge
     setDragOverActividadId(null)
-    let src: any = null
-    try { src = JSON.parse(e.dataTransfer.getData('application/json')) } catch (err) { }
+    setDragOverActividadEdge(null)
+    let src: any = actividadDragSourceRef.current
+    if (!src) {
+      try { src = JSON.parse(e.dataTransfer.getData('application/json')) } catch (err) { }
+    }
     // fallback: some browsers strip custom MIME types; try text/plain and locate source by id
-    if (!src || src.type !== 'actividad') {
+    if (!src || (!src.type && !src.actividadId) || src.type === 'actividad') {
       try {
         const txt = e.dataTransfer.getData('text/plain') || ''
         if (txt) {
@@ -411,7 +428,12 @@ export default function MatrixEditor({ id }: { id?: string }) {
         }
       } catch (err) {}
     }
-    if (!src || src.type !== 'actividad') return
+    if (!src || !src.actividadId) return
+    if (src.procesoId === procesoId && src.zonaId === zonaId && targetActividadId === src.actividadId) {
+      actividadDragSourceRef.current = null
+      setTimeout(() => { isDraggingRef.current = false }, 0)
+      return
+    }
 
     updateMatrix((m: any) => {
       const srcP = m.procesos.find((p: any) => p.id === src.procesoId)
@@ -424,12 +446,18 @@ export default function MatrixEditor({ id }: { id?: string }) {
       const dstP = m.procesos.find((p: any) => p.id === procesoId)
       const dstZ = dstP?.zonas?.find((z: any) => z.id === zonaId)
       if (!dstZ) return m
-      const destIdx = targetActividadId ? dstZ.actividades.findIndex((aa: any) => aa.id === targetActividadId) : -1
-      if (destIdx === -1) dstZ.actividades.push(actividadObj)
-      else dstZ.actividades.splice(destIdx, 0, actividadObj)
+      const targetIdx = targetActividadId ? dstZ.actividades.findIndex((aa: any) => aa.id === targetActividadId) : -1
+      if (targetIdx === -1) dstZ.actividades.push(actividadObj)
+      else {
+        const insertIdx = dropEdge === 'after' ? targetIdx + 1 : targetIdx
+        dstZ.actividades.splice(insertIdx, 0, actividadObj)
+      }
 
       return m
     })
+
+    actividadDragSourceRef.current = null
+    setTimeout(() => { isDraggingRef.current = false }, 0)
   }
 
   function onPeligroDragStart(e: React.DragEvent, procesoId: string, zonaId: string, actividadId: string, peligroId: string) {
@@ -784,11 +812,11 @@ export default function MatrixEditor({ id }: { id?: string }) {
                                 </div>
                                 {expanded && (
                                   <div className="pl-6 pr-2 pb-2">
-                                    <div className="space-y-1" onDragOver={(e)=>{ e.preventDefault(); setDragOverActividadId(null); e.dataTransfer.dropEffect='move' }} onDrop={(e)=> onActividadDrop(e, p.id, z.id, null)}>
+                                    <div className="space-y-1" onDragOver={(e)=> onActividadDragOver(e, null)} onDrop={(e)=> onActividadDrop(e, p.id, z.id, null)}>
                                       {(z.actividades||[]).map((a: any) => (
                                         <div
                                           key={a.id}
-                                          className={`flex items-center justify-between p-2 rounded cursor-pointer ${selected.actividadId===a.id? 'bg-slate-100':''} ${dragOverActividadId===a.id? 'bg-slate-200':''}`}
+                                          className={`flex items-center justify-between p-2 rounded cursor-pointer ${selected.actividadId===a.id? 'bg-slate-100':''} ${dragOverActividadId===a.id? 'bg-slate-200':''} ${dragOverActividadId===a.id && dragOverActividadEdge==='before' ? 'border-t-2 border-t-[#2d7a40]' : ''} ${dragOverActividadId===a.id && dragOverActividadEdge==='after' ? 'border-b-2 border-b-[#2d7a40]' : ''}`}
                                           onDragStart={(e) => e.stopPropagation()}
                                           onClick={() => {
                                             if (isDraggingRef.current) { isDraggingRef.current = false; return }
@@ -803,7 +831,12 @@ export default function MatrixEditor({ id }: { id?: string }) {
                                               className="mr-2 p-1 cursor-move rounded hover:bg-slate-100"
                                               draggable
                                               onDragStart={(e) => onActividadDragStart(e, p.id, z.id, a.id)}
-                                              onDragEnd={() => { setTimeout(() => { isDraggingRef.current = false }, 0) }}
+                                              onDragEnd={() => {
+                                                setDragOverActividadId(null)
+                                                setDragOverActividadEdge(null)
+                                                actividadDragSourceRef.current = null
+                                                setTimeout(() => { isDraggingRef.current = false }, 0)
+                                              }}
                                               onClick={(e:any) => e.stopPropagation()}
                                               onMouseDown={(e:any) => e.stopPropagation()}
                                               title="Reordenar actividad"
