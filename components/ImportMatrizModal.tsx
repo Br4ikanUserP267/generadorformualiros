@@ -97,6 +97,14 @@ const PREVIEW_COLUMNS: Array<{ key: keyof PreviewRow; label: string }> = [
   { key: 'fechaEjecucion', label: 'Fecha de Ejecución' },
 ]
 
+function compactPreviewValue(value: unknown, maxLen = 28): string {
+  if (value === null || value === undefined) return ''
+  const text = String(value).trim()
+  if (!text) return ''
+  if (text.length <= maxLen) return text
+  return `${text.slice(0, maxLen)}...`
+}
+
 type Step = 'upload' | 'preview' | 'result'
 
 export function ImportMatrizModal({ open, onOpenChange }: { open: boolean; onOpenChange: (open: boolean) => void }) {
@@ -269,7 +277,12 @@ export function ImportMatrizModal({ open, onOpenChange }: { open: boolean; onOpe
                     <tr key={idx} className="border-t">
                       {PREVIEW_COLUMNS.map((column) => {
                         const value = row[column.key]
-                        return <td key={column.key} className="p-2 whitespace-nowrap">{value ?? ''}</td>
+                        const full = value === null || value === undefined ? '' : String(value)
+                        return (
+                          <td key={column.key} className="p-2 whitespace-nowrap" title={full}>
+                            {compactPreviewValue(value)}
+                          </td>
+                        )
                       })}
                     </tr>
                   ))}

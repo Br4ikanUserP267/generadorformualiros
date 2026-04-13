@@ -466,13 +466,22 @@ function getCellText(value: ExcelJS.CellValue): string {
   if (value instanceof Date) return value.toISOString().split('T')[0]
 
   if (typeof value === 'object') {
-    const rich = value as { richText?: Array<{ text: string }>; text?: string; result?: unknown }
+    const rich = value as {
+      richText?: Array<{ text: string }>
+      text?: string
+      result?: unknown
+      formula?: string
+      hyperlink?: string
+    }
     if (Array.isArray(rich.richText)) return rich.richText.map((t) => t.text || '').join('')
     if (rich.text) return rich.text
+    if (rich.hyperlink && rich.text) return rich.text
     if (rich.result !== undefined && rich.result !== null) return String(rich.result)
+    if (rich.formula && (rich.result === undefined || rich.result === null)) return ''
+    return ''
   }
 
-  return String(value)
+  return ''
 }
 
 function getEffectiveCellText(sheet: ExcelJS.Worksheet, rowIndex: number, colIndex: number): string {
@@ -658,6 +667,21 @@ export async function parseImportWorkbook(buffer: Buffer): Promise<{
     const hasAnyValue = Object.values(raw).some((v) => !!v)
     if (!hasAnyValue) continue
 
+    const hasRowSignal = [
+      raw.proceso,
+      raw.zona,
+      raw.actividadDescripcion,
+      raw.tareas,
+      raw.cargo,
+      raw.peligro,
+      raw.clasificacion,
+      raw.efectos,
+      raw.nd,
+      raw.ne,
+      raw.nc,
+    ].some(Boolean)
+    if (!hasRowSignal) continue
+
     const hasDangerData = [
       raw.peligro,
       raw.clasificacion,
@@ -667,14 +691,6 @@ export async function parseImportWorkbook(buffer: Buffer): Promise<{
       raw.nc,
       raw.numExpuestos,
       raw.peorConsecuencia,
-      raw.requisitoLegal,
-      raw.eliminacion,
-      raw.sustitucion,
-      raw.controlesIngenieria,
-      raw.controlesAdministrativos,
-      raw.epp,
-      raw.responsableIntervencion,
-      raw.fechaEjecucion,
     ].some(Boolean)
     if (!hasDangerData) {
       if (raw.proceso && raw.proceso !== currentProceso) {

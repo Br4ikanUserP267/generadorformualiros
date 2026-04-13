@@ -117,6 +117,9 @@ export function Dashboard() {
   const [duplicateSuccessTitle, setDuplicateSuccessTitle] = useState('')
   const [previewMatrixId, setPreviewMatrixId] = useState<string|null>(null)
   const [importOpen, setImportOpen] = useState(false)
+  const [currentPage, setCurrentPage] = useState(1)
+
+  const PAGE_SIZE = 10
 
   useEffect(() => {
     const load = async () => {
@@ -205,6 +208,23 @@ export function Dashboard() {
       return true
     })
   }, [matrices, search, clasFilter, tipoFilter, dateDesde, dateHasta])
+
+  useEffect(() => {
+    setCurrentPage(1)
+  }, [search, clasFilter, tipoFilter, dateDesde, dateHasta])
+
+  const totalPages = useMemo(() => {
+    return Math.max(1, Math.ceil(filtered.length / PAGE_SIZE))
+  }, [filtered.length])
+
+  const paginated = useMemo(() => {
+    const start = (currentPage - 1) * PAGE_SIZE
+    return filtered.slice(start, start + PAGE_SIZE)
+  }, [filtered, currentPage])
+
+  useEffect(() => {
+    if (currentPage > totalPages) setCurrentPage(totalPages)
+  }, [currentPage, totalPages])
 
   const stats = useMemo(() => {
     let totP = 0, ma = 0, al = 0, me = 0, ba = 0
@@ -438,6 +458,12 @@ export function Dashboard() {
         .mcard-actions {display:flex;flex-direction:column;gap:4px;flex-shrink:0}
         .ibt {width:28px;height:28px;border-radius:var(--border-radius-md);border:0.5px solid var(--color-border-tertiary);background:transparent;cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--color-text-secondary);transition:all 0.15s;}
         .ibt:hover {background:var(--color-background-secondary);color:var(--color-text-primary);}
+
+        .pagination {display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:12px;flex-wrap:wrap}
+        .pagination-info {font-size:12px;color:var(--color-text-secondary)}
+        .pagination-actions {display:flex;align-items:center;gap:8px}
+        .pbtn {padding:6px 10px;border-radius:var(--border-radius-md);border:0.5px solid var(--color-border-tertiary);background:var(--color-background-primary);font-size:12px;cursor:pointer;color:var(--color-text-primary)}
+        .pbtn:disabled {opacity:.45;cursor:not-allowed}
       `}} />
 
       <div className="html-wrapper">
@@ -524,7 +550,7 @@ export function Dashboard() {
           <div className="results-label">{filtered.length} matri{filtered.length === 1 ? 'z' : 'ces'}</div>
           
           <div className="mlist">
-            {filtered.map(m => (
+            {paginated.map(m => (
               <div key={m.id} className="mcard" onClick={() => router.push('/matriz/' + m.id)}>
                 <div className="mcard-left">
                   <div className="mcard-title">{m.title}</div>
@@ -574,6 +600,20 @@ export function Dashboard() {
               </div>
             )}
           </div>
+
+          {filtered.length > 0 && (
+            <div className="pagination">
+              <div className="pagination-info">
+                Página {currentPage} de {totalPages} · Mostrando {paginated.length} de {filtered.length}
+              </div>
+              <div className="pagination-actions">
+                <button className="pbtn" disabled={currentPage <= 1} onClick={() => setCurrentPage(1)}>Primera</button>
+                <button className="pbtn" disabled={currentPage <= 1} onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}>Anterior</button>
+                <button className="pbtn" disabled={currentPage >= totalPages} onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}>Siguiente</button>
+                <button className="pbtn" disabled={currentPage >= totalPages} onClick={() => setCurrentPage(totalPages)}>Última</button>
+              </div>
+            </div>
+          )}
         </div>
       </div>
 
