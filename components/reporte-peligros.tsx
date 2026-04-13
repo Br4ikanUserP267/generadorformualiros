@@ -64,7 +64,7 @@ export function ReportePeligros() {
   const [page, setPage] = useState(0)
   const [pageSize] = useState(20)
   const [search, setSearch] = useState('')
-  const [selectedAceptabilidad, setSelectedAceptabilidad] = useState<string[]>([])
+  const [selectedAceptabilidad, setSelectedAceptabilidad] = useState<string | null>(null)
   const [counts, setCounts] = useState<CountsResponse>({ muyAlto: 0, alto: 0, medio: 0, bajo: 0 })
   const [loading, setLoading] = useState(false)
 
@@ -92,7 +92,7 @@ export function ReportePeligros() {
       params.set('page', String(nextPage))
       params.set('pageSize', String(pageSize))
       if (search.trim()) params.set('search', search.trim())
-      if (selectedAceptabilidad.length > 0) params.set('aceptabilidad', selectedAceptabilidad.join(','))
+      if (selectedAceptabilidad) params.set('aceptabilidad', selectedAceptabilidad)
 
       const res = await apiFetch(`/api/reporte/peligros?${params.toString()}`)
       if (!res.ok) throw new Error('No se pudo cargar el reporte')
@@ -123,15 +123,12 @@ export function ReportePeligros() {
   }, [page, pageSize, search, selectedAceptabilidad])
 
   function toggleAceptabilidad(value: string) {
-    setSelectedAceptabilidad((prev) => {
-      if (prev.includes(value)) return prev.filter((item) => item !== value)
-      return [...prev, value]
-    })
+    setSelectedAceptabilidad((prev) => (prev === value ? null : value))
   }
 
   function clearFilters() {
     setSearch('')
-    setSelectedAceptabilidad([])
+    setSelectedAceptabilidad(null)
     setPage(0)
   }
 
@@ -139,13 +136,19 @@ export function ReportePeligros() {
     <div className="min-h-screen bg-[#f5f8f5] p-6">
       <div className="mx-auto max-w-7xl space-y-6">
         <div className="rounded-xl border border-[#dde8dd] bg-white p-4">
-          <h1 className="text-xl font-semibold text-[#2d7a40]">Reporte de Peligros</h1>
-          <p className="text-sm text-slate-600">Vista consolidada de peligros por nivel de riesgo y aceptabilidad.</p>
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <h1 className="text-xl font-semibold text-[#2d7a40]">Reporte de Peligros</h1>
+            </div>
+            <Button asChild variant="outline">
+              <Link href="/dashboard">Volver</Link>
+            </Button>
+          </div>
         </div>
 
         <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-4">
           {ACEPTABILIDAD_LEVELS.map((card) => {
-            const selected = selectedAceptabilidad.includes(card.key)
+            const selected = selectedAceptabilidad === card.key
             const count =
               card.key === 'No Aceptable' ? counts.muyAlto :
               card.key === 'Aceptable con Control Especifico' ? counts.alto :
@@ -154,15 +157,15 @@ export function ReportePeligros() {
             return (
               <Card
                 key={card.key}
-                className={`cursor-pointer border-[#dde8dd] transition ${selected ? 'ring-2 ring-[#2d7a40]' : ''}`}
+                className={`cursor-pointer overflow-hidden border-[#dde8dd] py-0 gap-0 transition ${selected ? 'ring-2 ring-[#2d7a40]' : ''}`}
                 onClick={() => toggleAceptabilidad(card.key)}
               >
-                <CardHeader className="rounded-t-xl bg-[#2d7a40] py-3">
+                <CardHeader className="rounded-none bg-[#2d7a40] py-3">
                   <CardTitle className="text-sm text-white">{card.icon} {card.label}</CardTitle>
                 </CardHeader>
                 <CardContent className="pt-4">
                   <div className="text-3xl font-semibold" style={{ color: card.color }}>{count}</div>
-                  <div className="text-xs text-slate-500">aceptabilidad: {card.key}</div>
+                  <div className="text-xs text-slate-500">{card.key}</div>
                 </CardContent>
               </Card>
             )
@@ -177,6 +180,16 @@ export function ReportePeligros() {
               placeholder="Buscar por descripción de peligro..."
               className="max-w-md border-[#dde8dd]"
             />
+            <select
+              value={selectedAceptabilidad || ''}
+              onChange={(e) => setSelectedAceptabilidad(e.target.value || null)}
+              className="h-9 rounded-md border border-[#dde8dd] bg-white px-3 text-sm text-slate-700"
+            >
+              <option value="">Aceptabilidad: Todas</option>
+              {ACEPTABILIDAD_LEVELS.map((level) => (
+                <option key={level.key} value={level.key}>{level.key}</option>
+              ))}
+            </select>
             <Button variant="outline" onClick={clearFilters}>Limpiar filtros</Button>
           </div>
         </div>
@@ -213,7 +226,7 @@ export function ReportePeligros() {
                       </td>
                       <td className="px-4 py-3">
                         {item.matrizId ? (
-                          <Link href={`/matriz-riesgos/${item.matrizId}`} className="text-[#2d7a40] underline-offset-2 hover:underline">
+                          <Link href={`/matriz/${item.matrizId}`} className="text-[#2d7a40] underline-offset-2 hover:underline">
                             {item.nombreMatriz}
                           </Link>
                         ) : (
