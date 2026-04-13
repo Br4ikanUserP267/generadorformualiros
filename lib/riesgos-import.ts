@@ -190,12 +190,12 @@ const WORKBOOK_LAYOUT = {
     controlIndividuo: 13,
     nd: 14,
     ne: 15,
-    nc: 16,
-    nivelProbabilidad: 17,
-    interpProbabilidad: 18,
-    nivelConsecuencia: 19,
-    nivelRiesgo: 20,
-    interpRiesgo: 21,
+    nivelProbabilidad: 16,
+    interpProbabilidad: 17,
+    nc: 18,
+    nivelRiesgo: 19,
+    interpRiesgo: 20,
+    valoracionRiesgo: 21,
     numExpuestos: 22,
     peorConsecuencia: 23,
     requisitoLegal: 24,
@@ -592,6 +592,7 @@ export async function parseImportWorkbook(buffer: Buffer): Promise<{
   validRows: number
   errors: ImportRowError[]
   preview: ImportPreviewRow[]
+  metadata: ParsedImport['metadata']
   parsed: ParsedImport
 }> {
   const workbook = new ExcelJS.Workbook()
@@ -811,18 +812,40 @@ export async function parseImportWorkbook(buffer: Buffer): Promise<{
       preview.push({
         proceso: procesoValue,
         zona: zonaValue,
-        actividad: actividadDescripcion,
+        actividad: actividadName,
+        descripcionActividad: actividadDescripcion,
+        tareas: raw.tareas,
+        cargo: raw.cargo,
+        rutinario: raw.rutinario,
         peligro: raw.peligro,
         clasificacion: raw.clasificacion,
         efectos: raw.efectos,
+        controlFuente: raw.controlFuente,
+        controlMedio: raw.controlMedio,
+        controlIndividuo: raw.controlIndividuo,
         nd,
         ne,
         nc,
+        nivelProbabilidad: np || null,
+        interpretacionProbabilidad: interpNp,
+        nivelRiesgo: nr || null,
+        interpretacionNivelRiesgo: interpNr,
+        valoracionRiesgo: aceptabilidad,
+        numeroExpuestos: parseNumber(raw.numExpuestos).value,
+        peorConsecuencia: raw.peorConsecuencia,
+        requisitoLegal: raw.requisitoLegal,
+        eliminacion: raw.eliminacion,
+        sustitucion: raw.sustitucion,
+        controlesIngenieria: raw.controlesIngenieria,
+        controlesAdministrativos: raw.controlesAdministrativos,
+        epp: raw.epp,
+        responsableIntervencion: raw.responsableIntervencion,
+        fechaEjecucion: asIsoDate(raw.fechaEjecucion),
       })
     }
   }
 
-  return { totalRows, validRows, errors, preview, parsed }
+  return { totalRows, validRows, errors, preview, metadata, parsed }
 }
 
 export async function buildTemplateWorkbookBuffer() {

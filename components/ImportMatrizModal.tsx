@@ -17,12 +17,41 @@ type PreviewRow = {
   proceso: string
   zona: string
   actividad: string
+  descripcionActividad: string
+  tareas: string
+  cargo: string
+  rutinario: string
   peligro: string
   clasificacion: string
   efectos: string
+  controlFuente: string
+  controlMedio: string
+  controlIndividuo: string
   nd: number | null
   ne: number | null
   nc: number | null
+  nivelProbabilidad: number | null
+  interpretacionProbabilidad: string
+  nivelRiesgo: number | null
+  interpretacionNivelRiesgo: string
+  valoracionRiesgo: string
+  numeroExpuestos: number | null
+  peorConsecuencia: string
+  requisitoLegal: string
+  eliminacion: string
+  sustitucion: string
+  controlesIngenieria: string
+  controlesAdministrativos: string
+  epp: string
+  responsableIntervencion: string
+  fechaEjecucion: string | null
+}
+
+type PreviewMetadata = {
+  area: string
+  responsable: string
+  fechaElaboracion: string
+  fechaActualizacion: string
 }
 
 type PreviewResponse = {
@@ -31,7 +60,42 @@ type PreviewResponse = {
   validRows: number
   errors: PreviewError[]
   preview: PreviewRow[]
+  metadata: PreviewMetadata
 }
+
+const PREVIEW_COLUMNS: Array<{ key: keyof PreviewRow; label: string }> = [
+  { key: 'proceso', label: 'Proceso' },
+  { key: 'zona', label: 'Zona / Lugar' },
+  { key: 'actividad', label: 'Actividad' },
+  { key: 'descripcionActividad', label: 'Descripción de la Actividad' },
+  { key: 'tareas', label: 'Tareas' },
+  { key: 'cargo', label: 'Cargo' },
+  { key: 'rutinario', label: 'Rutinario' },
+  { key: 'peligro', label: 'Peligro' },
+  { key: 'clasificacion', label: 'Clasificación del Peligro' },
+  { key: 'efectos', label: 'Efectos Posibles' },
+  { key: 'controlFuente', label: 'Control Fuente' },
+  { key: 'controlMedio', label: 'Control Medio' },
+  { key: 'controlIndividuo', label: 'Control Individuo' },
+  { key: 'nd', label: 'ND' },
+  { key: 'ne', label: 'NE' },
+  { key: 'nivelProbabilidad', label: 'NP' },
+  { key: 'interpretacionProbabilidad', label: 'Interpretación NP' },
+  { key: 'nc', label: 'NC' },
+  { key: 'nivelRiesgo', label: 'NR' },
+  { key: 'interpretacionNivelRiesgo', label: 'Interpretación NR' },
+  { key: 'valoracionRiesgo', label: 'Valoración del Riesgo' },
+  { key: 'numeroExpuestos', label: 'N° Expuestos' },
+  { key: 'peorConsecuencia', label: 'Peor Consecuencia' },
+  { key: 'requisitoLegal', label: 'Requisito Legal' },
+  { key: 'eliminacion', label: 'Eliminación' },
+  { key: 'sustitucion', label: 'Sustitución' },
+  { key: 'controlesIngenieria', label: 'Controles de Ingeniería' },
+  { key: 'controlesAdministrativos', label: 'Controles Administrativos' },
+  { key: 'epp', label: 'EPP' },
+  { key: 'responsableIntervencion', label: 'Intervención' },
+  { key: 'fechaEjecucion', label: 'Fecha de Ejecución' },
+]
 
 type Step = 'upload' | 'preview' | 'result'
 
@@ -175,7 +239,14 @@ export function ImportMatrizModal({ open, onOpenChange }: { open: boolean; onOpe
         {step === 'preview' && previewData && (
           <div className="space-y-4">
             <div className="text-sm text-slate-700">
-              {previewData.totalRows} filas encontradas, {previewData.errors.length} errores.
+              {previewData.totalRows} filas encontradas, {previewData.errors.length} errores. Mostrando primeras {previewRows.length} filas con todas las columnas.
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm border rounded p-3 bg-slate-50">
+              <div><span className="font-medium">Área / Proceso:</span> {previewData.metadata?.area || '—'}</div>
+              <div><span className="font-medium">Responsable:</span> {previewData.metadata?.responsable || '—'}</div>
+              <div><span className="font-medium">Fecha Elaboración:</span> {previewData.metadata?.fechaElaboracion || '—'}</div>
+              <div><span className="font-medium">Fecha Actualización:</span> {previewData.metadata?.fechaActualizacion || '—'}</div>
             </div>
 
             {hasErrors && (
@@ -188,34 +259,23 @@ export function ImportMatrizModal({ open, onOpenChange }: { open: boolean; onOpe
               <table className="w-full text-sm">
                 <thead className="bg-slate-100">
                   <tr>
-                    <th className="text-left p-2">Proceso</th>
-                    <th className="text-left p-2">Zona</th>
-                    <th className="text-left p-2">Actividad</th>
-                    <th className="text-left p-2">Peligro</th>
-                    <th className="text-left p-2">Clasificación</th>
-                    <th className="text-left p-2">Efectos</th>
-                    <th className="text-left p-2">ND</th>
-                    <th className="text-left p-2">NE</th>
-                    <th className="text-left p-2">NC</th>
+                    {PREVIEW_COLUMNS.map((column) => (
+                      <th key={column.key} className="text-left p-2 whitespace-nowrap">{column.label}</th>
+                    ))}
                   </tr>
                 </thead>
                 <tbody>
                   {previewRows.map((row, idx) => (
                     <tr key={idx} className="border-t">
-                      <td className="p-2">{row.proceso}</td>
-                      <td className="p-2">{row.zona}</td>
-                      <td className="p-2">{row.actividad}</td>
-                      <td className="p-2">{row.peligro}</td>
-                      <td className="p-2">{row.clasificacion}</td>
-                      <td className="p-2">{row.efectos}</td>
-                      <td className="p-2">{row.nd ?? ''}</td>
-                      <td className="p-2">{row.ne ?? ''}</td>
-                      <td className="p-2">{row.nc ?? ''}</td>
+                      {PREVIEW_COLUMNS.map((column) => {
+                        const value = row[column.key]
+                        return <td key={column.key} className="p-2 whitespace-nowrap">{value ?? ''}</td>
+                      })}
                     </tr>
                   ))}
                   {previewRows.length === 0 && (
                     <tr>
-                      <td colSpan={9} className="p-4 text-center text-slate-500">No hay filas válidas para previsualizar.</td>
+                      <td colSpan={PREVIEW_COLUMNS.length} className="p-4 text-center text-slate-500">No hay filas válidas para previsualizar.</td>
                     </tr>
                   )}
                 </tbody>

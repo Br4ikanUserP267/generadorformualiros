@@ -10,12 +10,34 @@ export type ImportPreviewRow = {
   proceso: string
   zona: string
   actividad: string
+  descripcionActividad: string
+  tareas: string
+  cargo: string
+  rutinario: string
   peligro: string
   clasificacion: string
   efectos: string
+  controlFuente: string
+  controlMedio: string
+  controlIndividuo: string
   nd: number | null
   ne: number | null
   nc: number | null
+  nivelProbabilidad: number | null
+  interpretacionProbabilidad: string
+  nivelRiesgo: number | null
+  interpretacionNivelRiesgo: string
+  valoracionRiesgo: string
+  numeroExpuestos: number | null
+  peorConsecuencia: string
+  requisitoLegal: string
+  eliminacion: string
+  sustitucion: string
+  controlesIngenieria: string
+  controlesAdministrativos: string
+  epp: string
+  responsableIntervencion: string
+  fechaEjecucion: string | null
 }
 
 export type ParsedPeligro = {

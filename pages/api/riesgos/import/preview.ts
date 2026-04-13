@@ -64,6 +64,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       validRows: saved.validRows,
       errors: saved.errors,
       preview: saved.preview,
+      metadata: saved.metadata,
     })
   } catch (error: any) {
     if (error?.code === 'LIMIT_FILE_SIZE') {

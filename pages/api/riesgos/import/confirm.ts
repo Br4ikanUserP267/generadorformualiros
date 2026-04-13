@@ -30,6 +30,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const fechaElaboracion = fecha_elaboracion
       ? new Date(fecha_elaboracion)
       : (savedMetadata.fechaElaboracion ? new Date(savedMetadata.fechaElaboracion) : new Date())
+    const fechaActualizacion = savedMetadata.fechaActualizacion ? new Date(savedMetadata.fechaActualizacion) : null
 
     const areaValue = String(area ?? savedMetadata.area ?? '').trim()
     const responsableValue = String(responsable ?? savedMetadata.responsable ?? '').trim()
@@ -41,7 +42,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           area: areaValue,
           responsable: responsableValue,
           fechaElaboracion,
-          fechaActualizacion: null,
+          fechaActualizacion,
           procesos: {
             create: saved.parsed.procesos.map((p, pIdx) => ({
               nombre: p.nombre.trim(),
