@@ -35,18 +35,26 @@ type CountsResponse = {
 }
 
 const ACEPTABILIDAD_LEVELS = [
-  { key: 'No Aceptable', label: 'Muy Alto', color: '#c0392b', icon: '🔴' },
-  { key: 'Aceptable con Control Especifico', label: 'Alto', color: '#e67e22', icon: '🟠' },
+  { key: 'No Aceptable', label: 'Muy Alto', color: '#a50000', icon: '🔴' },
+  { key: 'Aceptable con Control Especifico', label: 'Alto', color: '#dc3545', icon: '🟠' },
   { key: 'Mejorable', label: 'Medio', color: '#f59e0b', icon: '🟡' },
-  { key: 'Aceptable', label: 'Bajo', color: '#27ae60', icon: '🟢' },
+  { key: 'Aceptable', label: 'Bajo', color: '#198754', icon: '🟢' },
 ] as const
 
 function levelColor(label: string) {
   const norm = label.toLowerCase().trim()
-  if (norm === 'muy alto' || norm === 'i') return '#c0392b'
-  if (norm === 'alto' || norm === 'ii') return '#e67e22'
+  if (norm === 'muy alto' || norm === 'i') return '#a50000'
+  if (norm === 'alto' || norm === 'ii') return '#dc3545'
   if (norm === 'medio' || norm === 'iii') return '#f59e0b'
-  if (norm === 'bajo' || norm === 'iv') return '#27ae60'
+  if (norm === 'bajo' || norm === 'iv') return '#198754'
+  return '#64748b'
+}
+
+function aceptabilidadColor(aceptabilidad: string) {
+  if (aceptabilidad === 'No Aceptable') return '#dc3545'
+  if (aceptabilidad === 'Aceptable con Control Especifico') return '#f59e0b'
+  if (aceptabilidad === 'Mejorable') return '#198754'
+  if (aceptabilidad === 'Aceptable') return '#198754'
   return '#64748b'
 }
 
@@ -133,18 +141,15 @@ export function ReportePeligros() {
   }
 
   return (
-    <div className="min-h-screen bg-[#f5f8f5] p-6">
-      <div className="mx-auto max-w-7xl space-y-6">
-        <div className="rounded-xl border border-[#dde8dd] bg-white p-4">
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            <div>
-              <h1 className="text-xl font-semibold text-[#2d7a40]">Reporte de Peligros</h1>
-            </div>
-            <Button asChild variant="outline">
-              <Link href="/dashboard">Volver</Link>
-            </Button>
-          </div>
-        </div>
+    <div className="min-h-screen bg-[#f5f8f5]">
+      <div className="sticky top-0 z-10 flex items-center gap-3 border-b border-[#d4e8d4] bg-white px-4 py-3">
+        <Button asChild variant="ghost" style={{ color: '#1a5c2a' }}>
+          <Link href="/dashboard">Volver</Link>
+        </Button>
+        <h1 className="text-xl font-semibold text-[#2d7a40]">Reporte de Peligros</h1>
+      </div>
+
+      <div className="mx-auto max-w-7xl space-y-6 p-6">
 
         <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-4">
           {ACEPTABILIDAD_LEVELS.map((card) => {
@@ -157,15 +162,14 @@ export function ReportePeligros() {
             return (
               <Card
                 key={card.key}
-                className={`cursor-pointer overflow-hidden border-[#dde8dd] py-0 gap-0 transition ${selected ? 'ring-2 ring-[#2d7a40]' : ''}`}
+                className={`cursor-pointer overflow-hidden border-[#dde8dd] py-0 gap-0 transition min-h-[170px] ${selected ? 'ring-2 ring-[#2d7a40]' : ''}`}
                 onClick={() => toggleAceptabilidad(card.key)}
               >
                 <CardHeader className="rounded-none bg-[#2d7a40] py-3">
                   <CardTitle className="text-sm text-white">{card.icon} {card.label}</CardTitle>
                 </CardHeader>
-                <CardContent className="pt-4">
+                <CardContent className="pt-5 pb-5">
                   <div className="text-3xl font-semibold" style={{ color: card.color }}>{count}</div>
-                  <div className="text-xs text-slate-500">{card.key}</div>
                 </CardContent>
               </Card>
             )
@@ -180,16 +184,6 @@ export function ReportePeligros() {
               placeholder="Buscar por descripción de peligro..."
               className="max-w-md border-[#dde8dd]"
             />
-            <select
-              value={selectedAceptabilidad || ''}
-              onChange={(e) => setSelectedAceptabilidad(e.target.value || null)}
-              className="h-9 rounded-md border border-[#dde8dd] bg-white px-3 text-sm text-slate-700"
-            >
-              <option value="">Aceptabilidad: Todas</option>
-              {ACEPTABILIDAD_LEVELS.map((level) => (
-                <option key={level.key} value={level.key}>{level.key}</option>
-              ))}
-            </select>
             <Button variant="outline" onClick={clearFilters}>Limpiar filtros</Button>
           </div>
         </div>
@@ -212,8 +206,7 @@ export function ReportePeligros() {
                 {items.map((item) => {
                   const nivelLabel = item.interpRiesgo || aceptabilidadToLevel(item.aceptabilidad)
                   const nivelColor = levelColor(nivelLabel)
-                  const aceptabilidadLevel = aceptabilidadToLevel(item.aceptabilidad)
-                  const aceptabilidadColor = levelColor(aceptabilidadLevel)
+                  const colorAceptabilidad = aceptabilidadColor(item.aceptabilidad)
 
                   return (
                     <tr key={item.id} className="border-t border-[#edf3ed]">
@@ -235,7 +228,7 @@ export function ReportePeligros() {
                       </td>
                       <td className="px-4 py-3">{item.actividad}</td>
                       <td className="px-4 py-3">
-                        <Badge className="border-0 text-white" style={{ backgroundColor: aceptabilidadColor }}>
+                        <Badge className="border-0 text-white" style={{ backgroundColor: colorAceptabilidad }}>
                           {item.aceptabilidad || 'Sin aceptabilidad'}
                         </Badge>
                       </td>
