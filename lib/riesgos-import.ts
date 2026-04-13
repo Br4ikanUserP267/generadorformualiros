@@ -133,32 +133,32 @@ const FIELD_LABELS: Record<ImportFieldKey, string> = {
 }
 
 const FIELD_ALIASES: Record<ImportFieldKey, string[]> = {
-  proceso: ['proceso'],
-  zona: ['zona / lugar', 'zona lugar', 'zona'],
-  actividad: ['actividad'],
-  descripcionActividad: ['descripcion de la actividad', 'descripcion actividad'],
+  proceso: ['proceso', 'area / proceso', 'area proceso'],
+  zona: ['zona / lugar', 'zona/lugar', 'zona lugar', 'zona'],
+  actividad: ['actividad', 'actividades', 'descripcion de la actividad', 'actividades descripcion'],
+  descripcionActividad: ['descripcion de la actividad', 'descripcion actividad', 'actividades', 'actividad'],
   tareas: ['tareas', 'tarea'],
   cargo: ['cargo'],
-  rutinario: ['rutinario'],
-  peligro: ['peligro'],
-  clasificacion: ['clasificacion del peligro', 'clasificacion peligro', 'clasificacion'],
+  rutinario: ['rutinario', 'rutinario si o no', 'si o no'],
+  peligro: ['peligro', 'peligros', 'peligros descripcion', 'descripcion peligro'],
+  clasificacion: ['clasificacion del peligro', 'clasificacion peligro', 'clasificacion', 'peligros clasificacion'],
   efectos: ['efectos posibles', 'efectos'],
-  controlFuente: ['control fuente', 'fuente'],
-  controlMedio: ['control medio', 'medio'],
-  controlIndividuo: ['control individuo', 'individuo'],
-  nd: ['nd'],
-  ne: ['ne'],
-  nc: ['nc'],
-  numExpuestos: ['num. expuestos', 'num expuestos', 'numero expuestos'],
+  controlFuente: ['control fuente', 'controles existentes fuente', 'fuente'],
+  controlMedio: ['control medio', 'controles existentes medio', 'medio'],
+  controlIndividuo: ['control individuo', 'controles existentes individuo', 'individuo'],
+  nd: ['nd', 'nivel deficiencia', 'evaluacion del riesgo nivel deficiencia'],
+  ne: ['ne', 'nivel exposicion', 'evaluacion del riesgo nivel exposicion'],
+  nc: ['nc', 'nivel consecuencia', 'evaluacion del riesgo nivel consecuencia'],
+  numExpuestos: ['num. expuestos', 'num expuestos', 'numero expuestos', 'n de expuestos', 'n° de expuestos'],
   peorConsecuencia: ['peor consecuencia'],
-  requisitoLegal: ['requisito legal'],
-  eliminacion: ['eliminacion'],
-  sustitucion: ['sustitucion'],
-  controlesIngenieria: ['controles ingenieria', 'control ingenieria'],
-  controlesAdministrativos: ['controles administrativos', 'control administrativo'],
-  epp: ['epp'],
-  responsableIntervencion: ['responsable intervencion'],
-  fechaEjecucion: ['fecha ejecucion'],
+  requisitoLegal: ['requisito legal', 'existencia de requisito legal', 'existencia de requisito legal o especifico'],
+  eliminacion: ['eliminacion', 'medidas de intervencion eliminacion'],
+  sustitucion: ['sustitucion', 'medidas de intervencion sustitucion'],
+  controlesIngenieria: ['controles ingenieria', 'controles de ingenieria', 'medidas de intervencion controles de ingenieria'],
+  controlesAdministrativos: ['controles administrativos', 'senalizacion advertencia controles administrativos'],
+  epp: ['epp', 'equipos / elementos de proteccion personal', 'equipos elementos de proteccion personal'],
+  responsableIntervencion: ['responsable intervencion', 'intervencion', 'seguimiento medidas de intervencion intervencion'],
+  fechaEjecucion: ['fecha ejecucion', 'seguimiento medidas de intervencion fecha de ejecucion'],
 }
 
 type HeaderDetection = {
@@ -184,13 +184,23 @@ function detectHeaderMapping(sheet: ExcelJS.Worksheet): HeaderDetection {
 
     const maxCol = Math.max(row.cellCount, 60)
     for (let col = 1; col <= maxCol; col++) {
-      const cellText = normalizeHeader(cleanString(getCellText(row.getCell(col).value)))
-      if (!cellText) continue
+      const current = normalizeHeader(getEffectiveCellText(sheet, rowIdx, col))
+      const above = normalizeHeader(getEffectiveCellText(sheet, rowIdx - 1, col))
+      const below = normalizeHeader(getEffectiveCellText(sheet, rowIdx + 1, col))
+
+      const candidates = [
+        current,
+        below,
+        `${current} ${below}`.trim(),
+        `${above} ${current}`.trim(),
+        `${above} ${current} ${below}`.trim(),
+      ].filter(Boolean)
+      if (candidates.length === 0) continue
 
       for (const field of Object.keys(FIELD_ALIASES) as ImportFieldKey[]) {
         if (mapping[field]) continue
         const aliases = FIELD_ALIASES[field]
-        if (aliases.some((a) => cellText.includes(normalizeHeader(a)))) {
+        if (aliases.some((a) => candidates.some((c) => c.includes(normalizeHeader(a))))) {
           mapping[field] = col
         }
       }
@@ -207,17 +217,25 @@ function detectHeaderMapping(sheet: ExcelJS.Worksheet): HeaderDetection {
     }
   }
 
+  if (!best.mapping.actividad && best.mapping.descripcionActividad) {
+    best.mapping.actividad = best.mapping.descripcionActividad
+  }
+  if (!best.mapping.descripcionActividad && best.mapping.actividad) {
+    best.mapping.descripcionActividad = best.mapping.actividad
+  }
+
   return best
 }
 
 function readMappedCell(
   row: ExcelJS.Row,
+  sheet: ExcelJS.Worksheet,
   mapping: Partial<Record<ImportFieldKey, number>>,
   key: ImportFieldKey
 ) {
   const col = mapping[key]
   if (!col) return ''
-  return cleanString(getCellText(row.getCell(col).value))
+  return cleanString(getEffectiveCellText(sheet, row.number, col))
 }
 
 function parseBooleanSiNo(raw: string): { value: boolean | null; error?: string } {
@@ -269,6 +287,21 @@ function getCellText(value: ExcelJS.CellValue): string {
   }
 
   return String(value)
+}
+
+function getEffectiveCellText(sheet: ExcelJS.Worksheet, rowIndex: number, colIndex: number): string {
+  if (rowIndex < 1 || colIndex < 1) return ''
+  const cell = sheet.getRow(rowIndex).getCell(colIndex)
+
+  let txt = cleanString(getCellText(cell.value))
+  if (txt) return txt
+
+  if (cell.isMerged && cell.master) {
+    txt = cleanString(getCellText(cell.master.value))
+    if (txt) return txt
+  }
+
+  return ''
 }
 
 function interpProbabilidad(np: number) {
@@ -389,32 +422,32 @@ export async function parseImportWorkbook(buffer: Buffer): Promise<{
     const row = sheet.getRow(rowNumber)
 
     const raw = {
-      proceso: readMappedCell(row, detected.mapping, 'proceso'),
-      zona: readMappedCell(row, detected.mapping, 'zona'),
-      actividad: readMappedCell(row, detected.mapping, 'actividad'),
-      descripcionActividad: readMappedCell(row, detected.mapping, 'descripcionActividad'),
-      tareas: readMappedCell(row, detected.mapping, 'tareas'),
-      cargo: readMappedCell(row, detected.mapping, 'cargo'),
-      rutinario: readMappedCell(row, detected.mapping, 'rutinario'),
-      peligro: readMappedCell(row, detected.mapping, 'peligro'),
-      clasificacion: readMappedCell(row, detected.mapping, 'clasificacion'),
-      efectos: readMappedCell(row, detected.mapping, 'efectos'),
-      controlFuente: readMappedCell(row, detected.mapping, 'controlFuente'),
-      controlMedio: readMappedCell(row, detected.mapping, 'controlMedio'),
-      controlIndividuo: readMappedCell(row, detected.mapping, 'controlIndividuo'),
-      nd: readMappedCell(row, detected.mapping, 'nd'),
-      ne: readMappedCell(row, detected.mapping, 'ne'),
-      nc: readMappedCell(row, detected.mapping, 'nc'),
-      numExpuestos: readMappedCell(row, detected.mapping, 'numExpuestos'),
-      peorConsecuencia: readMappedCell(row, detected.mapping, 'peorConsecuencia'),
-      requisitoLegal: readMappedCell(row, detected.mapping, 'requisitoLegal'),
-      eliminacion: readMappedCell(row, detected.mapping, 'eliminacion'),
-      sustitucion: readMappedCell(row, detected.mapping, 'sustitucion'),
-      controlesIngenieria: readMappedCell(row, detected.mapping, 'controlesIngenieria'),
-      controlesAdministrativos: readMappedCell(row, detected.mapping, 'controlesAdministrativos'),
-      epp: readMappedCell(row, detected.mapping, 'epp'),
-      responsableIntervencion: readMappedCell(row, detected.mapping, 'responsableIntervencion'),
-      fechaEjecucion: readMappedCell(row, detected.mapping, 'fechaEjecucion'),
+      proceso: readMappedCell(row, sheet, detected.mapping, 'proceso'),
+      zona: readMappedCell(row, sheet, detected.mapping, 'zona'),
+      actividad: readMappedCell(row, sheet, detected.mapping, 'actividad'),
+      descripcionActividad: readMappedCell(row, sheet, detected.mapping, 'descripcionActividad'),
+      tareas: readMappedCell(row, sheet, detected.mapping, 'tareas'),
+      cargo: readMappedCell(row, sheet, detected.mapping, 'cargo'),
+      rutinario: readMappedCell(row, sheet, detected.mapping, 'rutinario'),
+      peligro: readMappedCell(row, sheet, detected.mapping, 'peligro'),
+      clasificacion: readMappedCell(row, sheet, detected.mapping, 'clasificacion'),
+      efectos: readMappedCell(row, sheet, detected.mapping, 'efectos'),
+      controlFuente: readMappedCell(row, sheet, detected.mapping, 'controlFuente'),
+      controlMedio: readMappedCell(row, sheet, detected.mapping, 'controlMedio'),
+      controlIndividuo: readMappedCell(row, sheet, detected.mapping, 'controlIndividuo'),
+      nd: readMappedCell(row, sheet, detected.mapping, 'nd'),
+      ne: readMappedCell(row, sheet, detected.mapping, 'ne'),
+      nc: readMappedCell(row, sheet, detected.mapping, 'nc'),
+      numExpuestos: readMappedCell(row, sheet, detected.mapping, 'numExpuestos'),
+      peorConsecuencia: readMappedCell(row, sheet, detected.mapping, 'peorConsecuencia'),
+      requisitoLegal: readMappedCell(row, sheet, detected.mapping, 'requisitoLegal'),
+      eliminacion: readMappedCell(row, sheet, detected.mapping, 'eliminacion'),
+      sustitucion: readMappedCell(row, sheet, detected.mapping, 'sustitucion'),
+      controlesIngenieria: readMappedCell(row, sheet, detected.mapping, 'controlesIngenieria'),
+      controlesAdministrativos: readMappedCell(row, sheet, detected.mapping, 'controlesAdministrativos'),
+      epp: readMappedCell(row, sheet, detected.mapping, 'epp'),
+      responsableIntervencion: readMappedCell(row, sheet, detected.mapping, 'responsableIntervencion'),
+      fechaEjecucion: readMappedCell(row, sheet, detected.mapping, 'fechaEjecucion'),
     }
 
     const hasAnyValue = Object.values(raw).some((v) => !!v)
