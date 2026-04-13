@@ -378,6 +378,8 @@ export function Dashboard() {
               {user?.cargo ? <><>&nbsp;·&nbsp;</>{user.cargo}</> : null}
             </span>
             <span style={{opacity:'.3', margin:'0 4px', color:'#c8dfc8'}}>|</span>
+            <span style={{cursor:'pointer', color:'#1a5c2a', fontWeight:500}} onClick={() => router.push('/dashboard/reporte')}>Reporte de Peligros</span>
+            <span style={{opacity:'.3', margin:'0 4px', color:'#c8dfc8'}}>|</span>
             <span style={{cursor:'pointer', color:'#1a5c2a', fontWeight:500}} onClick={() => { logout(); router.push('/') }}>Cerrar sesión</span>
           </div>
         </div>
