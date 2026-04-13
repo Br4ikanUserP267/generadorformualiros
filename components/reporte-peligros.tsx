@@ -43,10 +43,9 @@ const ACEPTABILIDAD_LEVELS = [
 
 function levelColor(label: string) {
   const norm = label.toLowerCase().trim()
-  if (norm === 'muy alto' || norm === 'i') return '#a50000'
-  if (norm === 'alto' || norm === 'ii') return '#dc3545'
-  if (norm === 'medio' || norm === 'iii') return '#f59e0b'
-  if (norm === 'bajo' || norm === 'iv') return '#198754'
+  if (norm === 'i' || norm === 'muy alto') return '#a50000'
+  if (norm === 'ii' || norm === 'medio') return '#f59e0b'
+  if (norm === 'iii' || norm === 'iv' || norm === 'alto' || norm === 'bajo') return '#198754'
   return '#64748b'
 }
 
