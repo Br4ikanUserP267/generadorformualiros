@@ -338,7 +338,6 @@ export function Dashboard() {
             <div className="logo-divider"></div>
             <div>
               <div className="logo-text">Matriz de Riesgos</div>
-              <div className="logo-sub">{(user as any)?.organizacion || 'Organización'} — v1</div>
             </div>
           </div>
             <div className="user-pill">
