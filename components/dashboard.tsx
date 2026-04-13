@@ -4,6 +4,7 @@ import React, { useMemo, useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { useAuth } from '@/lib/auth-context'
 import ConfirmModal from './confirm-modal'
+import { ImportMatrizModal } from './ImportMatrizModal'
 import { MatrixPreview } from './matrix-preview'
 import { exportMatrizToExcel } from '@/lib/matriz-excel-export'
 import type { Riesgo } from '@/lib/types'
@@ -115,6 +116,7 @@ export function Dashboard() {
   const [duplicateSuccess, setDuplicateSuccess] = useState(false)
   const [duplicateSuccessTitle, setDuplicateSuccessTitle] = useState('')
   const [previewMatrixId, setPreviewMatrixId] = useState<string|null>(null)
+  const [importOpen, setImportOpen] = useState(false)
 
   useEffect(() => {
     const load = async () => {
@@ -221,6 +223,10 @@ export function Dashboard() {
 
   const handleNew = () => {
     router.push('/matriz/nuevo')
+  }
+
+  const handleOpenImport = () => {
+    setImportOpen(true)
   }
 
   function confirmDeleteAction() {
@@ -400,8 +406,13 @@ export function Dashboard() {
         .fsel {padding:8px 12px;font-size:13px;border-radius:var(--border-radius-md);border:0.5px solid var(--color-border-secondary);background:var(--color-background-secondary);color:var(--color-text-secondary);cursor:pointer;outline:none;appearance:auto}
         .fdate {padding:8px 12px;font-size:13px;border-radius:var(--border-radius-md);border:0.5px solid var(--color-border-secondary);background:var(--color-background-secondary);color:var(--color-text-secondary);width:130px;outline:none}
         .flabel {font-size:13px;color:var(--color-text-secondary);white-space:nowrap}
-        .new-btn {margin-left:auto;padding:9px 20px;font-size:13px;border-radius:var(--border-radius-md);border:none;background:#1a5c2a;color:#fff;cursor:pointer;font-weight:600;white-space:nowrap;transition:opacity 0.2s;}
+        .new-menu-wrap {margin-left:auto;position:relative}
+        .new-btn {padding:9px 20px;font-size:13px;border-radius:var(--border-radius-md);border:none;background:#1a5c2a;color:#fff;cursor:pointer;font-weight:600;white-space:nowrap;transition:opacity 0.2s;}
         .new-btn:hover {opacity:0.9;}
+        .new-menu {position:absolute;right:0;top:calc(100% + 6px);min-width:230px;background:var(--color-background-primary);border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-md);box-shadow:0 8px 30px rgba(0,0,0,.08);padding:6px;display:none;z-index:20}
+        .new-menu-wrap:hover .new-menu, .new-menu-wrap:focus-within .new-menu {display:block}
+        .new-menu-item {display:block;width:100%;text-align:left;background:transparent;border:none;padding:9px 10px;font-size:13px;border-radius:8px;color:var(--color-text-primary);cursor:pointer}
+        .new-menu-item:hover {background:var(--color-background-secondary)}
         
         .results-label {font-size:11px;color:var(--color-text-secondary);margin-bottom:8px}
         
@@ -500,7 +511,13 @@ export function Dashboard() {
                   <option key={t} value={t}>{t}</option>
                 ))}
               </select>
-              <button className="new-btn" onClick={handleNew}>+ Nueva matriz</button>
+              <div className="new-menu-wrap">
+                <button className="new-btn">+ Nueva matriz</button>
+                <div className="new-menu">
+                  <button className="new-menu-item" onClick={handleNew}>Ingresar datos manualmente</button>
+                  <button className="new-menu-item" onClick={handleOpenImport}>Importar desde Excel</button>
+                </div>
+              </div>
             </div>
           </div>
 
@@ -559,6 +576,8 @@ export function Dashboard() {
           </div>
         </div>
       </div>
+
+        <ImportMatrizModal open={importOpen} onOpenChange={setImportOpen} />
 
       <ConfirmModal
         open={confirmOpen}

@@ -23,6 +23,8 @@ model Matriz {
   usuarioId          String    @map("usuario_id")
   area               String?
   responsable        String?
+  importadoPor       String?   @map("importado_por")
+  importadoEn        DateTime? @map("importado_en")
   fechaElaboracion   DateTime? @map("fecha_elaboracion")
   fechaActualizacion DateTime? @map("fecha_actualizacion")
   createdAt          DateTime  @default(now()) @map("created_at")
