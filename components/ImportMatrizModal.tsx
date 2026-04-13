@@ -168,11 +168,6 @@ export function ImportMatrizModal({ open, onOpenChange }: { open: boolean; onOpe
               {error && <div className="mt-4 text-sm text-red-600">{error}</div>}
             </div>
 
-            <div className="text-sm">
-              <a className="text-[#2d7a40] underline" href="/api/riesgos/import/template" target="_blank" rel="noreferrer">
-                Descargar plantilla
-              </a>
-            </div>
           </div>
         )}
 

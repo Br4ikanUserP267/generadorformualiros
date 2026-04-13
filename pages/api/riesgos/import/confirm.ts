@@ -35,8 +35,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           responsable: (responsable || '').trim(),
           fechaElaboracion,
           fechaActualizacion: null,
-          importadoPor: firstUser.id,
-          importadoEn: new Date(),
           procesos: {
             create: saved.parsed.procesos.map((p, pIdx) => ({
               nombre: p.nombre.trim(),

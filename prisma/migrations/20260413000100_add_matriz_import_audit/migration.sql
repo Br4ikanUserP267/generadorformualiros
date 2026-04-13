@@ -1,3 +1,0 @@
-ALTER TABLE "matrices"
-ADD COLUMN IF NOT EXISTS "importado_por" TEXT,
-ADD COLUMN IF NOT EXISTS "importado_en" TIMESTAMP(3);

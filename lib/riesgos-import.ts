@@ -41,7 +41,183 @@ function normalizeHeader(value: string): string {
   return value
     .normalize('NFD')
     .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .replace(/\s+/g, ' ')
     .trim()
+}
+
+type ImportFieldKey =
+  | 'proceso'
+  | 'zona'
+  | 'actividad'
+  | 'descripcionActividad'
+  | 'tareas'
+  | 'cargo'
+  | 'rutinario'
+  | 'peligro'
+  | 'clasificacion'
+  | 'efectos'
+  | 'controlFuente'
+  | 'controlMedio'
+  | 'controlIndividuo'
+  | 'nd'
+  | 'ne'
+  | 'nc'
+  | 'numExpuestos'
+  | 'peorConsecuencia'
+  | 'requisitoLegal'
+  | 'eliminacion'
+  | 'sustitucion'
+  | 'controlesIngenieria'
+  | 'controlesAdministrativos'
+  | 'epp'
+  | 'responsableIntervencion'
+  | 'fechaEjecucion'
+
+const REQUIRED_IMPORT_FIELDS: ImportFieldKey[] = [
+  'proceso',
+  'zona',
+  'actividad',
+  'descripcionActividad',
+  'tareas',
+  'cargo',
+  'rutinario',
+  'peligro',
+  'clasificacion',
+  'efectos',
+  'controlFuente',
+  'controlMedio',
+  'controlIndividuo',
+  'nd',
+  'ne',
+  'nc',
+  'numExpuestos',
+  'peorConsecuencia',
+  'requisitoLegal',
+  'eliminacion',
+  'sustitucion',
+  'controlesIngenieria',
+  'controlesAdministrativos',
+  'epp',
+  'responsableIntervencion',
+  'fechaEjecucion',
+]
+
+const FIELD_LABELS: Record<ImportFieldKey, string> = {
+  proceso: 'Proceso',
+  zona: 'Zona / Lugar',
+  actividad: 'Actividad',
+  descripcionActividad: 'Descripción de la Actividad',
+  tareas: 'Tareas',
+  cargo: 'Cargo',
+  rutinario: 'Rutinario',
+  peligro: 'Peligro',
+  clasificacion: 'Clasificación del Peligro',
+  efectos: 'Efectos Posibles',
+  controlFuente: 'Control Fuente',
+  controlMedio: 'Control Medio',
+  controlIndividuo: 'Control Individuo',
+  nd: 'ND',
+  ne: 'NE',
+  nc: 'NC',
+  numExpuestos: 'Num. Expuestos',
+  peorConsecuencia: 'Peor Consecuencia',
+  requisitoLegal: 'Requisito Legal',
+  eliminacion: 'Eliminación',
+  sustitucion: 'Sustitución',
+  controlesIngenieria: 'Controles Ingeniería',
+  controlesAdministrativos: 'Controles Administrativos',
+  epp: 'EPP',
+  responsableIntervencion: 'Responsable Intervención',
+  fechaEjecucion: 'Fecha Ejecución',
+}
+
+const FIELD_ALIASES: Record<ImportFieldKey, string[]> = {
+  proceso: ['proceso'],
+  zona: ['zona / lugar', 'zona lugar', 'zona'],
+  actividad: ['actividad'],
+  descripcionActividad: ['descripcion de la actividad', 'descripcion actividad'],
+  tareas: ['tareas', 'tarea'],
+  cargo: ['cargo'],
+  rutinario: ['rutinario'],
+  peligro: ['peligro'],
+  clasificacion: ['clasificacion del peligro', 'clasificacion peligro', 'clasificacion'],
+  efectos: ['efectos posibles', 'efectos'],
+  controlFuente: ['control fuente', 'fuente'],
+  controlMedio: ['control medio', 'medio'],
+  controlIndividuo: ['control individuo', 'individuo'],
+  nd: ['nd'],
+  ne: ['ne'],
+  nc: ['nc'],
+  numExpuestos: ['num. expuestos', 'num expuestos', 'numero expuestos'],
+  peorConsecuencia: ['peor consecuencia'],
+  requisitoLegal: ['requisito legal'],
+  eliminacion: ['eliminacion'],
+  sustitucion: ['sustitucion'],
+  controlesIngenieria: ['controles ingenieria', 'control ingenieria'],
+  controlesAdministrativos: ['controles administrativos', 'control administrativo'],
+  epp: ['epp'],
+  responsableIntervencion: ['responsable intervencion'],
+  fechaEjecucion: ['fecha ejecucion'],
+}
+
+type HeaderDetection = {
+  headerRowIndex: number
+  dataStartRow: number
+  mapping: Partial<Record<ImportFieldKey, number>>
+}
+
+function detectHeaderMapping(sheet: ExcelJS.Worksheet): HeaderDetection {
+  const lastRowToScan = Math.min(sheet.rowCount || 1, 35)
+
+  let best: HeaderDetection = {
+    headerRowIndex: 1,
+    dataStartRow: 2,
+    mapping: {},
+  }
+
+  let bestScore = -1
+
+  for (let rowIdx = 1; rowIdx <= lastRowToScan; rowIdx++) {
+    const row = sheet.getRow(rowIdx)
+    const mapping: Partial<Record<ImportFieldKey, number>> = {}
+
+    const maxCol = Math.max(row.cellCount, 60)
+    for (let col = 1; col <= maxCol; col++) {
+      const cellText = normalizeHeader(cleanString(getCellText(row.getCell(col).value)))
+      if (!cellText) continue
+
+      for (const field of Object.keys(FIELD_ALIASES) as ImportFieldKey[]) {
+        if (mapping[field]) continue
+        const aliases = FIELD_ALIASES[field]
+        if (aliases.some((a) => cellText.includes(normalizeHeader(a)))) {
+          mapping[field] = col
+        }
+      }
+    }
+
+    const score = Object.keys(mapping).length
+    if (score > bestScore) {
+      bestScore = score
+      best = {
+        headerRowIndex: rowIdx,
+        dataStartRow: rowIdx + 1,
+        mapping,
+      }
+    }
+  }
+
+  return best
+}
+
+function readMappedCell(
+  row: ExcelJS.Row,
+  mapping: Partial<Record<ImportFieldKey, number>>,
+  key: ImportFieldKey
+) {
+  const col = mapping[key]
+  if (!col) return ''
+  return cleanString(getCellText(row.getCell(col).value))
 }
 
 function parseBooleanSiNo(raw: string): { value: boolean | null; error?: string } {
@@ -188,17 +364,10 @@ export async function parseImportWorkbook(buffer: Buffer): Promise<{
     throw new Error('No se encontro la hoja "Matriz" en el archivo')
   }
 
-  const headers: string[] = []
-  const headerRow = sheet.getRow(1)
-  for (let i = 0; i < EXPECTED_HEADERS.length; i++) {
-    headers.push(normalizeHeader(cleanString(getCellText(headerRow.getCell(i + 1).value))))
-  }
-
-  const expectedNormalized = EXPECTED_HEADERS.map((h) => normalizeHeader(h))
-  const missing: string[] = []
-  for (let i = 0; i < expectedNormalized.length; i++) {
-    if (headers[i] !== expectedNormalized[i]) missing.push(EXPECTED_HEADERS[i])
-  }
+  const detected = detectHeaderMapping(sheet)
+  const missing = REQUIRED_IMPORT_FIELDS
+    .filter((field) => !detected.mapping[field])
+    .map((field) => FIELD_LABELS[field])
 
   if (missing.length > 0) {
     const err = new Error('Columnas faltantes') as Error & { missing?: string[] }
@@ -216,44 +385,68 @@ export async function parseImportWorkbook(buffer: Buffer): Promise<{
   const preview: ImportPreviewRow[] = []
   const parsed: ParsedImport = { procesos: [] }
 
-  for (let rowNumber = 2; rowNumber <= sheet.rowCount; rowNumber++) {
+  for (let rowNumber = detected.dataStartRow; rowNumber <= sheet.rowCount; rowNumber++) {
     const row = sheet.getRow(rowNumber)
 
-    const raw: RawRow = {}
-    for (let i = 0; i < EXPECTED_HEADERS.length; i++) {
-      raw[EXPECTED_HEADERS[i]] = cleanString(getCellText(row.getCell(i + 1).value))
+    const raw = {
+      proceso: readMappedCell(row, detected.mapping, 'proceso'),
+      zona: readMappedCell(row, detected.mapping, 'zona'),
+      actividad: readMappedCell(row, detected.mapping, 'actividad'),
+      descripcionActividad: readMappedCell(row, detected.mapping, 'descripcionActividad'),
+      tareas: readMappedCell(row, detected.mapping, 'tareas'),
+      cargo: readMappedCell(row, detected.mapping, 'cargo'),
+      rutinario: readMappedCell(row, detected.mapping, 'rutinario'),
+      peligro: readMappedCell(row, detected.mapping, 'peligro'),
+      clasificacion: readMappedCell(row, detected.mapping, 'clasificacion'),
+      efectos: readMappedCell(row, detected.mapping, 'efectos'),
+      controlFuente: readMappedCell(row, detected.mapping, 'controlFuente'),
+      controlMedio: readMappedCell(row, detected.mapping, 'controlMedio'),
+      controlIndividuo: readMappedCell(row, detected.mapping, 'controlIndividuo'),
+      nd: readMappedCell(row, detected.mapping, 'nd'),
+      ne: readMappedCell(row, detected.mapping, 'ne'),
+      nc: readMappedCell(row, detected.mapping, 'nc'),
+      numExpuestos: readMappedCell(row, detected.mapping, 'numExpuestos'),
+      peorConsecuencia: readMappedCell(row, detected.mapping, 'peorConsecuencia'),
+      requisitoLegal: readMappedCell(row, detected.mapping, 'requisitoLegal'),
+      eliminacion: readMappedCell(row, detected.mapping, 'eliminacion'),
+      sustitucion: readMappedCell(row, detected.mapping, 'sustitucion'),
+      controlesIngenieria: readMappedCell(row, detected.mapping, 'controlesIngenieria'),
+      controlesAdministrativos: readMappedCell(row, detected.mapping, 'controlesAdministrativos'),
+      epp: readMappedCell(row, detected.mapping, 'epp'),
+      responsableIntervencion: readMappedCell(row, detected.mapping, 'responsableIntervencion'),
+      fechaEjecucion: readMappedCell(row, detected.mapping, 'fechaEjecucion'),
     }
 
-    const hasAnyValue = EXPECTED_HEADERS.some((h) => raw[h])
+    const hasAnyValue = Object.values(raw).some((v) => !!v)
     if (!hasAnyValue) continue
 
     totalRows += 1
 
-    const procesoValue = raw['Proceso'] || lastProceso
-    const zonaValue = raw['Zona / Lugar'] || lastZona
-    const actividadValue = raw['Actividad'] || lastActividad
+    const procesoValue = raw.proceso || lastProceso
+    const zonaValue = raw.zona || lastZona
+    const actividadValue = raw.actividad || lastActividad
 
-    if (raw['Proceso']) lastProceso = raw['Proceso']
-    if (raw['Zona / Lugar']) lastZona = raw['Zona / Lugar']
-    if (raw['Actividad']) lastActividad = raw['Actividad']
+    if (raw.proceso) lastProceso = raw.proceso
+    if (raw.zona) lastZona = raw.zona
+    if (raw.actividad) lastActividad = raw.actividad
 
     const rowErrors: ImportRowError[] = []
 
     if (!procesoValue) rowErrors.push({ row: rowNumber, field: 'Proceso', message: 'Requerido' })
     if (!actividadValue) rowErrors.push({ row: rowNumber, field: 'Actividad', message: 'Requerido' })
-    if (!raw['Peligro']) rowErrors.push({ row: rowNumber, field: 'Peligro', message: 'Requerido' })
+    if (!raw.peligro) rowErrors.push({ row: rowNumber, field: 'Peligro', message: 'Requerido' })
 
-    const ndParsed = parseNumber(raw.ND)
-    const neParsed = parseNumber(raw.NE)
-    const ncParsed = parseNumber(raw.NC)
+    const ndParsed = parseNumber(raw.nd)
+    const neParsed = parseNumber(raw.ne)
+    const ncParsed = parseNumber(raw.nc)
     if (ndParsed.error) rowErrors.push({ row: rowNumber, field: 'ND', message: ndParsed.error })
     if (neParsed.error) rowErrors.push({ row: rowNumber, field: 'NE', message: neParsed.error })
     if (ncParsed.error) rowErrors.push({ row: rowNumber, field: 'NC', message: ncParsed.error })
 
-    const rutinarioParsed = parseBooleanSiNo(raw.Rutinario)
+    const rutinarioParsed = parseBooleanSiNo(raw.rutinario)
     if (rutinarioParsed.error) rowErrors.push({ row: rowNumber, field: 'Rutinario', message: rutinarioParsed.error })
 
-    const requisitoParsed = parseBooleanSiNo(raw['Requisito Legal'])
+    const requisitoParsed = parseBooleanSiNo(raw.requisitoLegal)
     if (requisitoParsed.error) rowErrors.push({ row: rowNumber, field: 'Requisito Legal', message: requisitoParsed.error })
 
     if (rowErrors.length > 0) {
@@ -274,13 +467,13 @@ export async function parseImportWorkbook(buffer: Buffer): Promise<{
     const aceptabilidad = aceptabilidadFromNivel(interpNr)
 
     const peligro: ParsedPeligro = {
-      descripcion: raw.Peligro,
-      clasificacion: raw['Clasificación del Peligro'],
-      efectosPosibles: raw['Efectos Posibles'],
+      descripcion: raw.peligro,
+      clasificacion: raw.clasificacion,
+      efectosPosibles: raw.efectos,
       control: {
-        fuente: raw['Control Fuente'],
-        medio: raw['Control Medio'],
-        individuo: raw['Control Individuo'],
+        fuente: raw.controlFuente,
+        medio: raw.controlMedio,
+        individuo: raw.controlIndividuo,
       },
       evaluacion: {
         nivelDeficiencia: nd,
@@ -293,18 +486,18 @@ export async function parseImportWorkbook(buffer: Buffer): Promise<{
         aceptabilidad,
       },
       criterio: {
-        numExpuestos: parseNumber(raw['Num. Expuestos']).value,
-        peorConsecuencia: raw['Peor Consecuencia'],
+        numExpuestos: parseNumber(raw.numExpuestos).value,
+        peorConsecuencia: raw.peorConsecuencia,
         requisitoLegal: !!requisitoParsed.value,
       },
       intervencion: {
-        eliminacion: raw['Eliminación'],
-        sustitucion: raw['Sustitución'],
-        controlesIngenieria: raw['Controles Ingeniería'],
-        controlesAdministrativos: raw['Controles Administrativos'],
-        epp: raw.EPP,
-        responsable: raw['Responsable Intervención'],
-        fechaEjecucion: asIsoDate(raw['Fecha Ejecución']),
+        eliminacion: raw.eliminacion,
+        sustitucion: raw.sustitucion,
+        controlesIngenieria: raw.controlesIngenieria,
+        controlesAdministrativos: raw.controlesAdministrativos,
+        epp: raw.epp,
+        responsable: raw.responsableIntervencion,
+        fechaEjecucion: asIsoDate(raw.fechaEjecucion),
       },
     }
 
@@ -312,9 +505,9 @@ export async function parseImportWorkbook(buffer: Buffer): Promise<{
     const zona = ensureZona(proceso, zonaValue || 'Sin zona')
     const actividad = ensureActividad(zona, {
       nombre: actividadValue,
-      descripcion: raw['Descripción de la Actividad'],
-      tareas: raw.Tareas,
-      cargo: raw.Cargo,
+      descripcion: raw.descripcionActividad,
+      tareas: raw.tareas,
+      cargo: raw.cargo,
       rutinario: rutinarioParsed.value,
     })
 
@@ -325,9 +518,9 @@ export async function parseImportWorkbook(buffer: Buffer): Promise<{
         proceso: procesoValue,
         zona: zonaValue,
         actividad: actividadValue,
-        peligro: raw.Peligro,
-        clasificacion: raw['Clasificación del Peligro'],
-        efectos: raw['Efectos Posibles'],
+        peligro: raw.peligro,
+        clasificacion: raw.clasificacion,
+        efectos: raw.efectos,
         nd,
         ne,
         nc,
