@@ -499,6 +499,16 @@ function readWorkbookText(sheet: ExcelJS.Worksheet, rowIndex: number, colIndex: 
   return cleanString(getEffectiveCellText(sheet, rowIndex, colIndex))
 }
 
+function findLastDataRow(sheet: ExcelJS.Worksheet): number {
+  const maxRow = sheet.rowCount || 1
+  for (let rowIdx = maxRow; rowIdx >= WORKBOOK_LAYOUT.dataStartRow; rowIdx--) {
+    for (const col of Object.values(WORKBOOK_LAYOUT.columns)) {
+      if (readWorkbookText(sheet, rowIdx, col, false)) return rowIdx
+    }
+  }
+  return WORKBOOK_LAYOUT.dataStartRow - 1
+}
+
 function interpProbabilidad(np: number) {
   if (!np) return '—'
   if (np >= 24 && np <= 40) return 'Muy Alto'
@@ -599,9 +609,12 @@ export async function parseImportWorkbook(buffer: Buffer): Promise<{
     fechaActualizacion: asIsoDate(readWorkbookText(sheet, WORKBOOK_LAYOUT.metadata.fechaActualizacion.row, WORKBOOK_LAYOUT.metadata.fechaActualizacion.col)) || '',
   }
 
+  const lastDataRow = findLastDataRow(sheet)
+
   let currentProceso = ''
   let currentZona = ''
   let currentActivity: ParsedImport['procesos'][number]['zonas'][number]['actividades'][number] | null = null
+  let currentActivityDescripcion = ''
   let activityCounter = 0
 
   let totalRows = 0
@@ -610,35 +623,35 @@ export async function parseImportWorkbook(buffer: Buffer): Promise<{
   const preview: ImportPreviewRow[] = []
   const parsed: ParsedImport = { metadata, procesos: [] }
 
-  for (let rowNumber = WORKBOOK_LAYOUT.dataStartRow; rowNumber <= sheet.rowCount; rowNumber++) {
+  for (let rowNumber = WORKBOOK_LAYOUT.dataStartRow; rowNumber <= lastDataRow; rowNumber++) {
     const row = sheet.getRow(rowNumber)
 
     const raw = {
-      proceso: readWorkbookText(sheet, rowNumber, WORKBOOK_LAYOUT.columns.proceso),
-      zona: readWorkbookText(sheet, rowNumber, WORKBOOK_LAYOUT.columns.zona),
-      actividadDescripcion: readWorkbookText(sheet, rowNumber, WORKBOOK_LAYOUT.columns.actividadDescripcion),
-      tareas: readWorkbookText(sheet, rowNumber, WORKBOOK_LAYOUT.columns.tareas),
-      cargo: readWorkbookText(sheet, rowNumber, WORKBOOK_LAYOUT.columns.cargo),
-      rutinario: readWorkbookText(sheet, rowNumber, WORKBOOK_LAYOUT.columns.rutinario),
-      peligro: readWorkbookText(sheet, rowNumber, WORKBOOK_LAYOUT.columns.peligro),
-      clasificacion: readWorkbookText(sheet, rowNumber, WORKBOOK_LAYOUT.columns.clasificacion),
-      efectos: readWorkbookText(sheet, rowNumber, WORKBOOK_LAYOUT.columns.efectos),
-      controlFuente: readWorkbookText(sheet, rowNumber, WORKBOOK_LAYOUT.columns.controlFuente),
-      controlMedio: readWorkbookText(sheet, rowNumber, WORKBOOK_LAYOUT.columns.controlMedio),
-      controlIndividuo: readWorkbookText(sheet, rowNumber, WORKBOOK_LAYOUT.columns.controlIndividuo),
-      nd: readWorkbookText(sheet, rowNumber, WORKBOOK_LAYOUT.columns.nd),
-      ne: readWorkbookText(sheet, rowNumber, WORKBOOK_LAYOUT.columns.ne),
-      nc: readWorkbookText(sheet, rowNumber, WORKBOOK_LAYOUT.columns.nc),
-      numExpuestos: readWorkbookText(sheet, rowNumber, WORKBOOK_LAYOUT.columns.numExpuestos),
-      peorConsecuencia: readWorkbookText(sheet, rowNumber, WORKBOOK_LAYOUT.columns.peorConsecuencia),
-      requisitoLegal: readWorkbookText(sheet, rowNumber, WORKBOOK_LAYOUT.columns.requisitoLegal),
-      eliminacion: readWorkbookText(sheet, rowNumber, WORKBOOK_LAYOUT.columns.eliminacion),
-      sustitucion: readWorkbookText(sheet, rowNumber, WORKBOOK_LAYOUT.columns.sustitucion),
-      controlesIngenieria: readWorkbookText(sheet, rowNumber, WORKBOOK_LAYOUT.columns.controlesIngenieria),
-      controlesAdministrativos: readWorkbookText(sheet, rowNumber, WORKBOOK_LAYOUT.columns.controlesAdministrativos),
-      epp: readWorkbookText(sheet, rowNumber, WORKBOOK_LAYOUT.columns.epp),
-      responsableIntervencion: readWorkbookText(sheet, rowNumber, WORKBOOK_LAYOUT.columns.intervencion),
-      fechaEjecucion: readWorkbookText(sheet, rowNumber, WORKBOOK_LAYOUT.columns.fechaEjecucion),
+      proceso: readWorkbookText(sheet, rowNumber, WORKBOOK_LAYOUT.columns.proceso, false),
+      zona: readWorkbookText(sheet, rowNumber, WORKBOOK_LAYOUT.columns.zona, false),
+      actividadDescripcion: readWorkbookText(sheet, rowNumber, WORKBOOK_LAYOUT.columns.actividadDescripcion, false),
+      tareas: readWorkbookText(sheet, rowNumber, WORKBOOK_LAYOUT.columns.tareas, false),
+      cargo: readWorkbookText(sheet, rowNumber, WORKBOOK_LAYOUT.columns.cargo, false),
+      rutinario: readWorkbookText(sheet, rowNumber, WORKBOOK_LAYOUT.columns.rutinario, false),
+      peligro: readWorkbookText(sheet, rowNumber, WORKBOOK_LAYOUT.columns.peligro, false),
+      clasificacion: readWorkbookText(sheet, rowNumber, WORKBOOK_LAYOUT.columns.clasificacion, false),
+      efectos: readWorkbookText(sheet, rowNumber, WORKBOOK_LAYOUT.columns.efectos, false),
+      controlFuente: readWorkbookText(sheet, rowNumber, WORKBOOK_LAYOUT.columns.controlFuente, false),
+      controlMedio: readWorkbookText(sheet, rowNumber, WORKBOOK_LAYOUT.columns.controlMedio, false),
+      controlIndividuo: readWorkbookText(sheet, rowNumber, WORKBOOK_LAYOUT.columns.controlIndividuo, false),
+      nd: readWorkbookText(sheet, rowNumber, WORKBOOK_LAYOUT.columns.nd, false),
+      ne: readWorkbookText(sheet, rowNumber, WORKBOOK_LAYOUT.columns.ne, false),
+      nc: readWorkbookText(sheet, rowNumber, WORKBOOK_LAYOUT.columns.nc, false),
+      numExpuestos: readWorkbookText(sheet, rowNumber, WORKBOOK_LAYOUT.columns.numExpuestos, false),
+      peorConsecuencia: readWorkbookText(sheet, rowNumber, WORKBOOK_LAYOUT.columns.peorConsecuencia, false),
+      requisitoLegal: readWorkbookText(sheet, rowNumber, WORKBOOK_LAYOUT.columns.requisitoLegal, false),
+      eliminacion: readWorkbookText(sheet, rowNumber, WORKBOOK_LAYOUT.columns.eliminacion, false),
+      sustitucion: readWorkbookText(sheet, rowNumber, WORKBOOK_LAYOUT.columns.sustitucion, false),
+      controlesIngenieria: readWorkbookText(sheet, rowNumber, WORKBOOK_LAYOUT.columns.controlesIngenieria, false),
+      controlesAdministrativos: readWorkbookText(sheet, rowNumber, WORKBOOK_LAYOUT.columns.controlesAdministrativos, false),
+      epp: readWorkbookText(sheet, rowNumber, WORKBOOK_LAYOUT.columns.epp, false),
+      responsableIntervencion: readWorkbookText(sheet, rowNumber, WORKBOOK_LAYOUT.columns.intervencion, false),
+      fechaEjecucion: readWorkbookText(sheet, rowNumber, WORKBOOK_LAYOUT.columns.fechaEjecucion, false),
     }
 
     const hasAnyValue = Object.values(raw).some((v) => !!v)
@@ -663,34 +676,43 @@ export async function parseImportWorkbook(buffer: Buffer): Promise<{
       raw.fechaEjecucion,
     ].some(Boolean)
     if (!hasDangerData) {
-      if (raw.proceso) {
+      if (raw.proceso && raw.proceso !== currentProceso) {
         currentProceso = raw.proceso
         currentZona = ''
         currentActivity = null
+        currentActivityDescripcion = ''
         activityCounter = 0
       }
-      if (raw.zona) {
+      if (raw.zona && raw.zona !== currentZona) {
         currentZona = raw.zona
         currentActivity = null
+        currentActivityDescripcion = ''
         activityCounter = 0
+      }
+      if (raw.actividadDescripcion) {
+        currentActivityDescripcion = raw.actividadDescripcion
+        currentActivity = null
       }
       continue
     }
 
     totalRows += 1
 
-    if (raw.proceso) {
+    if (raw.proceso && raw.proceso !== currentProceso) {
       currentProceso = raw.proceso
       currentZona = ''
       currentActivity = null
+      currentActivityDescripcion = ''
       activityCounter = 0
     }
-    if (raw.zona) {
+    if (raw.zona && raw.zona !== currentZona) {
       currentZona = raw.zona
       currentActivity = null
+      currentActivityDescripcion = ''
       activityCounter = 0
     }
-    if (raw.actividadDescripcion) {
+    if (raw.actividadDescripcion && raw.actividadDescripcion !== currentActivityDescripcion) {
+      currentActivityDescripcion = raw.actividadDescripcion
       activityCounter += 1
       currentActivity = null
     }
@@ -698,7 +720,7 @@ export async function parseImportWorkbook(buffer: Buffer): Promise<{
     const procesoValue = currentProceso
     const zonaValue = currentZona
     const actividadName = currentActivity?.nombre || `Actividad ${Math.max(activityCounter, 1)}`
-    const actividadDescripcion = currentActivity?.descripcion || raw.actividadDescripcion
+    const actividadDescripcion = currentActivity?.descripcion || currentActivityDescripcion || raw.actividadDescripcion
 
     const rowErrors: ImportRowError[] = []
 
@@ -789,7 +811,7 @@ export async function parseImportWorkbook(buffer: Buffer): Promise<{
       preview.push({
         proceso: procesoValue,
         zona: zonaValue,
-        actividad: actividadName,
+        actividad: actividadDescripcion,
         peligro: raw.peligro,
         clasificacion: raw.clasificacion,
         efectos: raw.efectos,
