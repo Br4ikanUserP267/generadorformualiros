@@ -249,6 +249,17 @@ function detectHeaderMapping(sheet: ExcelJS.Worksheet): HeaderDetection {
     best.mapping.descripcionActividad = best.mapping.actividad
   }
 
+  // In this format ND, NE, NC are contiguous. Recover ND when it drifts to
+  // a wrong "nivel" column match.
+  if (best.mapping.ne && best.mapping.nc) {
+    const ne = best.mapping.ne
+    const nc = best.mapping.nc
+    const nd = best.mapping.nd
+    if (!nd || nd < ne - 2 || nd > ne + 2) {
+      if (Math.abs(ne - nc) <= 3) best.mapping.nd = ne - 1
+    }
+  }
+
   return best
 }
 
@@ -261,6 +272,16 @@ function readMappedCell(
   const col = mapping[key]
   if (!col) return ''
   return cleanString(getEffectiveCellText(sheet, row.number, col))
+}
+
+function readDirectMappedCell(
+  row: ExcelJS.Row,
+  mapping: Partial<Record<ImportFieldKey, number>>,
+  key: ImportFieldKey
+) {
+  const col = mapping[key]
+  if (!col) return ''
+  return cleanString(getCellText(row.getCell(col).value))
 }
 
 function parseBooleanSiNo(raw: string): { value: boolean | null; error?: string } {
@@ -455,6 +476,31 @@ export async function parseImportWorkbook(buffer: Buffer): Promise<{
 
   for (let rowNumber = detected.dataStartRow; rowNumber <= sheet.rowCount; rowNumber++) {
     const row = sheet.getRow(rowNumber)
+
+    // Skip structural/footer rows: require at least one direct risk/evaluation
+    // signal in this row (no merged inheritance for this check).
+    const directSignalFields: ImportFieldKey[] = [
+      'peligro',
+      'clasificacion',
+      'efectos',
+      'nd',
+      'ne',
+      'nc',
+      'numExpuestos',
+      'requisitoLegal',
+      'controlFuente',
+      'controlMedio',
+      'controlIndividuo',
+      'eliminacion',
+      'sustitucion',
+      'controlesIngenieria',
+      'controlesAdministrativos',
+      'epp',
+      'responsableIntervencion',
+      'fechaEjecucion',
+    ]
+    const hasDirectSignal = directSignalFields.some((f) => !!readDirectMappedCell(row, detected.mapping, f))
+    if (!hasDirectSignal) continue
 
     const raw = {
       proceso: readMappedCell(row, sheet, detected.mapping, 'proceso'),
