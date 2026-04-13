@@ -2,11 +2,13 @@
 
 import React, { useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { apiFetch } from '@/lib/utils'
+import { useAuth } from '@/lib/auth-context'
 
 type PeligroReporteItem = {
   id: string
@@ -35,10 +37,10 @@ type CountsResponse = {
 }
 
 const ACEPTABILIDAD_LEVELS = [
-  { key: 'No Aceptable', label: 'Muy Alto', color: '#a50000', icon: '🔴' },
-  { key: 'Aceptable con Control Especifico', label: 'Alto', color: '#dc3545', icon: '🟠' },
-  { key: 'Mejorable', label: 'Medio', color: '#f59e0b', icon: '🟡' },
-  { key: 'Aceptable', label: 'Bajo', color: '#198754', icon: '🟢' },
+  { key: 'No Aceptable', color: '#a50000', icon: '🔴' },
+  { key: 'Aceptable con Control Especifico', color: '#dc3545', icon: '🟠' },
+  { key: 'Mejorable', color: '#f59e0b', icon: '🟡' },
+  { key: 'Aceptable', color: '#198754', icon: '🟢' },
 ] as const
 
 function levelColor(label: string) {
@@ -66,6 +68,8 @@ function aceptabilidadToLevel(aceptabilidad: string) {
 }
 
 export function ReportePeligros() {
+  const router = useRouter()
+  const { user, logout } = useAuth()
   const [items, setItems] = useState<PeligroReporteItem[]>([])
   const [total, setTotal] = useState(0)
   const [page, setPage] = useState(0)
@@ -76,6 +80,7 @@ export function ReportePeligros() {
   const [loading, setLoading] = useState(false)
 
   const totalPages = useMemo(() => Math.max(1, Math.ceil(total / pageSize)), [total, pageSize])
+  const totalCardsCount = useMemo(() => counts.muyAlto + counts.alto + counts.medio + counts.bajo, [counts])
 
   async function loadCounts() {
     const params = new URLSearchParams()
@@ -141,11 +146,33 @@ export function ReportePeligros() {
 
   return (
     <div className="min-h-screen bg-[#f5f8f5]">
-      <div className="sticky top-0 z-10 flex items-center gap-3 border-b border-[#d4e8d4] bg-white px-4 py-3">
-        <Button asChild variant="ghost" style={{ color: '#1a5c2a' }}>
-          <Link href="/dashboard">Volver</Link>
-        </Button>
-        <h1 className="text-xl font-semibold text-[#2d7a40]">Reporte de Peligros</h1>
+      <div className="sticky top-0 z-10 flex items-center justify-between gap-3 border-b border-[#d4e8d4] bg-white px-4 py-3">
+        <div className="flex items-center gap-3">
+          <Button asChild variant="ghost" style={{ color: '#1a5c2a' }}>
+            <Link href="/dashboard">Volver</Link>
+          </Button>
+          <h1 className="text-xl font-semibold text-[#2d7a40]">Reporte de Peligros</h1>
+        </div>
+        <div className="flex items-center gap-2 text-sm text-slate-600">
+          <div className="flex h-8 w-8 items-center justify-center rounded-full bg-[#e8f5e9] text-xs font-semibold uppercase text-[#1a5c2a]">
+            {(user?.nombre || 'U')[0]}
+          </div>
+          <span>
+            {user?.nombre || ''}
+            {user?.cargo ? <><>&nbsp;·&nbsp;</>{user.cargo}</> : null}
+          </span>
+          <span style={{ opacity: '.35' }}>|</span>
+          <button
+            type="button"
+            className="font-medium text-[#1a5c2a] hover:underline"
+            onClick={() => {
+              logout()
+              router.push('/')
+            }}
+          >
+            Cerrar sesión
+          </button>
+        </div>
       </div>
 
       <div className="mx-auto max-w-7xl space-y-6 p-6">
@@ -157,6 +184,7 @@ export function ReportePeligros() {
               card.key === 'No Aceptable' ? counts.muyAlto :
               card.key === 'Aceptable con Control Especifico' ? counts.alto :
               card.key === 'Mejorable' ? counts.medio : counts.bajo
+            const percentage = totalCardsCount > 0 ? Math.round((count / totalCardsCount) * 100) : 0
 
             return (
               <Card
@@ -165,10 +193,18 @@ export function ReportePeligros() {
                 onClick={() => toggleAceptabilidad(card.key)}
               >
                 <CardHeader className="rounded-none bg-[#2d7a40] py-3">
-                  <CardTitle className="text-sm text-white">{card.icon} {card.label}</CardTitle>
+                  <CardTitle className="text-sm text-white">{card.icon} {card.key}</CardTitle>
                 </CardHeader>
                 <CardContent className="pt-5 pb-5">
                   <div className="text-3xl font-semibold" style={{ color: card.color }}>{count}</div>
+                  <div className="mt-1 text-xs text-slate-500">{percentage}% del total</div>
+                  <div className="mt-3 h-2 w-full rounded-full bg-slate-100">
+                    <div
+                      className="h-2 rounded-full"
+                      style={{ width: `${percentage}%`, backgroundColor: card.color }}
+                    />
+                  </div>
+                  {selected && <div className="mt-2 text-xs font-medium text-[#2d7a40]">Filtro activo</div>}
                 </CardContent>
               </Card>
             )
