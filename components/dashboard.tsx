@@ -110,7 +110,6 @@ export function Dashboard() {
   const [dateDesde, setDateDesde] = useState('')
   const [dateHasta, setDateHasta] = useState('')
   const [tipoFilter, setTipoFilter] = useState('')
-  const [clasFilter, setClasFilter] = useState('')
   const [deleteTarget, setDeleteTarget] = useState<string|null>(null)
   const [confirmOpen, setConfirmOpen] = useState(false)
   const [duplicateSuccess, setDuplicateSuccess] = useState(false)
@@ -123,7 +122,6 @@ export function Dashboard() {
   const [totals, setTotals] = useState({ totP: 0, ma: 0, al: 0, me: 0, ba: 0 })
   const [isLoading, setIsLoading] = useState(false)
   const [facetTipos, setFacetTipos] = useState<string[]>([])
-  const [facetClasificaciones, setFacetClasificaciones] = useState<string[]>([])
 
   const PAGE_SIZE = 10
 
@@ -137,7 +135,6 @@ export function Dashboard() {
       if (dateDesde) params.set('dateDesde', dateDesde)
       if (dateHasta) params.set('dateHasta', dateHasta)
       if (tipoFilter) params.set('tipo', tipoFilter)
-      if (clasFilter) params.set('clasificacion', clasFilter)
 
       const res = await apiFetch(`/api/riesgos/summary?${params.toString()}`)
       if (!res.ok) throw new Error('No se pudo cargar el resumen')
@@ -167,7 +164,6 @@ export function Dashboard() {
       if (!res.ok) return
       const body = await res.json().catch(() => ({}))
       setFacetTipos(Array.isArray(body?.tipos) ? body.tipos : [])
-      setFacetClasificaciones(Array.isArray(body?.clasificaciones) ? body.clasificaciones : [])
     } catch (error) {
       console.error('Error loading risk facets:', error)
     }
@@ -175,7 +171,7 @@ export function Dashboard() {
 
   useEffect(() => {
     void loadSummaries(currentPage)
-  }, [currentPage, search, dateDesde, dateHasta, tipoFilter, clasFilter])
+  }, [currentPage, search, dateDesde, dateHasta, tipoFilter])
 
   useEffect(() => {
     void loadFacets()
@@ -183,11 +179,9 @@ export function Dashboard() {
 
   useEffect(() => {
     setCurrentPage(1)
-  }, [search, dateDesde, dateHasta, tipoFilter, clasFilter])
+  }, [search, dateDesde, dateHasta, tipoFilter])
 
   const tiposList = useMemo(() => facetTipos, [facetTipos])
-
-  const clasificacionesList = useMemo(() => facetClasificaciones, [facetClasificaciones])
 
   const stats = useMemo(() => {
     return {
@@ -438,14 +432,8 @@ export function Dashboard() {
                   <option key={t} value={t}>{t}</option>
                 ))}
               </select>
-              <select className="fsel" value={clasFilter} onChange={e=>setClasFilter(e.target.value)}>
-                <option value="">Clasificación: Todas</option>
-                {clasificacionesList.map(c => (
-                  <option key={c} value={c}>{c}</option>
-                ))}
-              </select>
               <div className="filter-actions">
-                <button className="pbtn" onClick={() => { setSearch(''); setDateDesde(''); setDateHasta(''); setTipoFilter(''); setClasFilter(''); setCurrentPage(1) }}>Limpiar</button>
+                <button className="pbtn" onClick={() => { setSearch(''); setDateDesde(''); setDateHasta(''); setTipoFilter(''); setCurrentPage(1) }}>Limpiar</button>
                 <div className="new-menu-wrap">
                   <button className="new-btn">Nueva Matriz</button>
                   <div className="new-menu">
