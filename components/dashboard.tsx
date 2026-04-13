@@ -106,8 +106,11 @@ export function Dashboard() {
   const router = useRouter()
   
   const [matrices, setMatrices] = useState<any[]>([])
-  const [areaFilter, setAreaFilter] = useState('')
-  const [responsableFilter, setResponsableFilter] = useState('')
+  const [search, setSearch] = useState('')
+  const [dateDesde, setDateDesde] = useState('')
+  const [dateHasta, setDateHasta] = useState('')
+  const [tipoFilter, setTipoFilter] = useState('')
+  const [clasFilter, setClasFilter] = useState('')
   const [deleteTarget, setDeleteTarget] = useState<string|null>(null)
   const [confirmOpen, setConfirmOpen] = useState(false)
   const [duplicateSuccess, setDuplicateSuccess] = useState(false)
@@ -118,8 +121,10 @@ export function Dashboard() {
   const [totalMatrices, setTotalMatrices] = useState(0)
   const [totalPages, setTotalPages] = useState(1)
   const [isLoading, setIsLoading] = useState(false)
+  const [facetTipos, setFacetTipos] = useState<string[]>([])
+  const [facetClasificaciones, setFacetClasificaciones] = useState<string[]>([])
 
-  const PAGE_SIZE = 20
+  const PAGE_SIZE = 10
 
   const loadSummaries = async (page = 1) => {
     setIsLoading(true)
@@ -127,8 +132,11 @@ export function Dashboard() {
       const params = new URLSearchParams()
       params.set('page', String(page))
       params.set('pageSize', String(PAGE_SIZE))
-      if (areaFilter.trim()) params.set('area', areaFilter.trim())
-      if (responsableFilter.trim()) params.set('responsable', responsableFilter.trim())
+      if (search.trim()) params.set('search', search.trim())
+      if (dateDesde) params.set('dateDesde', dateDesde)
+      if (dateHasta) params.set('dateHasta', dateHasta)
+      if (tipoFilter) params.set('tipo', tipoFilter)
+      if (clasFilter) params.set('clasificacion', clasFilter)
 
       const res = await apiFetch(`/api/riesgos/summary?${params.toString()}`)
       if (!res.ok) throw new Error('No se pudo cargar el resumen')
@@ -145,9 +153,33 @@ export function Dashboard() {
     }
   }
 
+  const loadFacets = async () => {
+    try {
+      const res = await apiFetch('/api/riesgos/facets')
+      if (!res.ok) return
+      const body = await res.json().catch(() => ({}))
+      setFacetTipos(Array.isArray(body?.tipos) ? body.tipos : [])
+      setFacetClasificaciones(Array.isArray(body?.clasificaciones) ? body.clasificaciones : [])
+    } catch (error) {
+      console.error('Error loading risk facets:', error)
+    }
+  }
+
   useEffect(() => {
     void loadSummaries(currentPage)
-  }, [currentPage, areaFilter, responsableFilter])
+  }, [currentPage, search, dateDesde, dateHasta, tipoFilter, clasFilter])
+
+  useEffect(() => {
+    void loadFacets()
+  }, [])
+
+  useEffect(() => {
+    setCurrentPage(1)
+  }, [search, dateDesde, dateHasta, tipoFilter, clasFilter])
+
+  const tiposList = useMemo(() => facetTipos, [facetTipos])
+
+  const clasificacionesList = useMemo(() => facetClasificaciones, [facetClasificaciones])
 
   const stats = useMemo(() => {
     let totP = 0, ma = 0, al = 0, me = 0, ba = 0
@@ -289,6 +321,7 @@ export function Dashboard() {
         .fi input {padding:8px 10px;font-size:13px;border-radius:var(--border-radius-md);border:0.5px solid var(--color-border-secondary);background:var(--color-background-secondary);color:var(--color-text-primary);width:220px;outline:none}
         .fi input::placeholder {color:var(--color-text-tertiary)}
         .fsel {padding:8px 12px;font-size:13px;border-radius:var(--border-radius-md);border:0.5px solid var(--color-border-secondary);background:var(--color-background-secondary);color:var(--color-text-secondary);cursor:pointer;outline:none;appearance:auto}
+        .fdate {padding:8px 12px;font-size:13px;border-radius:var(--border-radius-md);border:0.5px solid var(--color-border-secondary);background:var(--color-background-secondary);color:var(--color-text-secondary);width:130px;outline:none}
         .flabel {font-size:13px;color:var(--color-text-secondary);white-space:nowrap}
         .filter-actions {display:flex;align-items:center;gap:8px;margin-left:auto;flex-wrap:wrap}
         .new-menu-wrap {margin-left:auto;position:relative}
@@ -355,12 +388,12 @@ export function Dashboard() {
           <div className="stat-row">
             <div className="scard">
               <span className="scard-num" style={{color:'#1a5c2a'}}>{stats.totM}</span>
-              <span className="scard-lbl">Matrices en página</span>
+              <span className="scard-lbl">Total matrices</span>
               <div className="scard-bar" style={{background:'#1a5c2a'}}></div>
             </div>
             <div className="scard">
               <span className="scard-num" style={{color:'var(--color-text-primary)'}}>{stats.totP}</span>
-              <span className="scard-lbl">Riesgos en página</span>
+              <span className="scard-lbl">Total riesgos</span>
               <div className="scard-bar" style={{background:'var(--color-border-secondary)'}}></div>
             </div>
             <div className="scard">
@@ -388,13 +421,27 @@ export function Dashboard() {
           <div className="filters">
             <div className="filter-row">
               <div className="fi">
-                <input type="text" placeholder="Área" value={areaFilter} onChange={e=>setAreaFilter(e.target.value)} />
+                <input type="text" placeholder="Área / Proceso, Zona…" value={search} onChange={e=>setSearch(e.target.value)} />
               </div>
               <div className="fi">
-                <input type="text" placeholder="Responsable" value={responsableFilter} onChange={e=>setResponsableFilter(e.target.value)} />
+                <input className="fdate" type="date" value={dateDesde} onChange={e=>setDateDesde(e.target.value)} />
               </div>
+              <span className="flabel">Hasta</span>
+              <input className="fdate" type="date" value={dateHasta} onChange={e=>setDateHasta(e.target.value)} />
+              <select className="fsel" value={tipoFilter} onChange={e=>setTipoFilter(e.target.value)}>
+                <option value="">Tipo: Todos</option>
+                {tiposList.map(t => (
+                  <option key={t} value={t}>{t}</option>
+                ))}
+              </select>
+              <select className="fsel" value={clasFilter} onChange={e=>setClasFilter(e.target.value)}>
+                <option value="">Clasificación: Todas</option>
+                {clasificacionesList.map(c => (
+                  <option key={c} value={c}>{c}</option>
+                ))}
+              </select>
               <div className="filter-actions">
-                <button className="pbtn" onClick={() => { setAreaFilter(''); setResponsableFilter(''); setCurrentPage(1) }}>Limpiar</button>
+                <button className="pbtn" onClick={() => { setSearch(''); setDateDesde(''); setDateHasta(''); setTipoFilter(''); setClasFilter(''); setCurrentPage(1) }}>Limpiar</button>
                 <div className="new-menu-wrap">
                   <button className="new-btn">Nueva Matriz</button>
                   <div className="new-menu">

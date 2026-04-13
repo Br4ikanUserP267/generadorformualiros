@@ -1,4 +1,5 @@
 import type { NextApiRequest, NextApiResponse } from 'next'
+import { Prisma } from '@prisma/client'
 import prisma from '@/lib/prisma'
 
 const DEFAULT_PAGE_SIZE = 20
@@ -37,6 +38,14 @@ function buildTextFilter(value: unknown) {
     contains: text,
     mode: 'insensitive' as const,
   }
+}
+
+function parseDate(value: unknown) {
+  const text = String(Array.isArray(value) ? value[0] : value || '').trim()
+  if (!text) return undefined
+  const parsed = new Date(text)
+  if (Number.isNaN(parsed.getTime())) return undefined
+  return parsed
 }
 
 function computeCountsFromSummary(summary: any) {
@@ -86,14 +95,63 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const page = parsePage(req.query.page)
     const pageSize = parsePageSize(req.query.pageSize)
     const skip = (page - 1) * pageSize
-    const area = buildTextFilter(req.query.area)
-    const responsable = buildTextFilter(req.query.responsable)
+    const search = String(Array.isArray(req.query.search) ? req.query.search[0] : req.query.search || '').trim()
+    const tipo = String(Array.isArray(req.query.tipo) ? req.query.tipo[0] : req.query.tipo || '').trim()
+    const clasificacion = String(Array.isArray(req.query.clasificacion) ? req.query.clasificacion[0] : req.query.clasificacion || '').trim()
+    const dateDesde = parseDate(req.query.dateDesde)
+    const dateHasta = parseDate(req.query.dateHasta)
 
-    const where = {
-      deletedAt: null as null,
-      ...(area ? { area } : {}),
-      ...(responsable ? { responsable } : {}),
+    const andConditions: Prisma.MatrizWhereInput[] = [{ deletedAt: null }]
+
+    if (search) {
+      andConditions.push({
+        OR: [
+          { area: { contains: search, mode: 'insensitive' } },
+          { responsable: { contains: search, mode: 'insensitive' } },
+          { procesos: { some: { nombre: { contains: search, mode: 'insensitive' } } } },
+          { procesos: { some: { zonas: { some: { nombre: { contains: search, mode: 'insensitive' } } } } } },
+        ],
+      })
     }
+
+    if (tipo) {
+      andConditions.push({
+        procesos: { some: { nombre: { equals: tipo, mode: 'insensitive' } } },
+      })
+    }
+
+    if (clasificacion) {
+      andConditions.push({
+        procesos: {
+          some: {
+            zonas: {
+              some: {
+                actividades: {
+                  some: {
+                    peligros: {
+                      some: {
+                        clasificacion: { equals: clasificacion, mode: 'insensitive' },
+                      },
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+      })
+    }
+
+    if (dateDesde || dateHasta) {
+      andConditions.push({
+        fechaElaboracion: {
+          ...(dateDesde ? { gte: dateDesde } : {}),
+          ...(dateHasta ? { lte: dateHasta } : {}),
+        },
+      })
+    }
+
+    const where: Prisma.MatrizWhereInput = andConditions.length > 1 ? { AND: andConditions } : { deletedAt: null }
 
     const [total, matrices] = await Promise.all([
       prisma.matriz.count({ where }),
@@ -111,6 +169,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
               nombre: true,
               zonas: {
                 select: {
+                  nombre: true,
                   actividades: {
                     select: {
                       _count: { select: { peligros: true } },
@@ -153,6 +212,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         totalActividades: computed.totalActividades,
         totalPeligros: computed.totalPeligros,
         tipos: computed.tipos,
+        clasificaciones: Array.from(new Set((matrix.procesos || []).flatMap((p: any) => (p.zonas || []).flatMap((z: any) => (z.actividades || []).flatMap((a: any) => (a.peligros || []).map((pel: any) => pel.clasificacion).filter(Boolean)))))) as string[],
         counts: computed.counts,
       }
     })
