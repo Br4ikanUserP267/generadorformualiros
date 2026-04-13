@@ -120,6 +120,7 @@ export function Dashboard() {
   const [currentPage, setCurrentPage] = useState(1)
   const [totalMatrices, setTotalMatrices] = useState(0)
   const [totalPages, setTotalPages] = useState(1)
+  const [totals, setTotals] = useState({ totP: 0, ma: 0, al: 0, me: 0, ba: 0 })
   const [isLoading, setIsLoading] = useState(false)
   const [facetTipos, setFacetTipos] = useState<string[]>([])
   const [facetClasificaciones, setFacetClasificaciones] = useState<string[]>([])
@@ -145,6 +146,13 @@ export function Dashboard() {
       setMatrices(Array.isArray(body?.items) ? body.items : [])
       setTotalMatrices(Number(body?.total || 0))
       setTotalPages(Math.max(1, Number(body?.totalPages || 1)))
+      setTotals({
+        totP: Number(body?.totals?.totalPeligros || 0),
+        ma: Number(body?.totals?.counts?.[0] || 0),
+        al: Number(body?.totals?.counts?.[1] || 0),
+        me: Number(body?.totals?.counts?.[2] || 0),
+        ba: Number(body?.totals?.counts?.[3] || 0),
+      })
       if (Number(body?.page) && Number(body.page) !== page) setCurrentPage(Number(body.page))
     } catch (error) {
       console.error('Error loading matrix summaries:', error)
@@ -182,19 +190,15 @@ export function Dashboard() {
   const clasificacionesList = useMemo(() => facetClasificaciones, [facetClasificaciones])
 
   const stats = useMemo(() => {
-    let totP = 0, ma = 0, al = 0, me = 0, ba = 0
-    for (const m of matrices) {
-      totP += m.totalPeligros
-      ma += m.counts[0]
-      al += m.counts[1]
-      me += m.counts[2]
-      ba += m.counts[3]
-    }
     return {
       totM: totalMatrices,
-      totP, ma, al, me, ba
+      totP: totals.totP,
+      ma: totals.ma,
+      al: totals.al,
+      me: totals.me,
+      ba: totals.ba,
     }
-  }, [matrices, totalMatrices])
+  }, [totalMatrices, totals])
 
   const handleNew = () => {
     router.push('/matriz/nuevo')

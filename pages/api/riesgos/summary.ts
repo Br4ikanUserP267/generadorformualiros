@@ -19,6 +19,15 @@ type SummaryMatrixRow = {
   counts: [number, number, number, number]
 }
 
+type SummaryTotals = {
+  totalMatrices: number
+  totalProcesos: number
+  totalZonas: number
+  totalActividades: number
+  totalPeligros: number
+  counts: [number, number, number, number]
+}
+
 function parsePage(value: unknown) {
   const page = Number(Array.isArray(value) ? value[0] : value)
   if (!Number.isFinite(page) || page < 1) return 1
@@ -78,6 +87,35 @@ function computeCountsFromSummary(summary: any) {
 
   return {
     tipos: Array.from(tipos),
+    totalZonas,
+    totalActividades,
+    totalPeligros,
+    counts,
+  }
+}
+
+function computeTotalsFromMatrices(matrices: any[]): SummaryTotals {
+  let totalProcesos = 0
+  let totalZonas = 0
+  let totalActividades = 0
+  let totalPeligros = 0
+  const counts: [number, number, number, number] = [0, 0, 0, 0]
+
+  for (const matrix of matrices || []) {
+    totalProcesos += (matrix.procesos || []).length
+    const computed = computeCountsFromSummary(matrix)
+    totalZonas += computed.totalZonas
+    totalActividades += computed.totalActividades
+    totalPeligros += computed.totalPeligros
+    counts[0] += computed.counts[0]
+    counts[1] += computed.counts[1]
+    counts[2] += computed.counts[2]
+    counts[3] += computed.counts[3]
+  }
+
+  return {
+    totalMatrices: matrices.length,
+    totalProcesos,
     totalZonas,
     totalActividades,
     totalPeligros,
@@ -153,7 +191,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     const where: Prisma.MatrizWhereInput = andConditions.length > 1 ? { AND: andConditions } : { deletedAt: null }
 
-    const [total, matrices] = await Promise.all([
+    const [total, matrices, totalsSource] = await Promise.all([
       prisma.matriz.count({ where }),
       prisma.matriz.findMany({
         where,
@@ -194,10 +232,37 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         take: pageSize,
         skip,
       }),
+      prisma.matriz.findMany({
+        where,
+        select: {
+          procesos: {
+            select: {
+              zonas: {
+                select: {
+                  actividades: {
+                    select: {
+                      peligros: {
+                        select: {
+                          evaluacion: {
+                            select: {
+                              nivelRiesgo: true,
+                            },
+                          },
+                        },
+                      },
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+      }),
     ])
 
     const totalPages = Math.max(1, Math.ceil(total / pageSize))
     const safePage = Math.min(page, totalPages)
+    const totals = computeTotalsFromMatrices(totalsSource)
 
     const items: SummaryMatrixRow[] = matrices.map((matrix: any) => {
       const computed = computeCountsFromSummary(matrix)
@@ -222,6 +287,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       pageSize,
       total,
       totalPages,
+      totals,
       items,
     })
   } catch (error) {
