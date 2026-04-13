@@ -25,12 +25,14 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       return res.status(500).json({ error: 'No hay usuarios en la base de datos' })
     }
 
+    const savedMetadata = saved.metadata || { area: '', responsable: '', fechaElaboracion: '', fechaActualizacion: '' }
+
     const fechaElaboracion = fecha_elaboracion
       ? new Date(fecha_elaboracion)
-      : (saved.metadata.fechaElaboracion ? new Date(saved.metadata.fechaElaboracion) : new Date())
+      : (savedMetadata.fechaElaboracion ? new Date(savedMetadata.fechaElaboracion) : new Date())
 
-    const areaValue = (area ?? saved.metadata.area ?? '').trim()
-    const responsableValue = (responsable ?? saved.metadata.responsable ?? '').trim()
+    const areaValue = String(area ?? savedMetadata.area ?? '').trim()
+    const responsableValue = String(responsable ?? savedMetadata.responsable ?? '').trim()
 
     const created = await prisma.$transaction(async (tx) => {
       return tx.matriz.create({

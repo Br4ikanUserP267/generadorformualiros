@@ -613,64 +613,64 @@ export async function parseImportWorkbook(buffer: Buffer): Promise<{
   for (let rowNumber = WORKBOOK_LAYOUT.dataStartRow; rowNumber <= sheet.rowCount; rowNumber++) {
     const row = sheet.getRow(rowNumber)
 
-    const rawDirect = {
-      proceso: readWorkbookText(sheet, rowNumber, WORKBOOK_LAYOUT.columns.proceso, false),
-      zona: readWorkbookText(sheet, rowNumber, WORKBOOK_LAYOUT.columns.zona, false),
-      actividadDescripcion: readWorkbookText(sheet, rowNumber, WORKBOOK_LAYOUT.columns.actividadDescripcion, false),
-      tareas: readWorkbookText(sheet, rowNumber, WORKBOOK_LAYOUT.columns.tareas, false),
-      cargo: readWorkbookText(sheet, rowNumber, WORKBOOK_LAYOUT.columns.cargo, false),
-      rutinario: readWorkbookText(sheet, rowNumber, WORKBOOK_LAYOUT.columns.rutinario, false),
-      peligro: readWorkbookText(sheet, rowNumber, WORKBOOK_LAYOUT.columns.peligro, false),
-      clasificacion: readWorkbookText(sheet, rowNumber, WORKBOOK_LAYOUT.columns.clasificacion, false),
-      efectos: readWorkbookText(sheet, rowNumber, WORKBOOK_LAYOUT.columns.efectos, false),
-      controlFuente: readWorkbookText(sheet, rowNumber, WORKBOOK_LAYOUT.columns.controlFuente, false),
-      controlMedio: readWorkbookText(sheet, rowNumber, WORKBOOK_LAYOUT.columns.controlMedio, false),
-      controlIndividuo: readWorkbookText(sheet, rowNumber, WORKBOOK_LAYOUT.columns.controlIndividuo, false),
-      nd: readWorkbookText(sheet, rowNumber, WORKBOOK_LAYOUT.columns.nd, false),
-      ne: readWorkbookText(sheet, rowNumber, WORKBOOK_LAYOUT.columns.ne, false),
-      nc: readWorkbookText(sheet, rowNumber, WORKBOOK_LAYOUT.columns.nc, false),
-      numExpuestos: readWorkbookText(sheet, rowNumber, WORKBOOK_LAYOUT.columns.numExpuestos, false),
-      peorConsecuencia: readWorkbookText(sheet, rowNumber, WORKBOOK_LAYOUT.columns.peorConsecuencia, false),
-      requisitoLegal: readWorkbookText(sheet, rowNumber, WORKBOOK_LAYOUT.columns.requisitoLegal, false),
-      eliminacion: readWorkbookText(sheet, rowNumber, WORKBOOK_LAYOUT.columns.eliminacion, false),
-      sustitucion: readWorkbookText(sheet, rowNumber, WORKBOOK_LAYOUT.columns.sustitucion, false),
-      controlesIngenieria: readWorkbookText(sheet, rowNumber, WORKBOOK_LAYOUT.columns.controlesIngenieria, false),
-      controlesAdministrativos: readWorkbookText(sheet, rowNumber, WORKBOOK_LAYOUT.columns.controlesAdministrativos, false),
-      epp: readWorkbookText(sheet, rowNumber, WORKBOOK_LAYOUT.columns.epp, false),
-      responsableIntervencion: readWorkbookText(sheet, rowNumber, WORKBOOK_LAYOUT.columns.intervencion, false),
-      fechaEjecucion: readWorkbookText(sheet, rowNumber, WORKBOOK_LAYOUT.columns.fechaEjecucion, false),
+    const raw = {
+      proceso: readWorkbookText(sheet, rowNumber, WORKBOOK_LAYOUT.columns.proceso),
+      zona: readWorkbookText(sheet, rowNumber, WORKBOOK_LAYOUT.columns.zona),
+      actividadDescripcion: readWorkbookText(sheet, rowNumber, WORKBOOK_LAYOUT.columns.actividadDescripcion),
+      tareas: readWorkbookText(sheet, rowNumber, WORKBOOK_LAYOUT.columns.tareas),
+      cargo: readWorkbookText(sheet, rowNumber, WORKBOOK_LAYOUT.columns.cargo),
+      rutinario: readWorkbookText(sheet, rowNumber, WORKBOOK_LAYOUT.columns.rutinario),
+      peligro: readWorkbookText(sheet, rowNumber, WORKBOOK_LAYOUT.columns.peligro),
+      clasificacion: readWorkbookText(sheet, rowNumber, WORKBOOK_LAYOUT.columns.clasificacion),
+      efectos: readWorkbookText(sheet, rowNumber, WORKBOOK_LAYOUT.columns.efectos),
+      controlFuente: readWorkbookText(sheet, rowNumber, WORKBOOK_LAYOUT.columns.controlFuente),
+      controlMedio: readWorkbookText(sheet, rowNumber, WORKBOOK_LAYOUT.columns.controlMedio),
+      controlIndividuo: readWorkbookText(sheet, rowNumber, WORKBOOK_LAYOUT.columns.controlIndividuo),
+      nd: readWorkbookText(sheet, rowNumber, WORKBOOK_LAYOUT.columns.nd),
+      ne: readWorkbookText(sheet, rowNumber, WORKBOOK_LAYOUT.columns.ne),
+      nc: readWorkbookText(sheet, rowNumber, WORKBOOK_LAYOUT.columns.nc),
+      numExpuestos: readWorkbookText(sheet, rowNumber, WORKBOOK_LAYOUT.columns.numExpuestos),
+      peorConsecuencia: readWorkbookText(sheet, rowNumber, WORKBOOK_LAYOUT.columns.peorConsecuencia),
+      requisitoLegal: readWorkbookText(sheet, rowNumber, WORKBOOK_LAYOUT.columns.requisitoLegal),
+      eliminacion: readWorkbookText(sheet, rowNumber, WORKBOOK_LAYOUT.columns.eliminacion),
+      sustitucion: readWorkbookText(sheet, rowNumber, WORKBOOK_LAYOUT.columns.sustitucion),
+      controlesIngenieria: readWorkbookText(sheet, rowNumber, WORKBOOK_LAYOUT.columns.controlesIngenieria),
+      controlesAdministrativos: readWorkbookText(sheet, rowNumber, WORKBOOK_LAYOUT.columns.controlesAdministrativos),
+      epp: readWorkbookText(sheet, rowNumber, WORKBOOK_LAYOUT.columns.epp),
+      responsableIntervencion: readWorkbookText(sheet, rowNumber, WORKBOOK_LAYOUT.columns.intervencion),
+      fechaEjecucion: readWorkbookText(sheet, rowNumber, WORKBOOK_LAYOUT.columns.fechaEjecucion),
     }
 
-    const hasAnyValue = Object.values(rawDirect).some((v) => !!v)
+    const hasAnyValue = Object.values(raw).some((v) => !!v)
     if (!hasAnyValue) continue
 
     const hasDangerData = [
-      rawDirect.peligro,
-      rawDirect.clasificacion,
-      rawDirect.efectos,
-      rawDirect.nd,
-      rawDirect.ne,
-      rawDirect.nc,
-      rawDirect.numExpuestos,
-      rawDirect.peorConsecuencia,
-      rawDirect.requisitoLegal,
-      rawDirect.eliminacion,
-      rawDirect.sustitucion,
-      rawDirect.controlesIngenieria,
-      rawDirect.controlesAdministrativos,
-      rawDirect.epp,
-      rawDirect.responsableIntervencion,
-      rawDirect.fechaEjecucion,
+      raw.peligro,
+      raw.clasificacion,
+      raw.efectos,
+      raw.nd,
+      raw.ne,
+      raw.nc,
+      raw.numExpuestos,
+      raw.peorConsecuencia,
+      raw.requisitoLegal,
+      raw.eliminacion,
+      raw.sustitucion,
+      raw.controlesIngenieria,
+      raw.controlesAdministrativos,
+      raw.epp,
+      raw.responsableIntervencion,
+      raw.fechaEjecucion,
     ].some(Boolean)
     if (!hasDangerData) {
-      if (rawDirect.proceso) {
-        currentProceso = rawDirect.proceso
+      if (raw.proceso) {
+        currentProceso = raw.proceso
         currentZona = ''
         currentActivity = null
         activityCounter = 0
       }
-      if (rawDirect.zona) {
-        currentZona = rawDirect.zona
+      if (raw.zona) {
+        currentZona = raw.zona
         currentActivity = null
         activityCounter = 0
       }
@@ -679,18 +679,18 @@ export async function parseImportWorkbook(buffer: Buffer): Promise<{
 
     totalRows += 1
 
-    if (rawDirect.proceso) {
-      currentProceso = rawDirect.proceso
+    if (raw.proceso) {
+      currentProceso = raw.proceso
       currentZona = ''
       currentActivity = null
       activityCounter = 0
     }
-    if (rawDirect.zona) {
-      currentZona = rawDirect.zona
+    if (raw.zona) {
+      currentZona = raw.zona
       currentActivity = null
       activityCounter = 0
     }
-    if (rawDirect.actividadDescripcion) {
+    if (raw.actividadDescripcion) {
       activityCounter += 1
       currentActivity = null
     }
@@ -698,25 +698,25 @@ export async function parseImportWorkbook(buffer: Buffer): Promise<{
     const procesoValue = currentProceso
     const zonaValue = currentZona
     const actividadName = currentActivity?.nombre || `Actividad ${Math.max(activityCounter, 1)}`
-    const actividadDescripcion = currentActivity?.descripcion || rawDirect.actividadDescripcion
+    const actividadDescripcion = currentActivity?.descripcion || raw.actividadDescripcion
 
     const rowErrors: ImportRowError[] = []
 
     if (!procesoValue) rowErrors.push({ row: rowNumber, field: 'Proceso', message: 'Requerido' })
     if (!actividadDescripcion) rowErrors.push({ row: rowNumber, field: 'Actividad', message: 'Requerido' })
-    if (!rawDirect.peligro) rowErrors.push({ row: rowNumber, field: 'Peligro', message: 'Requerido' })
+    if (!raw.peligro) rowErrors.push({ row: rowNumber, field: 'Peligro', message: 'Requerido' })
 
-    const ndParsed = parseNumber(rawDirect.nd)
-    const neParsed = parseNumber(rawDirect.ne)
-    const ncParsed = parseNumber(rawDirect.nc)
+    const ndParsed = parseNumber(raw.nd)
+    const neParsed = parseNumber(raw.ne)
+    const ncParsed = parseNumber(raw.nc)
     if (ndParsed.error) rowErrors.push({ row: rowNumber, field: 'ND', message: ndParsed.error })
     if (neParsed.error) rowErrors.push({ row: rowNumber, field: 'NE', message: neParsed.error })
     if (ncParsed.error) rowErrors.push({ row: rowNumber, field: 'NC', message: ncParsed.error })
 
-    const rutinarioParsed = parseBooleanSiNo(rawDirect.rutinario)
+    const rutinarioParsed = parseBooleanSiNo(raw.rutinario)
     if (rutinarioParsed.error) rowErrors.push({ row: rowNumber, field: 'Rutinario', message: rutinarioParsed.error })
 
-    const requisitoParsed = parseBooleanSiNo(rawDirect.requisitoLegal)
+    const requisitoParsed = parseBooleanSiNo(raw.requisitoLegal)
     if (requisitoParsed.error) rowErrors.push({ row: rowNumber, field: 'Requisito Legal', message: requisitoParsed.error })
 
     if (rowErrors.length > 0) {
@@ -737,13 +737,13 @@ export async function parseImportWorkbook(buffer: Buffer): Promise<{
     const aceptabilidad = aceptabilidadFromNivel(interpNr)
 
     const peligro: ParsedPeligro = {
-      descripcion: rawDirect.peligro,
-      clasificacion: rawDirect.clasificacion,
-      efectosPosibles: rawDirect.efectos,
+      descripcion: raw.peligro,
+      clasificacion: raw.clasificacion,
+      efectosPosibles: raw.efectos,
       control: {
-        fuente: rawDirect.controlFuente,
-        medio: rawDirect.controlMedio,
-        individuo: rawDirect.controlIndividuo,
+        fuente: raw.controlFuente,
+        medio: raw.controlMedio,
+        individuo: raw.controlIndividuo,
       },
       evaluacion: {
         nivelDeficiencia: nd,
@@ -756,18 +756,18 @@ export async function parseImportWorkbook(buffer: Buffer): Promise<{
         aceptabilidad,
       },
       criterio: {
-        numExpuestos: parseNumber(rawDirect.numExpuestos).value,
-        peorConsecuencia: rawDirect.peorConsecuencia,
+        numExpuestos: parseNumber(raw.numExpuestos).value,
+        peorConsecuencia: raw.peorConsecuencia,
         requisitoLegal: !!requisitoParsed.value,
       },
       intervencion: {
-        eliminacion: rawDirect.eliminacion,
-        sustitucion: rawDirect.sustitucion,
-        controlesIngenieria: rawDirect.controlesIngenieria,
-        controlesAdministrativos: rawDirect.controlesAdministrativos,
-        epp: rawDirect.epp,
-        responsable: rawDirect.responsableIntervencion,
-        fechaEjecucion: asIsoDate(rawDirect.fechaEjecucion),
+        eliminacion: raw.eliminacion,
+        sustitucion: raw.sustitucion,
+        controlesIngenieria: raw.controlesIngenieria,
+        controlesAdministrativos: raw.controlesAdministrativos,
+        epp: raw.epp,
+        responsable: raw.responsableIntervencion,
+        fechaEjecucion: asIsoDate(raw.fechaEjecucion),
       },
     }
 
@@ -776,16 +776,12 @@ export async function parseImportWorkbook(buffer: Buffer): Promise<{
     const activityRow = {
       nombre: actividadName,
       descripcion: actividadDescripcion,
-      tareas: rawDirect.tareas,
-      cargo: rawDirect.cargo,
+      tareas: raw.tareas,
+      cargo: raw.cargo,
       rutinario: rutinarioParsed.value,
     }
 
-    if (!currentActivity) {
-      currentActivity = ensureActividad(zona, activityRow)
-    } else {
-      currentActivity = ensureActividad(zona, activityRow)
-    }
+    currentActivity = ensureActividad(zona, activityRow)
 
     currentActivity.peligros.push(peligro)
 
@@ -794,9 +790,9 @@ export async function parseImportWorkbook(buffer: Buffer): Promise<{
         proceso: procesoValue,
         zona: zonaValue,
         actividad: actividadName,
-        peligro: rawDirect.peligro,
-        clasificacion: rawDirect.clasificacion,
-        efectos: rawDirect.efectos,
+        peligro: raw.peligro,
+        clasificacion: raw.clasificacion,
+        efectos: raw.efectos,
         nd,
         ne,
         nc,
