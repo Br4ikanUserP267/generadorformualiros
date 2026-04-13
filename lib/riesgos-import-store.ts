@@ -73,6 +73,12 @@ export type ParsedProceso = {
 }
 
 export type ParsedImport = {
+  metadata: {
+    area: string
+    responsable: string
+    fechaElaboracion: string
+    fechaActualizacion: string
+  }
   procesos: ParsedProceso[]
 }
 
@@ -84,6 +90,7 @@ export type StoredImport = {
   validRows: number
   errors: ImportRowError[]
   preview: ImportPreviewRow[]
+  metadata: ParsedImport['metadata']
   parsed: ParsedImport
 }
 

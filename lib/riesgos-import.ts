@@ -167,6 +167,48 @@ type HeaderDetection = {
   mapping: Partial<Record<ImportFieldKey, number>>
 }
 
+const WORKBOOK_LAYOUT = {
+  metadata: {
+    area: { row: 7, col: 4 },
+    responsable: { row: 7, col: 11 },
+    fechaElaboracion: { row: 7, col: 17 },
+    fechaActualizacion: { row: 7, col: 25 },
+  },
+  dataStartRow: 11,
+  columns: {
+    proceso: 2,
+    zona: 3,
+    actividadDescripcion: 4,
+    tareas: 5,
+    cargo: 6,
+    rutinario: 7,
+    peligro: 8,
+    clasificacion: 9,
+    efectos: 10,
+    controlFuente: 11,
+    controlMedio: 12,
+    controlIndividuo: 13,
+    nd: 14,
+    ne: 15,
+    nc: 16,
+    nivelProbabilidad: 17,
+    interpProbabilidad: 18,
+    nivelConsecuencia: 19,
+    nivelRiesgo: 20,
+    interpRiesgo: 21,
+    numExpuestos: 22,
+    peorConsecuencia: 23,
+    requisitoLegal: 24,
+    eliminacion: 25,
+    sustitucion: 26,
+    controlesIngenieria: 27,
+    controlesAdministrativos: 28,
+    epp: 29,
+    intervencion: 30,
+    fechaEjecucion: 31,
+  },
+} as const
+
 const SUBHEADER_ALIASES: Record<ImportFieldKey, string[]> = {
   proceso: ['proceso'],
   zona: ['zona/lugar', 'zona / lugar', 'zona lugar'],
@@ -448,6 +490,15 @@ function getEffectiveCellText(sheet: ExcelJS.Worksheet, rowIndex: number, colInd
   return ''
 }
 
+function readWorkbookText(sheet: ExcelJS.Worksheet, rowIndex: number, colIndex: number, allowMerged = true): string {
+  const row = sheet.getRow(rowIndex)
+  const cell = row.getCell(colIndex)
+  const direct = cleanString(getCellText(cell.value))
+  if (direct) return direct
+  if (!allowMerged) return ''
+  return cleanString(getEffectiveCellText(sheet, rowIndex, colIndex))
+}
+
 function interpProbabilidad(np: number) {
   if (!np) return '—'
   if (np >= 24 && np <= 40) return 'Muy Alto'
@@ -541,114 +592,131 @@ export async function parseImportWorkbook(buffer: Buffer): Promise<{
     throw new Error('No se encontro la hoja "Matriz" en el archivo')
   }
 
-  const detected = detectHeaderMapping(sheet)
-  const missing = REQUIRED_IMPORT_FIELDS
-    .filter((field) => !detected.mapping[field])
-    .map((field) => FIELD_LABELS[field])
-
-  if (missing.length > 0) {
-    const err = new Error('Columnas faltantes') as Error & { missing?: string[] }
-    err.missing = missing
-    throw err
+  const metadata = {
+    area: readWorkbookText(sheet, WORKBOOK_LAYOUT.metadata.area.row, WORKBOOK_LAYOUT.metadata.area.col),
+    responsable: readWorkbookText(sheet, WORKBOOK_LAYOUT.metadata.responsable.row, WORKBOOK_LAYOUT.metadata.responsable.col),
+    fechaElaboracion: asIsoDate(readWorkbookText(sheet, WORKBOOK_LAYOUT.metadata.fechaElaboracion.row, WORKBOOK_LAYOUT.metadata.fechaElaboracion.col)) || '',
+    fechaActualizacion: asIsoDate(readWorkbookText(sheet, WORKBOOK_LAYOUT.metadata.fechaActualizacion.row, WORKBOOK_LAYOUT.metadata.fechaActualizacion.col)) || '',
   }
 
-  let lastProceso = ''
-  let lastZona = ''
-  let lastActividad = ''
+  let currentProceso = ''
+  let currentZona = ''
+  let currentActivity: ParsedImport['procesos'][number]['zonas'][number]['actividades'][number] | null = null
+  let activityCounter = 0
 
   let totalRows = 0
   let validRows = 0
   const errors: ImportRowError[] = []
   const preview: ImportPreviewRow[] = []
-  const parsed: ParsedImport = { procesos: [] }
+  const parsed: ParsedImport = { metadata, procesos: [] }
 
-  for (let rowNumber = detected.dataStartRow; rowNumber <= sheet.rowCount; rowNumber++) {
+  for (let rowNumber = WORKBOOK_LAYOUT.dataStartRow; rowNumber <= sheet.rowCount; rowNumber++) {
     const row = sheet.getRow(rowNumber)
 
-    // Skip structural/footer rows: require at least one direct risk/evaluation
-    // signal in this row (no merged inheritance for this check).
-    const directSignalFields: ImportFieldKey[] = [
-      'peligro',
-      'clasificacion',
-      'efectos',
-      'nd',
-      'ne',
-      'nc',
-      'numExpuestos',
-      'requisitoLegal',
-      'controlFuente',
-      'controlMedio',
-      'controlIndividuo',
-      'eliminacion',
-      'sustitucion',
-      'controlesIngenieria',
-      'controlesAdministrativos',
-      'epp',
-      'responsableIntervencion',
-      'fechaEjecucion',
-    ]
-    const hasDirectSignal = directSignalFields.some((f) => !!readDirectMappedCell(row, detected.mapping, f))
-    if (!hasDirectSignal) continue
-
-    const raw = {
-      proceso: readMappedCell(row, sheet, detected.mapping, 'proceso'),
-      zona: readMappedCell(row, sheet, detected.mapping, 'zona'),
-      actividad: readMappedCell(row, sheet, detected.mapping, 'actividad'),
-      descripcionActividad: readMappedCell(row, sheet, detected.mapping, 'descripcionActividad'),
-      tareas: readMappedCell(row, sheet, detected.mapping, 'tareas'),
-      cargo: readMappedCell(row, sheet, detected.mapping, 'cargo'),
-      rutinario: readMappedCell(row, sheet, detected.mapping, 'rutinario'),
-      peligro: readMappedCell(row, sheet, detected.mapping, 'peligro'),
-      clasificacion: readMappedCell(row, sheet, detected.mapping, 'clasificacion'),
-      efectos: readMappedCell(row, sheet, detected.mapping, 'efectos'),
-      controlFuente: readMappedCell(row, sheet, detected.mapping, 'controlFuente'),
-      controlMedio: readMappedCell(row, sheet, detected.mapping, 'controlMedio'),
-      controlIndividuo: readMappedCell(row, sheet, detected.mapping, 'controlIndividuo'),
-      nd: readMappedCell(row, sheet, detected.mapping, 'nd'),
-      ne: readMappedCell(row, sheet, detected.mapping, 'ne'),
-      nc: readMappedCell(row, sheet, detected.mapping, 'nc'),
-      numExpuestos: readMappedCell(row, sheet, detected.mapping, 'numExpuestos'),
-      peorConsecuencia: readMappedCell(row, sheet, detected.mapping, 'peorConsecuencia'),
-      requisitoLegal: readMappedCell(row, sheet, detected.mapping, 'requisitoLegal'),
-      eliminacion: readMappedCell(row, sheet, detected.mapping, 'eliminacion'),
-      sustitucion: readMappedCell(row, sheet, detected.mapping, 'sustitucion'),
-      controlesIngenieria: readMappedCell(row, sheet, detected.mapping, 'controlesIngenieria'),
-      controlesAdministrativos: readMappedCell(row, sheet, detected.mapping, 'controlesAdministrativos'),
-      epp: readMappedCell(row, sheet, detected.mapping, 'epp'),
-      responsableIntervencion: readMappedCell(row, sheet, detected.mapping, 'responsableIntervencion'),
-      fechaEjecucion: readMappedCell(row, sheet, detected.mapping, 'fechaEjecucion'),
+    const rawDirect = {
+      proceso: readWorkbookText(sheet, rowNumber, WORKBOOK_LAYOUT.columns.proceso, false),
+      zona: readWorkbookText(sheet, rowNumber, WORKBOOK_LAYOUT.columns.zona, false),
+      actividadDescripcion: readWorkbookText(sheet, rowNumber, WORKBOOK_LAYOUT.columns.actividadDescripcion, false),
+      tareas: readWorkbookText(sheet, rowNumber, WORKBOOK_LAYOUT.columns.tareas, false),
+      cargo: readWorkbookText(sheet, rowNumber, WORKBOOK_LAYOUT.columns.cargo, false),
+      rutinario: readWorkbookText(sheet, rowNumber, WORKBOOK_LAYOUT.columns.rutinario, false),
+      peligro: readWorkbookText(sheet, rowNumber, WORKBOOK_LAYOUT.columns.peligro, false),
+      clasificacion: readWorkbookText(sheet, rowNumber, WORKBOOK_LAYOUT.columns.clasificacion, false),
+      efectos: readWorkbookText(sheet, rowNumber, WORKBOOK_LAYOUT.columns.efectos, false),
+      controlFuente: readWorkbookText(sheet, rowNumber, WORKBOOK_LAYOUT.columns.controlFuente, false),
+      controlMedio: readWorkbookText(sheet, rowNumber, WORKBOOK_LAYOUT.columns.controlMedio, false),
+      controlIndividuo: readWorkbookText(sheet, rowNumber, WORKBOOK_LAYOUT.columns.controlIndividuo, false),
+      nd: readWorkbookText(sheet, rowNumber, WORKBOOK_LAYOUT.columns.nd, false),
+      ne: readWorkbookText(sheet, rowNumber, WORKBOOK_LAYOUT.columns.ne, false),
+      nc: readWorkbookText(sheet, rowNumber, WORKBOOK_LAYOUT.columns.nc, false),
+      numExpuestos: readWorkbookText(sheet, rowNumber, WORKBOOK_LAYOUT.columns.numExpuestos, false),
+      peorConsecuencia: readWorkbookText(sheet, rowNumber, WORKBOOK_LAYOUT.columns.peorConsecuencia, false),
+      requisitoLegal: readWorkbookText(sheet, rowNumber, WORKBOOK_LAYOUT.columns.requisitoLegal, false),
+      eliminacion: readWorkbookText(sheet, rowNumber, WORKBOOK_LAYOUT.columns.eliminacion, false),
+      sustitucion: readWorkbookText(sheet, rowNumber, WORKBOOK_LAYOUT.columns.sustitucion, false),
+      controlesIngenieria: readWorkbookText(sheet, rowNumber, WORKBOOK_LAYOUT.columns.controlesIngenieria, false),
+      controlesAdministrativos: readWorkbookText(sheet, rowNumber, WORKBOOK_LAYOUT.columns.controlesAdministrativos, false),
+      epp: readWorkbookText(sheet, rowNumber, WORKBOOK_LAYOUT.columns.epp, false),
+      responsableIntervencion: readWorkbookText(sheet, rowNumber, WORKBOOK_LAYOUT.columns.intervencion, false),
+      fechaEjecucion: readWorkbookText(sheet, rowNumber, WORKBOOK_LAYOUT.columns.fechaEjecucion, false),
     }
 
-    const hasAnyValue = Object.values(raw).some((v) => !!v)
+    const hasAnyValue = Object.values(rawDirect).some((v) => !!v)
     if (!hasAnyValue) continue
+
+    const hasDangerData = [
+      rawDirect.peligro,
+      rawDirect.clasificacion,
+      rawDirect.efectos,
+      rawDirect.nd,
+      rawDirect.ne,
+      rawDirect.nc,
+      rawDirect.numExpuestos,
+      rawDirect.peorConsecuencia,
+      rawDirect.requisitoLegal,
+      rawDirect.eliminacion,
+      rawDirect.sustitucion,
+      rawDirect.controlesIngenieria,
+      rawDirect.controlesAdministrativos,
+      rawDirect.epp,
+      rawDirect.responsableIntervencion,
+      rawDirect.fechaEjecucion,
+    ].some(Boolean)
+    if (!hasDangerData) {
+      if (rawDirect.proceso) {
+        currentProceso = rawDirect.proceso
+        currentZona = ''
+        currentActivity = null
+        activityCounter = 0
+      }
+      if (rawDirect.zona) {
+        currentZona = rawDirect.zona
+        currentActivity = null
+        activityCounter = 0
+      }
+      continue
+    }
 
     totalRows += 1
 
-    const procesoValue = raw.proceso || lastProceso
-    const zonaValue = raw.zona || lastZona
-    const actividadValue = raw.actividad || lastActividad
+    if (rawDirect.proceso) {
+      currentProceso = rawDirect.proceso
+      currentZona = ''
+      currentActivity = null
+      activityCounter = 0
+    }
+    if (rawDirect.zona) {
+      currentZona = rawDirect.zona
+      currentActivity = null
+      activityCounter = 0
+    }
+    if (rawDirect.actividadDescripcion) {
+      activityCounter += 1
+      currentActivity = null
+    }
 
-    if (raw.proceso) lastProceso = raw.proceso
-    if (raw.zona) lastZona = raw.zona
-    if (raw.actividad) lastActividad = raw.actividad
+    const procesoValue = currentProceso
+    const zonaValue = currentZona
+    const actividadName = currentActivity?.nombre || `Actividad ${Math.max(activityCounter, 1)}`
+    const actividadDescripcion = currentActivity?.descripcion || rawDirect.actividadDescripcion
 
     const rowErrors: ImportRowError[] = []
 
     if (!procesoValue) rowErrors.push({ row: rowNumber, field: 'Proceso', message: 'Requerido' })
-    if (!actividadValue) rowErrors.push({ row: rowNumber, field: 'Actividad', message: 'Requerido' })
-    if (!raw.peligro) rowErrors.push({ row: rowNumber, field: 'Peligro', message: 'Requerido' })
+    if (!actividadDescripcion) rowErrors.push({ row: rowNumber, field: 'Actividad', message: 'Requerido' })
+    if (!rawDirect.peligro) rowErrors.push({ row: rowNumber, field: 'Peligro', message: 'Requerido' })
 
-    const ndParsed = parseNumber(raw.nd)
-    const neParsed = parseNumber(raw.ne)
-    const ncParsed = parseNumber(raw.nc)
+    const ndParsed = parseNumber(rawDirect.nd)
+    const neParsed = parseNumber(rawDirect.ne)
+    const ncParsed = parseNumber(rawDirect.nc)
     if (ndParsed.error) rowErrors.push({ row: rowNumber, field: 'ND', message: ndParsed.error })
     if (neParsed.error) rowErrors.push({ row: rowNumber, field: 'NE', message: neParsed.error })
     if (ncParsed.error) rowErrors.push({ row: rowNumber, field: 'NC', message: ncParsed.error })
 
-    const rutinarioParsed = parseBooleanSiNo(raw.rutinario)
+    const rutinarioParsed = parseBooleanSiNo(rawDirect.rutinario)
     if (rutinarioParsed.error) rowErrors.push({ row: rowNumber, field: 'Rutinario', message: rutinarioParsed.error })
 
-    const requisitoParsed = parseBooleanSiNo(raw.requisitoLegal)
+    const requisitoParsed = parseBooleanSiNo(rawDirect.requisitoLegal)
     if (requisitoParsed.error) rowErrors.push({ row: rowNumber, field: 'Requisito Legal', message: requisitoParsed.error })
 
     if (rowErrors.length > 0) {
@@ -669,13 +737,13 @@ export async function parseImportWorkbook(buffer: Buffer): Promise<{
     const aceptabilidad = aceptabilidadFromNivel(interpNr)
 
     const peligro: ParsedPeligro = {
-      descripcion: raw.peligro,
-      clasificacion: raw.clasificacion,
-      efectosPosibles: raw.efectos,
+      descripcion: rawDirect.peligro,
+      clasificacion: rawDirect.clasificacion,
+      efectosPosibles: rawDirect.efectos,
       control: {
-        fuente: raw.controlFuente,
-        medio: raw.controlMedio,
-        individuo: raw.controlIndividuo,
+        fuente: rawDirect.controlFuente,
+        medio: rawDirect.controlMedio,
+        individuo: rawDirect.controlIndividuo,
       },
       evaluacion: {
         nivelDeficiencia: nd,
@@ -688,41 +756,47 @@ export async function parseImportWorkbook(buffer: Buffer): Promise<{
         aceptabilidad,
       },
       criterio: {
-        numExpuestos: parseNumber(raw.numExpuestos).value,
-        peorConsecuencia: raw.peorConsecuencia,
+        numExpuestos: parseNumber(rawDirect.numExpuestos).value,
+        peorConsecuencia: rawDirect.peorConsecuencia,
         requisitoLegal: !!requisitoParsed.value,
       },
       intervencion: {
-        eliminacion: raw.eliminacion,
-        sustitucion: raw.sustitucion,
-        controlesIngenieria: raw.controlesIngenieria,
-        controlesAdministrativos: raw.controlesAdministrativos,
-        epp: raw.epp,
-        responsable: raw.responsableIntervencion,
-        fechaEjecucion: asIsoDate(raw.fechaEjecucion),
+        eliminacion: rawDirect.eliminacion,
+        sustitucion: rawDirect.sustitucion,
+        controlesIngenieria: rawDirect.controlesIngenieria,
+        controlesAdministrativos: rawDirect.controlesAdministrativos,
+        epp: rawDirect.epp,
+        responsable: rawDirect.responsableIntervencion,
+        fechaEjecucion: asIsoDate(rawDirect.fechaEjecucion),
       },
     }
 
     const proceso = ensureProceso(parsed, procesoValue)
     const zona = ensureZona(proceso, zonaValue || 'Sin zona')
-    const actividad = ensureActividad(zona, {
-      nombre: actividadValue,
-      descripcion: raw.descripcionActividad,
-      tareas: raw.tareas,
-      cargo: raw.cargo,
+    const activityRow = {
+      nombre: actividadName,
+      descripcion: actividadDescripcion,
+      tareas: rawDirect.tareas,
+      cargo: rawDirect.cargo,
       rutinario: rutinarioParsed.value,
-    })
+    }
 
-    actividad.peligros.push(peligro)
+    if (!currentActivity) {
+      currentActivity = ensureActividad(zona, activityRow)
+    } else {
+      currentActivity = ensureActividad(zona, activityRow)
+    }
+
+    currentActivity.peligros.push(peligro)
 
     if (preview.length < 10) {
       preview.push({
         proceso: procesoValue,
         zona: zonaValue,
-        actividad: actividadValue,
-        peligro: raw.peligro,
-        clasificacion: raw.clasificacion,
-        efectos: raw.efectos,
+        actividad: actividadName,
+        peligro: rawDirect.peligro,
+        clasificacion: rawDirect.clasificacion,
+        efectos: rawDirect.efectos,
         nd,
         ne,
         nc,
