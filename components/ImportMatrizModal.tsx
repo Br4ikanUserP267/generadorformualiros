@@ -131,7 +131,8 @@ export function ImportMatrizModal({ open, onOpenChange }: { open: boolean; onOpe
         if (!next) resetState()
       }}
     >
-      <DialogContent className="max-w-5xl">
+      <DialogContent className="w-[95vw] max-w-[95vw] sm:max-w-5xl max-h-[92vh] overflow-hidden p-0">
+        <div className="p-6 overflow-y-auto max-h-[92vh]">
         <DialogHeader>
           <DialogTitle>Importar matriz desde Excel</DialogTitle>
         </DialogHeader>
@@ -183,7 +184,7 @@ export function ImportMatrizModal({ open, onOpenChange }: { open: boolean; onOpe
               </div>
             )}
 
-            <div className="overflow-auto border rounded">
+            <div className="overflow-auto border rounded max-h-[42vh]">
               <table className="w-full text-sm">
                 <thead className="bg-slate-100">
                   <tr>
@@ -282,6 +283,7 @@ export function ImportMatrizModal({ open, onOpenChange }: { open: boolean; onOpe
             )}
           </div>
         )}
+        </div>
       </DialogContent>
     </Dialog>
   )

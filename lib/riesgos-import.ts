@@ -170,6 +170,24 @@ type HeaderDetection = {
 function detectHeaderMapping(sheet: ExcelJS.Worksheet): HeaderDetection {
   const lastRowToScan = Math.min(sheet.rowCount || 1, 35)
 
+  const countHeaderMatchesInRow = (rowIdx: number) => {
+    if (rowIdx < 1) return 0
+    const row = sheet.getRow(rowIdx)
+    const maxCol = Math.max(row.cellCount, 60)
+    let count = 0
+
+    for (let col = 1; col <= maxCol; col++) {
+      const txt = normalizeHeader(getEffectiveCellText(sheet, rowIdx, col))
+      if (!txt) continue
+      const isHeaderLike = (Object.keys(FIELD_ALIASES) as ImportFieldKey[]).some((field) =>
+        FIELD_ALIASES[field].some((alias) => txt.includes(normalizeHeader(alias)))
+      )
+      if (isHeaderLike) count += 1
+    }
+
+    return count
+  }
+
   let best: HeaderDetection = {
     headerRowIndex: 1,
     dataStartRow: 2,
@@ -206,12 +224,19 @@ function detectHeaderMapping(sheet: ExcelJS.Worksheet): HeaderDetection {
       }
     }
 
-    const score = Object.keys(mapping).length
+    const anchorFields: ImportFieldKey[] = ['proceso', 'zona', 'actividad', 'peligro', 'nd', 'ne', 'nc']
+    const anchorsFound = anchorFields.filter((k) => !!mapping[k]).length
+    const score = Object.keys(mapping).length + (anchorsFound * 3)
+
+    // Avoid selecting weak rows that accidentally match only a few generic labels.
+    if (anchorsFound < 4) continue
+
     if (score > bestScore) {
+      const nextRowHeaderLikeCount = countHeaderMatchesInRow(rowIdx + 1)
       bestScore = score
       best = {
         headerRowIndex: rowIdx,
-        dataStartRow: rowIdx + 1,
+        dataStartRow: rowIdx + (nextRowHeaderLikeCount >= 4 ? 2 : 1),
         mapping,
       }
     }
@@ -242,17 +267,27 @@ function parseBooleanSiNo(raw: string): { value: boolean | null; error?: string 
   const v = raw.trim()
   if (!v) return { value: null }
   const norm = v.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase()
-  if (norm === 'si') return { value: true }
-  if (norm === 'no') return { value: false }
+  if (norm === 'si' || norm === '1' || norm === 'true') return { value: true }
+  if (norm === 'no' || norm === '0' || norm === 'false') return { value: false }
+  if (norm.includes(' si ')) return { value: true }
+  if (norm.includes(' no ')) return { value: false }
   return { value: null, error: 'Debe ser "Si" o "No"' }
 }
 
 function parseNumber(raw: string): { value: number | null; error?: string } {
   const v = raw.trim()
   if (!v) return { value: null }
-  const n = Number(v)
-  if (Number.isNaN(n)) return { value: null, error: 'Debe ser un numero' }
-  return { value: n }
+  const direct = Number(v)
+  if (!Number.isNaN(direct)) return { value: direct }
+
+  // Allow dropdown labels that include a numeric token, e.g. "10 (Muy Alto)".
+  const token = v.match(/-?\d+(?:[.,]\d+)?/)
+  if (token) {
+    const parsed = Number(token[0].replace(',', '.'))
+    if (!Number.isNaN(parsed)) return { value: parsed }
+  }
+
+  return { value: null, error: 'Debe ser un numero' }
 }
 
 function asIsoDate(raw: string): string | null {
@@ -390,7 +425,7 @@ export async function parseImportWorkbook(buffer: Buffer): Promise<{
   parsed: ParsedImport
 }> {
   const workbook = new ExcelJS.Workbook()
-  await workbook.xlsx.load(buffer)
+  await workbook.xlsx.load(buffer as any)
 
   const sheet = workbook.getWorksheet('Matriz')
   if (!sheet) {

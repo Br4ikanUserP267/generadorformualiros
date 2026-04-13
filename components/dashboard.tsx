@@ -512,10 +512,10 @@ export function Dashboard() {
                 ))}
               </select>
               <div className="new-menu-wrap">
-                <button className="new-btn">+ Nueva matriz</button>
+                <button className="new-btn">Nueva Matriz</button>
                 <div className="new-menu">
-                  <button className="new-menu-item" onClick={handleNew}>Ingresar datos manualmente</button>
-                  <button className="new-menu-item" onClick={handleOpenImport}>Importar desde Excel</button>
+                  <button className="new-menu-item" onClick={handleNew}>Crear Nueva Matriz</button>
+                  <button className="new-menu-item" onClick={handleOpenImport}>Importar Matriz desde Excel</button>
                 </div>
               </div>
             </div>
