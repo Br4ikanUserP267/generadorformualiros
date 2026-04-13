@@ -167,7 +167,81 @@ type HeaderDetection = {
   mapping: Partial<Record<ImportFieldKey, number>>
 }
 
+const SUBHEADER_ALIASES: Record<ImportFieldKey, string[]> = {
+  proceso: ['proceso'],
+  zona: ['zona/lugar', 'zona / lugar', 'zona lugar'],
+  actividad: ['actividades', 'actividad'],
+  descripcionActividad: ['actividades', 'actividad'],
+  tareas: ['tareas'],
+  cargo: ['cargo'],
+  rutinario: ['rutinario si o no', 'rutinario'],
+  peligro: ['descripcion', 'peligro descripcion', 'peligros descripcion'],
+  clasificacion: ['clasificacion'],
+  efectos: ['efectos posibles'],
+  controlFuente: ['fuente'],
+  controlMedio: ['medio'],
+  controlIndividuo: ['individuo'],
+  nd: ['nivel deficiencia', 'nd'],
+  ne: ['nivel exposicion', 'ne'],
+  nc: ['nivel consecuencia', 'nc'],
+  numExpuestos: ['n° de expuestos', 'n de expuestos', 'num. expuestos', 'num expuestos'],
+  peorConsecuencia: ['peor consecuencia'],
+  requisitoLegal: ['existencia de requisito legal', 'requisito legal'],
+  eliminacion: ['eliminacion'],
+  sustitucion: ['sustitucion'],
+  controlesIngenieria: ['controles de ingenieria', 'controles ingenieria'],
+  controlesAdministrativos: ['senalizacion, advertencia, controles administrativos', 'controles administrativos'],
+  epp: ['equipos / elementos de proteccion personal', 'epp'],
+  responsableIntervencion: ['intervencion', 'responsable intervencion'],
+  fechaEjecucion: ['fecha de ejecucion', 'fecha ejecucion'],
+}
+
+function detectStructuredSubheaderMapping(sheet: ExcelJS.Worksheet): HeaderDetection | null {
+  const maxScan = Math.min(sheet.rowCount || 1, 60)
+  const requiredAnchors: ImportFieldKey[] = ['proceso', 'zona', 'actividad', 'peligro', 'nd', 'ne', 'nc']
+
+  for (let rowIdx = 1; rowIdx <= maxScan; rowIdx++) {
+    const row = sheet.getRow(rowIdx)
+    const maxCol = Math.max(row.cellCount, 60)
+    const mapping: Partial<Record<ImportFieldKey, number>> = {}
+
+    for (let col = 1; col <= maxCol; col++) {
+      const txt = normalizeHeader(getEffectiveCellText(sheet, rowIdx, col))
+      if (!txt) continue
+
+      for (const field of Object.keys(SUBHEADER_ALIASES) as ImportFieldKey[]) {
+        if (mapping[field]) continue
+        if (SUBHEADER_ALIASES[field].some((alias) => txt.includes(normalizeHeader(alias)))) {
+          mapping[field] = col
+        }
+      }
+    }
+
+    const anchors = requiredAnchors.filter((k) => !!mapping[k]).length
+    if (anchors < requiredAnchors.length) continue
+
+    // Template-specific sanity: ND/NE/NC must be contiguous in that order.
+    const nd = mapping.nd as number
+    const ne = mapping.ne as number
+    const nc = mapping.nc as number
+    if (!(nd < ne && ne < nc && nc - nd <= 6)) continue
+
+    if (!mapping.descripcionActividad && mapping.actividad) mapping.descripcionActividad = mapping.actividad
+
+    return {
+      headerRowIndex: rowIdx,
+      dataStartRow: rowIdx + 1,
+      mapping,
+    }
+  }
+
+  return null
+}
+
 function detectHeaderMapping(sheet: ExcelJS.Worksheet): HeaderDetection {
+  const structured = detectStructuredSubheaderMapping(sheet)
+  if (structured) return structured
+
   const lastRowToScan = Math.min(sheet.rowCount || 1, 35)
 
   const countHeaderMatchesInRow = (rowIdx: number) => {
@@ -257,6 +331,20 @@ function detectHeaderMapping(sheet: ExcelJS.Worksheet): HeaderDetection {
     const nd = best.mapping.nd
     if (!nd || nd < ne - 2 || nd > ne + 2) {
       if (Math.abs(ne - nc) <= 3) best.mapping.nd = ne - 1
+    }
+  }
+
+  // If grouped subheader scan found ND/NE/NC but fuzzy aliases shifted,
+  // clamp to ordered neighborhood to avoid reading non-evaluation cells.
+  if (best.mapping.nd && best.mapping.ne && best.mapping.nc) {
+    const nd = best.mapping.nd
+    const ne = best.mapping.ne
+    const nc = best.mapping.nc
+    if (!(nd < ne && ne < nc)) {
+      const ordered = [nd, ne, nc].sort((a, b) => a - b)
+      best.mapping.nd = ordered[0]
+      best.mapping.ne = ordered[1]
+      best.mapping.nc = ordered[2]
     }
   }
 
