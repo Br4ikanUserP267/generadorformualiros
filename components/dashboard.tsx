@@ -106,11 +106,8 @@ export function Dashboard() {
   const router = useRouter()
   
   const [matrices, setMatrices] = useState<any[]>([])
-  const [search, setSearch] = useState('')
-  const [dateDesde, setDateDesde] = useState('')
-  const [dateHasta, setDateHasta] = useState('')
-  const [tipoFilter, setTipoFilter] = useState('')
-  const [clasFilter, setClasFilter] = useState('')
+  const [areaFilter, setAreaFilter] = useState('')
+  const [responsableFilter, setResponsableFilter] = useState('')
   const [deleteTarget, setDeleteTarget] = useState<string|null>(null)
   const [confirmOpen, setConfirmOpen] = useState(false)
   const [duplicateSuccess, setDuplicateSuccess] = useState(false)
@@ -118,117 +115,43 @@ export function Dashboard() {
   const [previewMatrixId, setPreviewMatrixId] = useState<string|null>(null)
   const [importOpen, setImportOpen] = useState(false)
   const [currentPage, setCurrentPage] = useState(1)
+  const [totalMatrices, setTotalMatrices] = useState(0)
+  const [totalPages, setTotalPages] = useState(1)
+  const [isLoading, setIsLoading] = useState(false)
 
-  const PAGE_SIZE = 10
+  const PAGE_SIZE = 20
 
-  useEffect(() => {
-    const load = async () => {
-      try {
-        const res = await apiFetch('/api/riesgos')
-        if (res.ok) {
-          const js = await res.json()
-          const mapped = (js || []).map((m: any) => {
-            const tagsSet = new Set<string>()
-            const clasifSet = new Set<string>()
-            let counts = [0, 0, 0, 0]
-            let totalPeligros = 0
-            
-            if (m.procesos) {
-              m.procesos.forEach((p:any) => {
-                if (p.nombre) tagsSet.add(p.nombre)
-                p.zonas?.forEach((z:any) => {
-                  z.actividades?.forEach((a:any) => {
-                    a.peligros?.forEach((pel:any) => {
-                      totalPeligros++
-                      if (pel.clasificacion) clasifSet.add(pel.clasificacion)
-                      
-                      const nd = Number(pel.evaluacion?.nd || pel.evaluacion?.deficiencia || 0)
-                      const ne = Number(pel.evaluacion?.ne || pel.evaluacion?.exposicion || 0)
-                      const nc = Number(pel.evaluacion?.nc || pel.evaluacion?.consecuencia || 0)
-                      const nr = (nd * ne) * nc
-                      
-                      if (!nr || nr === 0) { counts[3]++ } // consider unconfigured as Bajo
-                      else if (nr >= 4000) counts[0]++
-                      else if (nr >= 501) counts[0]++
-                      else if (nr >= 121) counts[1]++
-                      else if (nr >= 40) counts[2]++
-                      else counts[3]++
-                    })
-                  })
-                })
-              })
-            }
+  const loadSummaries = async (page = 1) => {
+    setIsLoading(true)
+    try {
+      const params = new URLSearchParams()
+      params.set('page', String(page))
+      params.set('pageSize', String(PAGE_SIZE))
+      if (areaFilter.trim()) params.set('area', areaFilter.trim())
+      if (responsableFilter.trim()) params.set('responsable', responsableFilter.trim())
 
-            const isoDate = m.fecha_elaboracion || m.fecha_actualizacion || ''
-            let d = isoDate || ''
-            if (isoDate && isoDate.includes('-')) {
-              const parts = isoDate.split('T')[0].split('-')
-              if (parts.length === 3) d = `${parts[2]}/${parts[1]}/${parts[0]}`
-            }
+      const res = await apiFetch(`/api/riesgos/summary?${params.toString()}`)
+      if (!res.ok) throw new Error('No se pudo cargar el resumen')
 
-            return {
-              id: m.id,
-              title: m.area || m.responsable || 'Matriz sin área',
-              date: d,
-              isoDate: isoDate ? isoDate.split('T')[0] : '',
-              tipos: Array.from(tagsSet),
-              clasificaciones: Array.from(clasifSet),
-              counts,
-              totalPeligros
-            }
-          })
-          setMatrices(mapped)
-        }
-      } catch (e) {
-        console.error(e)
-      }
+      const body = await res.json()
+      setMatrices(Array.isArray(body?.items) ? body.items : [])
+      setTotalMatrices(Number(body?.total || 0))
+      setTotalPages(Math.max(1, Number(body?.totalPages || 1)))
+      if (Number(body?.page) && Number(body.page) !== page) setCurrentPage(Number(body.page))
+    } catch (error) {
+      console.error('Error loading matrix summaries:', error)
+    } finally {
+      setIsLoading(false)
     }
-    load()
-  }, [])
-
-  const tiposList = useMemo(() => {
-    const set = new Set<string>()
-    matrices.forEach(m => {
-      m.tipos.forEach((t: string) => { if (t) set.add(t) })
-    })
-    return Array.from(set).sort()
-  }, [matrices])
-
-  const filtered = useMemo(() => {
-    return matrices.filter(m => {
-      if (search) {
-        const q = search.toLowerCase()
-        const matchText = m.title.toLowerCase().includes(q) || m.tipos.join(' ').toLowerCase().includes(q)
-        if (!matchText) return false
-      }
-      if (clasFilter && !m.clasificaciones.includes(clasFilter)) return false
-      if (tipoFilter && !m.tipos.some((t:any) => t === tipoFilter)) return false
-      if (dateDesde && m.isoDate && m.isoDate < dateDesde) return false
-      if (dateHasta && m.isoDate && m.isoDate > dateHasta) return false
-      return true
-    })
-  }, [matrices, search, clasFilter, tipoFilter, dateDesde, dateHasta])
+  }
 
   useEffect(() => {
-    setCurrentPage(1)
-  }, [search, clasFilter, tipoFilter, dateDesde, dateHasta])
-
-  const totalPages = useMemo(() => {
-    return Math.max(1, Math.ceil(filtered.length / PAGE_SIZE))
-  }, [filtered.length])
-
-  const paginated = useMemo(() => {
-    const start = (currentPage - 1) * PAGE_SIZE
-    return filtered.slice(start, start + PAGE_SIZE)
-  }, [filtered, currentPage])
-
-  useEffect(() => {
-    if (currentPage > totalPages) setCurrentPage(totalPages)
-  }, [currentPage, totalPages])
+    void loadSummaries(currentPage)
+  }, [currentPage, areaFilter, responsableFilter])
 
   const stats = useMemo(() => {
     let totP = 0, ma = 0, al = 0, me = 0, ba = 0
-    for (const m of filtered) {
+    for (const m of matrices) {
       totP += m.totalPeligros
       ma += m.counts[0]
       al += m.counts[1]
@@ -236,10 +159,10 @@ export function Dashboard() {
       ba += m.counts[3]
     }
     return {
-      totM: filtered.length,
+      totM: totalMatrices,
       totP, ma, al, me, ba
     }
-  }, [filtered])
+  }, [matrices, totalMatrices])
 
   const handleNew = () => {
     router.push('/matriz/nuevo')
@@ -252,9 +175,9 @@ export function Dashboard() {
   function confirmDeleteAction() {
     if (!deleteTarget) return
     apiFetch(`/api/riesgos/${deleteTarget}`, { method: 'DELETE' }).then(() => { 
-      setMatrices((prev) => prev.filter(p => p.id !== deleteTarget))
       setConfirmOpen(false)
       setDeleteTarget(null)
+      void loadSummaries(currentPage)
     }).catch(() => {
       setConfirmOpen(false)
       setDeleteTarget(null)
@@ -298,65 +221,8 @@ export function Dashboard() {
       })
 
       if (!createRes.ok) throw new Error('No se pudo crear la copia')
-      
-      // Reload matrices list to ensure all fields are properly structured
-      const reloadRes = await apiFetch('/api/riesgos')
-      if (reloadRes.ok) {
-        const js = await reloadRes.json()
-        // Use same mapping logic as initial load
-        const mapped = (js || []).map((m: any) => {
-          const tagsSet = new Set<string>()
-          const clasifSet = new Set<string>()
-          let counts = [0, 0, 0, 0]
-          let totalPeligros = 0
-          
-          if (m.procesos) {
-            m.procesos.forEach((p:any) => {
-              if (p.nombre) tagsSet.add(p.nombre)
-              p.zonas?.forEach((z:any) => {
-                z.actividades?.forEach((a:any) => {
-                  a.peligros?.forEach((pel:any) => {
-                    totalPeligros++
-                    if (pel.clasificacion) clasifSet.add(pel.clasificacion)
-                    
-                    const nd = Number(pel.evaluacion?.nd || pel.evaluacion?.deficiencia || 0)
-                    const ne = Number(pel.evaluacion?.ne || pel.evaluacion?.exposicion || 0)
-                    const nc = Number(pel.evaluacion?.nc || pel.evaluacion?.consecuencia || 0)
-                    const nr = (nd * ne) * nc
-                    
-                    if (!nr || nr === 0) { counts[3]++ }
-                    else if (nr >= 4000) counts[0]++
-                    else if (nr >= 501) counts[0]++
-                    else if (nr >= 121) counts[1]++
-                    else if (nr >= 40) counts[2]++
-                    else counts[3]++
-                  })
-                })
-              })
-            })
-          }
 
-          const isoDate = m.fecha_elaboracion || m.fecha_actualizacion || ''
-          let d = isoDate || ''
-          if (isoDate && isoDate.includes('-')) {
-            const parts = isoDate.split('T')[0].split('-')
-            if (parts.length === 3) d = `${parts[2]}/${parts[1]}/${parts[0]}`
-          }
-
-          return {
-            id: m.id,
-            title: m.area || m.responsable || 'Matriz sin área',
-            date: d,
-            isoDate: isoDate ? isoDate.split('T')[0] : '',
-            responsable: m.responsable || '',
-            tipos: Array.from(tagsSet),
-            clasificaciones: Array.from(clasifSet),
-            counts,
-            totalPeligros
-          }
-        })
-        setMatrices(mapped)
-      }
+      await loadSummaries(currentPage)
       
       // Show success with modal style
       setDuplicateSuccessTitle(`${duplicateData.area}`)
@@ -420,12 +286,11 @@ export function Dashboard() {
         .filters {background:var(--color-background-primary);border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-lg);padding:14px 16px;margin-bottom:16px}
         .filter-row {display:flex;align-items:center;gap:12px;flex-wrap:wrap}
         .fi {position:relative;display:flex;align-items:center}
-        .fi svg {position:absolute;left:8px;pointer-events:none;opacity:.35;top:50%;transform:translateY(-50%)}
-        .fi input {padding:8px 10px 8px 30px;font-size:13px;border-radius:var(--border-radius-md);border:0.5px solid var(--color-border-secondary);background:var(--color-background-secondary);color:var(--color-text-primary);width:200px;outline:none}
+        .fi input {padding:8px 10px;font-size:13px;border-radius:var(--border-radius-md);border:0.5px solid var(--color-border-secondary);background:var(--color-background-secondary);color:var(--color-text-primary);width:220px;outline:none}
         .fi input::placeholder {color:var(--color-text-tertiary)}
         .fsel {padding:8px 12px;font-size:13px;border-radius:var(--border-radius-md);border:0.5px solid var(--color-border-secondary);background:var(--color-background-secondary);color:var(--color-text-secondary);cursor:pointer;outline:none;appearance:auto}
-        .fdate {padding:8px 12px;font-size:13px;border-radius:var(--border-radius-md);border:0.5px solid var(--color-border-secondary);background:var(--color-background-secondary);color:var(--color-text-secondary);width:130px;outline:none}
         .flabel {font-size:13px;color:var(--color-text-secondary);white-space:nowrap}
+        .filter-actions {display:flex;align-items:center;gap:8px;margin-left:auto;flex-wrap:wrap}
         .new-menu-wrap {margin-left:auto;position:relative}
         .new-btn {padding:9px 20px;font-size:13px;border-radius:var(--border-radius-md);border:none;background:#1a5c2a;color:#fff;cursor:pointer;font-weight:600;white-space:nowrap;transition:opacity 0.2s;}
         .new-btn:hover {opacity:0.9;}
@@ -491,12 +356,12 @@ export function Dashboard() {
           <div className="stat-row">
             <div className="scard">
               <span className="scard-num" style={{color:'#1a5c2a'}}>{stats.totM}</span>
-              <span className="scard-lbl">Total matrices</span>
+              <span className="scard-lbl">Matrices en página</span>
               <div className="scard-bar" style={{background:'#1a5c2a'}}></div>
             </div>
             <div className="scard">
               <span className="scard-num" style={{color:'var(--color-text-primary)'}}>{stats.totP}</span>
-              <span className="scard-lbl">Total riesgos</span>
+              <span className="scard-lbl">Riesgos en página</span>
               <div className="scard-bar" style={{background:'var(--color-border-secondary)'}}></div>
             </div>
             <div className="scard">
@@ -524,36 +389,31 @@ export function Dashboard() {
           <div className="filters">
             <div className="filter-row">
               <div className="fi">
-                <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><circle cx="5" cy="5" r="3.5" stroke="currentColor" strokeWidth="1.2"/><path d="M8 8L10.5 10.5" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round"/></svg>
-                <input type="text" placeholder="Área / Proceso, Zona…" value={search} onChange={e=>setSearch(e.target.value)} />
+                <input type="text" placeholder="Área" value={areaFilter} onChange={e=>setAreaFilter(e.target.value)} />
               </div>
-              <span className="flabel">Desde</span>
-              <input className="fdate" type="date" value={dateDesde} onChange={e=>setDateDesde(e.target.value)} />
-              <span className="flabel">Hasta</span>
-              <input className="fdate" type="date" value={dateHasta} onChange={e=>setDateHasta(e.target.value)} />
-              <select className="fsel" value={tipoFilter} onChange={e=>setTipoFilter(e.target.value)}>
-                <option value="">Tipo: Todos</option>
-                {tiposList.map(t => (
-                  <option key={t} value={t}>{t}</option>
-                ))}
-              </select>
-              <div className="new-menu-wrap">
-                <button className="new-btn">Nueva Matriz</button>
-                <div className="new-menu">
-                  <button className="new-menu-item" onClick={handleNew}>Crear Nueva Matriz</button>
-                  <button className="new-menu-item" onClick={handleOpenImport}>Importar Matriz desde Excel</button>
+              <div className="fi">
+                <input type="text" placeholder="Responsable" value={responsableFilter} onChange={e=>setResponsableFilter(e.target.value)} />
+              </div>
+              <div className="filter-actions">
+                <button className="pbtn" onClick={() => { setAreaFilter(''); setResponsableFilter(''); setCurrentPage(1) }}>Limpiar</button>
+                <div className="new-menu-wrap">
+                  <button className="new-btn">Nueva Matriz</button>
+                  <div className="new-menu">
+                    <button className="new-menu-item" onClick={handleNew}>Crear Nueva Matriz</button>
+                    <button className="new-menu-item" onClick={handleOpenImport}>Importar Matriz desde Excel</button>
+                  </div>
                 </div>
               </div>
             </div>
           </div>
 
-          <div className="results-label">{filtered.length} matri{filtered.length === 1 ? 'z' : 'ces'}</div>
+          <div className="results-label">{totalMatrices} matri{totalMatrices === 1 ? 'z' : 'ces'}</div>
           
           <div className="mlist">
-            {paginated.map(m => (
+            {matrices.map(m => (
               <div key={m.id} className="mcard" onClick={() => router.push('/matriz/' + m.id)}>
                 <div className="mcard-left">
-                  <div className="mcard-title">{m.title}</div>
+                  <div className="mcard-title">{m.area || m.responsable || 'Matriz sin área'}</div>
                   <div className="mcard-date">{m.date}</div>
                   <div className="mcard-tags">
                     {m.tipos.length === 0 ? (
@@ -594,17 +454,22 @@ export function Dashboard() {
                 </div>
               </div>
             ))}
-            {filtered.length === 0 && (
+            {matrices.length === 0 && !isLoading && (
               <div className="text-center py-12 text-sm text-slate-500">
                 No se encontraron matrices que coincidan con los filtros.
               </div>
             )}
+            {isLoading && (
+              <div className="text-center py-12 text-sm text-slate-500">
+                Cargando matrices...
+              </div>
+            )}
           </div>
 
-          {filtered.length > 0 && (
+          {totalMatrices > 0 && (
             <div className="pagination">
               <div className="pagination-info">
-                Página {currentPage} de {totalPages} · Mostrando {paginated.length} de {filtered.length}
+                Página {currentPage} de {totalPages} · Mostrando {matrices.length} de {totalMatrices}
               </div>
               <div className="pagination-actions">
                 <button className="pbtn" disabled={currentPage <= 1} onClick={() => setCurrentPage(1)}>Primera</button>
