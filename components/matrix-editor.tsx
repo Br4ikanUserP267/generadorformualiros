@@ -1,7 +1,7 @@
 "use client"
 
 import React, { useMemo, useState, useEffect, useRef } from "react"
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { toast } from '@/hooks/use-toast'
 import { exportMatrizToExcel } from '@/lib/matriz-excel-export'
 import { Button } from "@/components/ui/button"
@@ -82,8 +82,11 @@ function getStablePeligroLabel(peligro: any, fallbackIndex: number) {
 
 export default function MatrixEditor({ id }: { id?: string }) {
   const router = useRouter()
+  const searchParams = useSearchParams()
+  const peligroIdParam = searchParams?.get('peligroId')
   const [matrix, setMatrix] = useState<any>(null)
   const [selected, setSelected] = useState<{procesoId?: string, zonaId?: string, actividadId?: string}>({})
+  const peligroRefMap = useRef<Record<string, HTMLDivElement | null>>({})
 
   useEffect(() => {
     if (id && id !== 'nuevo') {
@@ -127,7 +130,65 @@ export default function MatrixEditor({ id }: { id?: string }) {
         procesos: []
       })
     }
-  }, [id, router])
+  }, [id, router, peligroIdParam])
+
+  // Auto-expand and highlight peligro when accessed from report
+  useEffect(() => {
+    if (!matrix || !peligroIdParam) return
+    
+    // Find the peligro and its parent structure
+    let targetProcesoId: string | null = null
+    let targetZonaId: string | null = null
+    let targetActividadId: string | null = null
+    let foundPeligro: any = null
+    
+    for (const proceso of matrix.procesos || []) {
+      for (const zona of proceso.zonas || []) {
+        for (const actividad of zona.actividades || []) {
+          const peligro = (actividad.peligros || []).find((p: any) => p.id === peligroIdParam)
+          if (peligro) {
+            targetProcesoId = proceso.id
+            targetZonaId = zona.id
+            targetActividadId = actividad.id
+            foundPeligro = peligro
+            break
+          }
+        }
+        if (foundPeligro) break
+      }
+      if (foundPeligro) break
+    }
+    
+    if (!foundPeligro || !targetZonaId || !targetActividadId) return
+    
+    // Update selected state to show the activity
+    setSelected({ procesoId: targetProcesoId, zonaId: targetZonaId, actividadId: targetActividadId })
+    
+    // Expand the zone
+    setExpandedZonaIds(s => ({ ...s, [targetZonaId]: true }))
+    
+    // Collapse all peligros except the target one
+    updateMatrix((m: any) => {
+      for (const proceso of m.procesos || []) {
+        for (const zona of proceso.zonas || []) {
+          for (const actividad of zona.actividades || []) {
+            for (const peligro of actividad.peligros || []) {
+              peligro._ui = { ...peligro._ui, expanded: peligro.id === peligroIdParam }
+            }
+          }
+        }
+      }
+      return m
+    })
+    
+    // Scroll to the peligro after a short delay to ensure DOM is ready
+    setTimeout(() => {
+      const element = peligroRefMap.current?.[peligroIdParam]
+      if (element) {
+        element.scrollIntoView({ behavior: 'smooth', block: 'center' })
+      }
+    }, 100)
+  }, [matrix, peligroIdParam])
 
   const [showProcesoModal, setShowProcesoModal] = useState(false)
   const [editingProceso, setEditingProceso] = useState<any>(null)
@@ -1079,8 +1140,9 @@ export default function MatrixEditor({ id }: { id?: string }) {
                       {currentActividad.peligros.map((r: any, idx: number) => (
                         <div
                           key={r.id}
+                          ref={(el) => { if (el) peligroRefMap.current[r.id] = el }}
                           data-peligro-id={r.id}
-                          className={`border rounded bg-[#fafcfa] ${dragOverPeligroId===r.id ? 'bg-slate-100' : ''} ${dragOverPeligroId===r.id && dragOverPeligroEdge==='before' ? 'border-t-2 border-t-[#2d7a40]' : ''} ${dragOverPeligroId===r.id && dragOverPeligroEdge==='after' ? 'border-b-2 border-b-[#2d7a40]' : ''}`}
+                          className={`border rounded bg-[#fafcfa] ${dragOverPeligroId===r.id ? 'bg-slate-100' : ''} ${dragOverPeligroId===r.id && dragOverPeligroEdge==='before' ? 'border-t-2 border-t-[#2d7a40]' : ''} ${dragOverPeligroId===r.id && dragOverPeligroEdge==='after' ? 'border-b-2 border-b-[#2d7a40]' : ''} ${peligroIdParam === r.id ? 'ring-2 ring-[#2d7a40] bg-blue-50' : ''}`}
                         >
                           <div
                             className="p-3 flex items-center justify-between cursor-pointer"

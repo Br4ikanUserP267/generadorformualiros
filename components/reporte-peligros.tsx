@@ -74,7 +74,7 @@ export function ReportePeligros() {
   const [items, setItems] = useState<PeligroReporteItem[]>([])
   const [total, setTotal] = useState(0)
   const [page, setPage] = useState(0)
-  const [pageSize] = useState(20)
+  const [pageSize] = useState(15)
   const [search, setSearch] = useState('')
   const [selectedAceptabilidad, setSelectedAceptabilidad] = useState<string | null>(null)
   const [counts, setCounts] = useState<CountsResponse>({ muyAlto: 0, alto: 0, medio: 0, bajo: 0 })
@@ -149,9 +149,11 @@ export function ReportePeligros() {
     <div className="min-h-screen bg-[#f5f8f5]">
       <div className="sticky top-0 z-20 flex items-center justify-between bg-white" style={{ borderBottom: '0.5px solid #d4e8d4', padding: '16px 24px' }}>
         <div className="flex items-center" style={{ gap: '12px' }}>
-          <img src="/matriz-riesgos/csmLOGO_1_.png" alt="Logo" style={{ height: '38px', objectFit: 'contain' }} />
+          <Button asChild variant="ghost" className="h-auto px-0 text-[13px] font-medium text-[#1a5c2a] hover:bg-transparent hover:text-[#1a5c2a]">
+            <Link href="/dashboard">Volver</Link>
+          </Button>
           <div style={{ width: '0.5px', height: '30px', background: '#c8dfc8' }}></div>
-          <div className="text-[16px] font-semibold text-[#1a5c2a]">Matriz de Riesgos</div>
+          <div className="text-[16px] font-semibold text-[#1a5c2a]">Reporte de Riesgos</div>
         </div>
         <div className="flex items-center" style={{ gap: '8px', fontSize: '13px', color: '#555' }}>
           <div className="flex h-8 w-8 items-center justify-center rounded-full bg-[#e8f5e9] text-[13px] font-semibold uppercase text-[#1a5c2a]">
@@ -161,10 +163,6 @@ export function ReportePeligros() {
             {user?.nombre || ''}
             {user?.cargo ? <><>&nbsp;·&nbsp;</>{user.cargo}</> : null}
           </span>
-          <span style={{opacity:'.3', margin:'0 4px', color:'#c8dfc8'}}>|</span>
-          <Link href="/dashboard" style={{cursor:'pointer', color:'#1a5c2a', fontWeight:500}}>Dashboard</Link>
-          <span style={{opacity:'.3', margin:'0 4px', color:'#c8dfc8'}}>|</span>
-          <span style={{ color: '#1a5c2a', fontWeight: 500 }}>Reporte de Peligros</span>
           <span style={{opacity:'.3', margin:'0 4px', color:'#c8dfc8'}}>|</span>
           <button
             type="button"
@@ -258,7 +256,7 @@ export function ReportePeligros() {
                       </td>
                       <td className="px-4 py-3">
                         {item.matrizId ? (
-                          <Link href={`/matriz/${item.matrizId}`} className="text-[#2d7a40] underline-offset-2 hover:underline">
+                          <Link href={`/matriz/${item.matrizId}?peligroId=${item.id}`} className="text-[#2d7a40] underline-offset-2 hover:underline">
                             {item.nombreMatriz}
                           </Link>
                         ) : (
