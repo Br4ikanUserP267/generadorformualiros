@@ -5,6 +5,32 @@
 @custom-variant dark (&:is(.dark *));
 
 :root {
+  --brand-green: #2d7a40;
+  --brand-green-hover: #256735;
+  --brand-green-soft: #eaf5ed;
+  --surface-bg: #f5f8f5;
+  --surface-card: #ffffff;
+  --surface-border: #dde8dd;
+  --surface-border-strong: #c7d8c9;
+  --text-title: #153522;
+  --text-body: #2f3b33;
+  --text-muted: #647a6a;
+
+  --risk-prob-bajo: #198754;
+  --risk-prob-medio: #f59e0b;
+  --risk-prob-alto: #dc3545;
+  --risk-prob-muy-alto: #a50000;
+
+  --risk-nivel-i: #dc3545;
+  --risk-nivel-ii: #f59e0b;
+  --risk-nivel-iii: #22c55e;
+  --risk-nivel-iv: #198754;
+
+  --risk-aceptable: #198754;
+  --risk-mejorable: #22c55e;
+  --risk-aceptable-control: #f59e0b;
+  --risk-no-aceptable: #dc3545;
+
   --background: oklch(0.98 0.005 145);
   --foreground: oklch(0.2 0.02 145);
   --card: oklch(1 0 0);

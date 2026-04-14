@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useMemo, useState, useEffect } from 'react'
+import React, { useMemo, useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { useAuth } from '@/lib/auth-context'
 import ConfirmModal from './confirm-modal'
@@ -122,35 +122,75 @@ export function Dashboard() {
   const [totals, setTotals] = useState({ totP: 0, ma: 0, al: 0, me: 0, ba: 0 })
   const [isLoading, setIsLoading] = useState(false)
   const [facetTipos, setFacetTipos] = useState<string[]>([])
+  const summariesCacheRef = useRef<Record<string, any>>({})
+  const prefetchTokenRef = useRef(0)
 
   const PAGE_SIZE = 6
+
+  const buildSummaryParams = (page: number) => {
+    const params = new URLSearchParams()
+    params.set('page', String(page))
+    params.set('pageSize', String(PAGE_SIZE))
+    if (search.trim()) params.set('search', search.trim())
+    if (dateDesde) params.set('dateDesde', dateDesde)
+    if (dateHasta) params.set('dateHasta', dateHasta)
+    if (tipoFilter) params.set('tipo', tipoFilter)
+    return params
+  }
+
+  const applySummaryPayload = (body: any, requestedPage: number) => {
+    setMatrices(Array.isArray(body?.items) ? body.items : [])
+    setTotalMatrices(Number(body?.total || 0))
+    setTotalPages(Math.max(1, Number(body?.totalPages || 1)))
+    setTotals({
+      totP: Number(body?.totals?.totalPeligros || 0),
+      ma: Number(body?.totals?.counts?.[0] || 0),
+      al: Number(body?.totals?.counts?.[1] || 0),
+      me: Number(body?.totals?.counts?.[2] || 0),
+      ba: Number(body?.totals?.counts?.[3] || 0),
+    })
+    if (Number(body?.page) && Number(body.page) !== requestedPage) setCurrentPage(Number(body.page))
+  }
+
+  const prefetchRemainingPages = async (fromPage: number, maxPage: number, token: number) => {
+    for (let p = fromPage; p <= maxPage; p++) {
+      if (prefetchTokenRef.current !== token) return
+      const params = buildSummaryParams(p)
+      const key = params.toString()
+      if (summariesCacheRef.current[key]) continue
+      try {
+        const res = await apiFetch(`/api/riesgos/summary?${key}`)
+        if (!res.ok) return
+        const body = await res.json()
+        summariesCacheRef.current[key] = body
+      } catch {
+        return
+      }
+    }
+  }
 
   const loadSummaries = async (page = 1) => {
     setIsLoading(true)
     try {
-      const params = new URLSearchParams()
-      params.set('page', String(page))
-      params.set('pageSize', String(PAGE_SIZE))
-      if (search.trim()) params.set('search', search.trim())
-      if (dateDesde) params.set('dateDesde', dateDesde)
-      if (dateHasta) params.set('dateHasta', dateHasta)
-      if (tipoFilter) params.set('tipo', tipoFilter)
+      const params = buildSummaryParams(page)
+      const key = params.toString()
+      const cached = summariesCacheRef.current[key]
+      if (cached) {
+        applySummaryPayload(cached, page)
+      } else {
+        const res = await apiFetch(`/api/riesgos/summary?${key}`)
+        if (!res.ok) throw new Error('No se pudo cargar el resumen')
+        const body = await res.json()
+        summariesCacheRef.current[key] = body
+        applySummaryPayload(body, page)
+      }
 
-      const res = await apiFetch(`/api/riesgos/summary?${params.toString()}`)
-      if (!res.ok) throw new Error('No se pudo cargar el resumen')
-
-      const body = await res.json()
-      setMatrices(Array.isArray(body?.items) ? body.items : [])
-      setTotalMatrices(Number(body?.total || 0))
-      setTotalPages(Math.max(1, Number(body?.totalPages || 1)))
-      setTotals({
-        totP: Number(body?.totals?.totalPeligros || 0),
-        ma: Number(body?.totals?.counts?.[0] || 0),
-        al: Number(body?.totals?.counts?.[1] || 0),
-        me: Number(body?.totals?.counts?.[2] || 0),
-        ba: Number(body?.totals?.counts?.[3] || 0),
-      })
-      if (Number(body?.page) && Number(body.page) !== page) setCurrentPage(Number(body.page))
+      const currentBody = summariesCacheRef.current[key]
+      const maxPage = Number(currentBody?.totalPages || 1)
+      if (page === 1 && maxPage > 1) {
+        const token = ++prefetchTokenRef.current
+        void prefetchRemainingPages(2, maxPage, token)
+      }
     } catch (error) {
       console.error('Error loading matrix summaries:', error)
     } finally {
@@ -179,6 +219,8 @@ export function Dashboard() {
 
   useEffect(() => {
     setCurrentPage(1)
+    summariesCacheRef.current = {}
+    prefetchTokenRef.current += 1
   }, [search, dateDesde, dateHasta, tipoFilter])
 
   const tiposList = useMemo(() => facetTipos, [facetTipos])
@@ -269,14 +311,14 @@ export function Dashboard() {
       <style dangerouslySetInnerHTML={{__html: `
         :root {
           --color-background-primary: #ffffff;
-          --color-background-secondary: #f8fafc;
-          --color-background-tertiary: #f1f5f9;
-          --color-border-primary: #cbd5e1;
-          --color-border-secondary: #e2e8f0;
-          --color-border-tertiary: #e2e8f0;
-          --color-text-primary: #0f172a;
-          --color-text-secondary: #64748b;
-          --color-text-tertiary: #94a3b8;
+          --color-background-secondary: #f8fbf8;
+          --color-background-tertiary: #f5f8f5;
+          --color-border-primary: #c7d8c9;
+          --color-border-secondary: #dde8dd;
+          --color-border-tertiary: #dde8dd;
+          --color-text-primary: #153522;
+          --color-text-secondary: #647a6a;
+          --color-text-tertiary: #8aa08f;
           --border-radius-lg: 12px;
           --border-radius-md: 8px;
         }
@@ -295,7 +337,7 @@ export function Dashboard() {
         }
         .html-wrapper * { box-sizing:border-box;margin:0;padding:0;font-family:inherit; }
         .html-wrapper { width:100%; min-height: 100vh; display: flex; flex-direction: column; background: var(--color-background-tertiary); }
-        .topbar {background:#ffffff;border-bottom: 0.5px solid #d4e8d4;padding:16px 24px;display:flex;align-items:center;justify-content:space-between;}
+        .topbar {background:#ffffff;border-bottom: 0.5px solid #d4e8d4;padding:16px 24px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:20;}
         .logo {display:flex;align-items:center;gap:12px}
         .logo-divider {width: 0.5px; height: 30px; background: #c8dfc8;}
         .logo-text {font-size:16px;font-weight:600;color:#1a5c2a}
@@ -308,12 +350,12 @@ export function Dashboard() {
         .stat-row {display:grid;grid-template-columns:repeat(6,1fr);gap:12px;margin-bottom:16px}
         @media (max-width: 768px) { .stat-row { grid-template-columns:repeat(3,1fr); } }
         @media (max-width: 480px) { .stat-row { grid-template-columns:1fr 1fr; } }
-        .scard {background:var(--color-background-primary);border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-lg);padding:16px 20px;display:flex;flex-direction:column;gap:6px}
+        .scard {background:var(--color-background-primary);border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-lg);padding:16px 20px;display:flex;flex-direction:column;gap:6px;min-height:104px;box-shadow:0 2px 8px rgba(21,53,34,0.04)}
         .scard-num {font-size:28px;font-weight:600;line-height:1}
         .scard-lbl {font-size:12px;color:var(--color-text-secondary);font-weight:500;}
         .scard-bar {height:4px;border-radius:2px;margin-top:5px}
         
-        .filters {background:var(--color-background-primary);border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-lg);padding:14px 16px;margin-bottom:16px}
+        .filters {background:var(--color-background-primary);border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-lg);padding:14px 16px;margin-bottom:16px;box-shadow:0 2px 8px rgba(21,53,34,0.04)}
         .filter-row {display:flex;align-items:center;gap:12px;flex-wrap:wrap}
         .fi {position:relative;display:flex;align-items:center}
         .fi input {padding:8px 10px;font-size:13px;border-radius:var(--border-radius-md);border:0.5px solid var(--color-border-secondary);background:var(--color-background-secondary);color:var(--color-text-primary);width:220px;outline:none}
@@ -334,8 +376,8 @@ export function Dashboard() {
         
         .mlist {display:flex;flex-direction:column;gap:8px}
         
-        .mcard {background:var(--color-background-primary);border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-lg);padding:14px 16px;display:flex;align-items:center;gap:16px;cursor:pointer;transition:all .15s}
-        .mcard:hover {border-color:var(--color-border-primary); transform:translateY(-1px); box-shadow:0 4px 15px rgba(0,0,0,0.03)}
+        .mcard {background:var(--color-background-primary);border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-lg);padding:14px 16px;display:flex;align-items:center;gap:16px;cursor:pointer;transition:all .15s;box-shadow:0 2px 8px rgba(21,53,34,0.04)}
+        .mcard:hover {border-color:var(--color-border-primary); transform:translateY(-1px); box-shadow:0 8px 18px rgba(21,53,34,0.08)}
         
         .mcard-left {flex:1;min-width:0}
         .mcard-title {font-size:14px;font-weight:500;color:var(--color-text-primary);margin-bottom:2px}
@@ -351,7 +393,7 @@ export function Dashboard() {
         .snum-val {font-size:18px;font-weight:500;line-height:1}
         .snum-lbl {font-size:9px;margin-top:2px;font-weight:500}
         
-        .mcard-actions {display:flex;flex-direction:column;gap:4px;flex-shrink:0}
+        .mcard-actions {display:flex;flex-direction:row;gap:6px;flex-shrink:0;align-items:center}
         .ibt {width:28px;height:28px;border-radius:var(--border-radius-md);border:0.5px solid var(--color-border-tertiary);background:transparent;cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--color-text-secondary);transition:all 0.15s;}
         .ibt:hover {background:var(--color-background-secondary);color:var(--color-text-primary);}
 

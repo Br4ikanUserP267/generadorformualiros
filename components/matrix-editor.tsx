@@ -11,6 +11,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Switch } from "@/components/ui/switch"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Badge } from "@/components/ui/badge"
+import ConfirmModal from '@/components/confirm-modal'
 import { PencilIcon, TrashIcon, CopyIcon } from 'lucide-react'
 import { apiFetch } from '@/lib/utils'
 
@@ -19,21 +20,21 @@ function makeId(prefix = '') { return prefix + Math.random().toString(36).slice(
 // risk interpretation helpers (GTC-45 rules)
 function interpProbabilidad(np: number) {
   if (!np) return { label: '—', color: '#9CA3AF' }
-  if (np >= 24 && np <= 40) return { label: 'Muy Alto', color: '#c0392b' }
-  if (np >= 10 && np <= 23) return { label: 'Alto', color: '#c0392b' }
+  if (np >= 24 && np <= 40) return { label: 'Muy Alto', color: '#a50000' }
+  if (np >= 10 && np <= 23) return { label: 'Alto', color: '#dc3545' }
   if (np >= 6 && np <= 9) return { label: 'Medio', color: '#f59e0b' }
-  if (np >= 2 && np <= 5) return { label: 'Bajo', color: '#27ae60' }
+  if (np >= 2 && np <= 5) return { label: 'Bajo', color: '#198754' }
   return { label: String(np), color: '#9CA3AF' }
 }
 
 function interpNivelRiesgo(nr: number) {
   if (!nr) return { label: '—', color: '#9CA3AF' }
-  if (nr >= 4000 && nr <= 6000) return { label: 'I', color: '#c0392b' }
+  if (nr >= 4000 && nr <= 6000) return { label: 'I', color: '#dc3545' }
   if (nr >= 150 && nr <= 500) return { label: 'II', color: '#f59e0b' }
-  if (nr >= 40 && nr <= 120) return { label: 'III', color: '#27ae60' }
-  if (nr >= 10 && nr <= 20) return { label: 'IV', color: '#27ae60' }
+  if (nr >= 40 && nr <= 120) return { label: 'III', color: '#22c55e' }
+  if (nr >= 10 && nr <= 20) return { label: 'IV', color: '#198754' }
   // catch-all mapping
-  if (nr >= 501) return { label: 'I', color: '#c0392b' }
+  if (nr >= 501) return { label: 'I', color: '#dc3545' }
   if (nr >= 121 && nr <= 500) return { label: 'II', color: '#f59e0b' }
   return { label: String(nr), color: '#9CA3AF' }
 }
@@ -59,9 +60,10 @@ function aceptabilidadFromNivel(label: string) {
 }
 
 function aceptabilidadColor(text: string) {
-  if (text.includes('No Aceptable')) return '#c0392b' // Rojo
+  if (text.includes('No Aceptable')) return '#dc3545' // Rojo
   if (text.includes('Control Especifico')) return '#f59e0b' // Amarillo
-  if (text.includes('Mejorable') || text.includes('Aceptable')) return '#27ae60' // Verde
+  if (text.includes('Mejorable')) return '#22c55e' // Verde
+  if (text.includes('Aceptable')) return '#198754' // Verde profundo
   return '#9CA3AF'
 }
 
@@ -147,6 +149,10 @@ export default function MatrixEditor({ id }: { id?: string }) {
   const [showFilesModal, setShowFilesModal] = useState(false)
   const [uploadedFiles, setUploadedFiles] = useState<Array<{name:string,type:string,size:number,data:string}>>([])
   const [selectedPreviewIndex, setSelectedPreviewIndex] = useState<number | null>(null)
+  const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false)
+  const [confirmDeleteTitle, setConfirmDeleteTitle] = useState('Confirmar eliminación')
+  const [confirmDeleteMessage, setConfirmDeleteMessage] = useState('¿Estás seguro? Esta acción no se puede deshacer.')
+  const [pendingDeleteAction, setPendingDeleteAction] = useState<null | (() => void)>(null)
   const fileInputRef = useRef<HTMLInputElement | null>(null)
   const isDraggingRef = useRef(false)
   const actividadDragSourceRef = useRef<{ procesoId: string, zonaId: string, actividadId: string } | null>(null)
@@ -255,27 +261,35 @@ export default function MatrixEditor({ id }: { id?: string }) {
   }
 
   function removeProceso(procesoId: string) {
-    if (!confirm('Eliminar proceso?')) return
-    updateMatrix((m: any) => {
-      m.procesos = m.procesos.filter((p: any) => p.id !== procesoId)
-      if (selected.procesoId === procesoId) {
-        const np = m.procesos[0]
-        const nz = np?.zonas?.[0]
-        const na = nz?.actividades?.[0]
-        setSelected({ procesoId: np?.id, zonaId: nz?.id, actividadId: na?.id })
-      }
-      return m
+    setConfirmDeleteTitle('Eliminar proceso')
+    setConfirmDeleteMessage('¿Estás seguro de que deseas eliminar este proceso? Se eliminarán también sus zonas, actividades y peligros asociados.')
+    setPendingDeleteAction(() => () => {
+      updateMatrix((m: any) => {
+        m.procesos = m.procesos.filter((p: any) => p.id !== procesoId)
+        if (selected.procesoId === procesoId) {
+          const np = m.procesos[0]
+          const nz = np?.zonas?.[0]
+          const na = nz?.actividades?.[0]
+          setSelected({ procesoId: np?.id, zonaId: nz?.id, actividadId: na?.id })
+        }
+        return m
+      })
     })
+    setConfirmDeleteOpen(true)
   }
 
   function removeZona(procesoId: string, zonaId: string) {
-    if (!confirm('Eliminar zona?')) return
-    updateMatrix((m: any) => {
-      const p = m.procesos.find((x: any) => x.id === procesoId)
-      p.zonas = p.zonas.filter((z: any) => z.id !== zonaId)
-      if (selected.zonaId === zonaId) setSelected({ procesoId, zonaId: p.zonas?.[0]?.id })
-      return m
+    setConfirmDeleteTitle('Eliminar zona')
+    setConfirmDeleteMessage('¿Estás seguro de que deseas eliminar esta zona? Se eliminarán también sus actividades y peligros asociados.')
+    setPendingDeleteAction(() => () => {
+      updateMatrix((m: any) => {
+        const p = m.procesos.find((x: any) => x.id === procesoId)
+        p.zonas = p.zonas.filter((z: any) => z.id !== zonaId)
+        if (selected.zonaId === zonaId) setSelected({ procesoId, zonaId: p.zonas?.[0]?.id })
+        return m
+      })
     })
+    setConfirmDeleteOpen(true)
   }
 
   function openAddActividadModal(procesoId: string, zonaId: string) {
@@ -339,12 +353,16 @@ export default function MatrixEditor({ id }: { id?: string }) {
   }
 
   function removePeligro(procesoId: string, zonaId: string, actividadId: string, peligroId: string) {
-    if (!confirm('Eliminar peligro?')) return
-    updateMatrix((m: any) => {
-      const a = m.procesos.find((x: any)=> x.id===procesoId).zonas.find((y:any)=>y.id===zonaId).actividades.find((aa:any)=>aa.id===actividadId)
-      a.peligros = a.peligros.filter((p: any) => p.id !== peligroId)
-      return m
+    setConfirmDeleteTitle('Eliminar peligro')
+    setConfirmDeleteMessage('¿Estás seguro de que deseas eliminar este peligro? Esta acción no se puede deshacer.')
+    setPendingDeleteAction(() => () => {
+      updateMatrix((m: any) => {
+        const a = m.procesos.find((x: any)=> x.id===procesoId).zonas.find((y:any)=>y.id===zonaId).actividades.find((aa:any)=>aa.id===actividadId)
+        a.peligros = a.peligros.filter((p: any) => p.id !== peligroId)
+        return m
+      })
     })
+    setConfirmDeleteOpen(true)
   }
   function duplicatePeligro(procesoId: string, zonaId: string, actividadId: string, peligroId: string) {
     updateMatrix((m:any)=>{
@@ -602,13 +620,17 @@ export default function MatrixEditor({ id }: { id?: string }) {
   }
 
   function removeActividad(procesoId: string, zonaId: string, actividadId: string) {
-    if (!confirm('Eliminar actividad?')) return
-    updateMatrix((m:any)=>{
-      const z = m.procesos.find((x:any)=>x.id===procesoId).zonas.find((y:any)=>y.id===zonaId)
-      z.actividades = z.actividades.filter((a:any)=> a.id !== actividadId)
-      if (selected.actividadId === actividadId) setSelected({ procesoId, zonaId, actividadId: z.actividades?.[0]?.id })
-      return m
+    setConfirmDeleteTitle('Eliminar actividad')
+    setConfirmDeleteMessage('¿Estás seguro de que deseas eliminar esta actividad? Se eliminarán también sus peligros asociados.')
+    setPendingDeleteAction(() => () => {
+      updateMatrix((m:any)=>{
+        const z = m.procesos.find((x:any)=>x.id===procesoId).zonas.find((y:any)=>y.id===zonaId)
+        z.actividades = z.actividades.filter((a:any)=> a.id !== actividadId)
+        if (selected.actividadId === actividadId) setSelected({ procesoId, zonaId, actividadId: z.actividades?.[0]?.id })
+        return m
+      })
     })
+    setConfirmDeleteOpen(true)
   }
 
   const stats = useMemo(() => {
@@ -749,12 +771,29 @@ export default function MatrixEditor({ id }: { id?: string }) {
   }
 
   function removeUploadedFile(index: number) {
-    setUploadedFiles((cur) => {
-      const copy = [...cur]
-      copy.splice(index, 1)
-      return copy
+    setConfirmDeleteTitle('Eliminar archivo')
+    setConfirmDeleteMessage('¿Deseas eliminar este archivo de la carga actual?')
+    setPendingDeleteAction(() => () => {
+      setUploadedFiles((cur) => {
+        const copy = [...cur]
+        copy.splice(index, 1)
+        return copy
+      })
+      setSelectedPreviewIndex((cur) => (cur === index ? null : cur && cur > index ? cur - 1 : cur))
     })
-    setSelectedPreviewIndex((cur) => (cur === index ? null : cur && cur > index ? cur - 1 : cur))
+    setConfirmDeleteOpen(true)
+  }
+
+  function handleConfirmDelete() {
+    const action = pendingDeleteAction
+    setConfirmDeleteOpen(false)
+    setPendingDeleteAction(null)
+    if (action) action()
+  }
+
+  function handleCancelDelete() {
+    setConfirmDeleteOpen(false)
+    setPendingDeleteAction(null)
   }
 
   function decodeDataUrl(dataUrl: string) {
@@ -799,16 +838,16 @@ export default function MatrixEditor({ id }: { id?: string }) {
 
   if (!matrix) {
     return (
-      <div className="flex bg-white items-center justify-center p-8 text-slate-500 h-screen w-full">
+      <div className="flex items-center justify-center p-8 text-slate-500 h-screen w-full bg-[#f3f7f3]">
         Cargando matriz de riesgos...
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen bg-[#f5f7f5] text-slate-800">
+    <div className="min-h-screen bg-[#f3f7f3] text-slate-800">
       {/* Top bar */}
-      <div className="sticky top-0 px-4 py-3 flex items-center gap-4 z-10" style={{background:'#ffffff', borderBottom: '0.5px solid #d4e8d4'}}>
+      <div className="sticky top-0 px-4 py-3 flex items-center gap-4 z-20 bg-white/95 backdrop-blur border-b border-[#d7e5d7] shadow-[0_1px_0_rgba(0,0,0,0.03)]">
         <div className="flex items-center gap-2">
           <img src="/matriz-riesgos/csmLOGO_1_.png" style={{ height: '38px', objectFit: 'contain' }} alt="Logo" />
           <div style={{ width: '0.5px', height: '30px', background: '#c8dfc8', margin: '0 4px' }} />
@@ -816,13 +855,13 @@ export default function MatrixEditor({ id }: { id?: string }) {
         </div>
         <div className="flex-1 flex items-center gap-3 justify-center text-[#1a5c2a]">
             <div className="text-xs font-medium">Área / Proceso</div>
-            <Input style={{background: '#f4faf4', border: '0.5px solid #c8dfc8', color: '#1a5c2a'}} value={matrix.area} onChange={(e:any)=> updateMatrix((m:any)=>{ m.area = e.target.value; return m })} />
+            <Input className="h-9 rounded-md border-[#c8dfc8] bg-[#f4faf4] text-[#1a5c2a] focus-visible:ring-[#2d7a40]" value={matrix.area} onChange={(e:any)=> updateMatrix((m:any)=>{ m.area = e.target.value; return m })} />
             <div className="text-xs font-medium">Responsable</div>
-            <Input style={{background: '#f4faf4', border: '0.5px solid #c8dfc8', color: '#1a5c2a'}} value={matrix.responsable} onChange={(e:any)=> updateMatrix((m:any)=>{ m.responsable = e.target.value; return m })} />
+            <Input className="h-9 rounded-md border-[#c8dfc8] bg-[#f4faf4] text-[#1a5c2a] focus-visible:ring-[#2d7a40]" value={matrix.responsable} onChange={(e:any)=> updateMatrix((m:any)=>{ m.responsable = e.target.value; return m })} />
             <div className="text-xs font-medium">Fecha Elaboración</div>
-            <Input type="date" style={{background: '#f4faf4', border: '0.5px solid #c8dfc8', color: '#1a5c2a'}} value={matrix.fecha_elaboracion} onChange={(e:any)=> updateMatrix((m:any)=>{ m.fecha_elaboracion = e.target.value; return m })} />
+            <Input type="date" className="h-9 rounded-md border-[#c8dfc8] bg-[#f4faf4] text-[#1a5c2a] focus-visible:ring-[#2d7a40]" value={matrix.fecha_elaboracion} onChange={(e:any)=> updateMatrix((m:any)=>{ m.fecha_elaboracion = e.target.value; return m })} />
             <div className="text-xs font-medium">Fecha Actualización</div>
-            <Input type="date" style={{background: '#f4faf4', border: '0.5px solid #c8dfc8', color: '#1a5c2a'}} value={matrix.fecha_actualizacion || ''} onChange={(e:any)=> updateMatrix((m:any)=>{ m.fecha_actualizacion = e.target.value; return m })} />
+            <Input type="date" className="h-9 rounded-md border-[#c8dfc8] bg-[#f4faf4] text-[#1a5c2a] focus-visible:ring-[#2d7a40]" value={matrix.fecha_actualizacion || ''} onChange={(e:any)=> updateMatrix((m:any)=>{ m.fecha_actualizacion = e.target.value; return m })} />
         
         </div>
         <div className="flex items-center gap-2">
@@ -833,14 +872,14 @@ export default function MatrixEditor({ id }: { id?: string }) {
 
                 <div className="p-4 flex items-start gap-6">
                   <aside className="w-80 mr-6">
-                    <div style={{ border: '0.5px solid #dde8dd', borderRadius: '10px', overflow: 'hidden', background: '#fff' }}>
-                      <div className="flex items-center justify-between px-4 py-2" style={{ background: '#2d7a40', color: '#fff' }}>
+                    <div className="overflow-hidden rounded-xl border border-[#d7e5d7] bg-white shadow-[0_8px_24px_rgba(17,24,39,0.04)]">
+                      <div className="flex items-center justify-between px-4 py-3 bg-[#1f6f36] text-white">
                         <div className="font-semibold text-sm">Procesos</div>
                         <Button size="sm" variant="secondary" className="bg-white text-[#2d7a40] hover:bg-slate-100" onClick={addProceso}>+ Proceso</Button>
                       </div>
                       <div className="p-4 space-y-3">
                     { (matrix.procesos || []).map((p: any) => (
-                      <div key={p.id} className="border rounded p-2">
+                      <div key={p.id} className="border border-[#e1ebe1] rounded-lg p-2 bg-[#fbfdfb]">
                         <div className="flex items-center justify-between">
                           <div className="font-medium bg-[#2d7a40] text-white px-2 py-1 rounded">{p.nombre}</div>
                           <div className="flex items-center gap-2">
@@ -856,8 +895,8 @@ export default function MatrixEditor({ id }: { id?: string }) {
                             const pill = interpNivelRiesgo(worst)
                             const expanded = !!expandedZonaIds[z.id]
                             return (
-                              <div key={z.id} className={`border rounded ${selected.zonaId===z.id? 'bg-slate-50':''}`}>
-                                <div className={`flex items-center justify-between p-2 cursor-pointer ${selected.zonaId===z.id? 'bg-slate-100':''}`} onClick={() => setSelected({ procesoId: p.id, zonaId: z.id })}>
+                              <div key={z.id} className={`border rounded ${selected.zonaId===z.id? 'bg-[#edf5ed] border-[#bdd8c0]':'border-[#e4ece4]'}`}>
+                                <div className={`flex items-center justify-between p-2 cursor-pointer ${selected.zonaId===z.id? 'bg-[#e5f1e7]':''}`} onClick={() => setSelected({ procesoId: p.id, zonaId: z.id })}>
                                     <div className="flex items-center gap-2">
                                       <div
                                         className="text-sm bg-[#2d7a40] text-white px-2 py-1 rounded cursor-pointer"
@@ -880,7 +919,7 @@ export default function MatrixEditor({ id }: { id?: string }) {
                                       {(z.actividades||[]).map((a: any) => (
                                         <div
                                           key={a.id}
-                                          className={`flex items-center justify-between p-2 rounded cursor-pointer ${selected.actividadId===a.id? 'bg-slate-100':''} ${dragOverActividadId===a.id? 'bg-slate-200':''} ${dragOverActividadId===a.id && dragOverActividadEdge==='before' ? 'border-t-2 border-t-[#2d7a40]' : ''} ${dragOverActividadId===a.id && dragOverActividadEdge==='after' ? 'border-b-2 border-b-[#2d7a40]' : ''}`}
+                                          className={`flex items-center justify-between p-2 rounded cursor-pointer ${selected.actividadId===a.id? 'bg-[#e8f2ea]':''} ${dragOverActividadId===a.id? 'bg-[#dcebdd]' : ''} ${dragOverActividadId===a.id && dragOverActividadEdge==='before' ? 'border-t-2 border-t-[#2d7a40]' : ''} ${dragOverActividadId===a.id && dragOverActividadEdge==='after' ? 'border-b-2 border-b-[#2d7a40]' : ''}`}
                                           onDragStart={(e) => e.stopPropagation()}
                                           onClick={() => {
                                             if (isDraggingRef.current) { isDraggingRef.current = false; return }
@@ -927,7 +966,7 @@ export default function MatrixEditor({ id }: { id?: string }) {
                                         </div>
                                       ))}
                                       <div className="pt-1">
-                                        <button className="w-full text-left text-sm text-slate-600 p-2 rounded border" onClick={(e:any)=>{ e.stopPropagation(); openAddActividadModal(p.id, z.id) }}>+ Agregar actividad</button>
+                                        <button className="w-full text-left text-sm text-slate-700 p-2 rounded-md border border-[#d6e6d8] bg-white hover:bg-[#f4faf4]" onClick={(e:any)=>{ e.stopPropagation(); openAddActividadModal(p.id, z.id) }}>+ Agregar actividad</button>
                                       </div>
                                     </div>
                                   </div>
@@ -943,8 +982,8 @@ export default function MatrixEditor({ id }: { id?: string }) {
                   
 
           <div className="mt-6 pt-4">
-            <div style={{ border: '0.5px solid #dde8dd', borderRadius: '10px', overflow: 'hidden', background: '#fff' }}>
-              <div className="flex flex-row items-center justify-between px-4 py-2" style={{ background: '#2d7a40', color: '#fff' }}>
+            <div className="overflow-hidden rounded-xl border border-[#d7e5d7] bg-white shadow-[0_8px_24px_rgba(17,24,39,0.04)]">
+              <div className="flex flex-row items-center justify-between px-4 py-3 bg-[#1f6f36] text-white">
                 <div className="font-semibold text-sm">Archivos</div>
                 <Button size="sm" variant="outline" style={{border: '0.5px solid #b2d8b2', color: '#1a5c2a', background: '#e8f5e9'}} onClick={()=> setShowFilesModal(true)}>Añadir Archivos</Button>
               </div>
@@ -955,7 +994,12 @@ export default function MatrixEditor({ id }: { id?: string }) {
                   <div className="flex flex-wrap gap-3">
                     {(matrix.files || []).map((f: any, i: number) => (
                       <div key={i} className="w-28 p-2 flex flex-col items-center bg-white rounded shadow-sm border relative group">
-                        <button onClick={() => updateMatrix((m:any)=>{ m.files.splice(i,1); return m })} className="absolute -top-2 -right-2 bg-red-100 hover:bg-red-200 text-red-600 rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity shadow-sm border border-red-200" title="Eliminar archivo">
+                        <button onClick={() => {
+                          setConfirmDeleteTitle('Eliminar archivo adjunto')
+                          setConfirmDeleteMessage('¿Deseas eliminar este archivo adjunto de la matriz?')
+                          setPendingDeleteAction(() => () => updateMatrix((m:any)=>{ m.files.splice(i,1); return m }))
+                          setConfirmDeleteOpen(true)
+                        }} className="absolute -top-2 -right-2 bg-red-100 hover:bg-red-200 text-red-600 rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity shadow-sm border border-red-200" title="Eliminar archivo">
                           <TrashIcon size={12} />
                         </button>
                         {f.type?.startsWith('image/') ? (
@@ -979,16 +1023,16 @@ export default function MatrixEditor({ id }: { id?: string }) {
         {/* Main */}
         <main className="flex-1">
           {!currentActividad ? (
-            <div className="h-60 flex items-center justify-center border-dashed border-2 rounded text-slate-500">Selecciona una actividad del panel izquierdo para comenzar.</div>
+            <div className="h-60 flex items-center justify-center border-dashed border-2 border-[#c7dbc9] rounded-xl bg-white text-slate-500">Selecciona una actividad del panel izquierdo para comenzar.</div>
           ) : (
             <div className="space-y-4">
               <div className="flex items-center justify-between">
-                <div className="text-sm">{currentProceso?.nombre} › {currentZona?.nombre} › {currentActividad?.nombre}</div>
+                <div className="text-sm font-medium text-[#244d2e]">{currentProceso?.nombre} › {currentZona?.nombre} › {currentActividad?.nombre}</div>
                 <div><Button variant="destructive" onClick={() => removeActividad(currentProceso.id, currentZona.id, currentActividad.id)}>Eliminar actividad</Button></div>
               </div>
 
-                      <Card className="flex flex-col gap-0 overflow-hidden p-0 border border-[#dde8dd] shadow-sm">
-                        <CardHeader className="flex items-center bg-[#2d7a40] text-white px-4 py-3 mt-0 min-h-[48px]"><CardTitle className="text-sm font-semibold">Información de la Actividad</CardTitle></CardHeader>
+                      <Card className="flex flex-col gap-0 overflow-hidden p-0 border border-[#d7e5d7] shadow-[0_10px_28px_rgba(17,24,39,0.05)] rounded-xl">
+                        <CardHeader className="flex items-center bg-[#1f6f36] text-white px-4 py-3 mt-0 min-h-[48px]"><CardTitle className="text-sm font-semibold">Información de la Actividad</CardTitle></CardHeader>
                 <CardContent className="p-4">
                   <div className="grid grid-cols-2 gap-3 mt-0">
                     <div className="col-span-2">
@@ -1014,8 +1058,8 @@ export default function MatrixEditor({ id }: { id?: string }) {
                 </CardContent>
               </Card>
 
-                  <Card className="flex flex-col gap-0 overflow-hidden p-0 border border-[#dde8dd] shadow-sm">
-                <CardHeader className="flex items-center justify-between bg-[#2d7a40] text-white px-4 py-3 mt-0 min-h-[48px]"><CardTitle className="text-sm font-semibold">Peligros</CardTitle><div><Badge className="bg-white/20 hover:bg-white/30 text-white">{currentActividad?.peligros?.length||0}</Badge> <Button size="sm" variant="secondary" className="bg-white text-[#2d7a40] hover:bg-slate-100 ml-2" onClick={() => addPeligro(currentProceso.id, currentZona.id, currentActividad?.id)}>+ Agregar peligro</Button></div></CardHeader>
+                  <Card className="flex flex-col gap-0 overflow-hidden p-0 border border-[#d7e5d7] shadow-[0_10px_28px_rgba(17,24,39,0.05)] rounded-xl">
+                <CardHeader className="flex items-center justify-between bg-[#1f6f36] text-white px-4 py-3 mt-0 min-h-[48px]"><CardTitle className="text-sm font-semibold">Peligros</CardTitle><div><Badge className="bg-white/20 hover:bg-white/30 text-white">{currentActividad?.peligros?.length||0}</Badge> <Button size="sm" variant="secondary" className="bg-white text-[#2d7a40] hover:bg-slate-100 ml-2" onClick={() => addPeligro(currentProceso.id, currentZona.id, currentActividad?.id)}>+ Agregar peligro</Button></div></CardHeader>
                 <CardContent className="p-4">
                   {(!currentActividad || !currentActividad.peligros || currentActividad.peligros.length===0) ? (
                     <div className="p-6 border-dashed border rounded text-slate-500">No hay peligros en esta actividad.</div>
@@ -1079,7 +1123,7 @@ export default function MatrixEditor({ id }: { id?: string }) {
                             <div className="p-3 border-t">
                               <div className="flex gap-2 mb-3">
                                 {['Descripción & Controles','Evaluación','Criterios','Intervención'].map((t, i) => (
-                                  <button key={t} onClick={()=> updatePeligroField(currentProceso.id, currentZona.id, currentActividad.id, r.id, ['_ui','activeTab'], i)} className={`px-3 py-1 rounded ${r._ui?.activeTab===i? 'bg-green-600 text-white':'bg-background border'}`}>{t}</button>
+                                  <button key={t} onClick={()=> updatePeligroField(currentProceso.id, currentZona.id, currentActividad.id, r.id, ['_ui','activeTab'], i)} className={`px-3 py-1.5 rounded-md text-sm transition-colors ${r._ui?.activeTab===i? 'bg-[#1f6f36] text-white shadow-sm':'bg-white border border-[#d6e5d7] text-slate-700 hover:bg-[#f4faf4]'}`}>{t}</button>
                                 ))}
                               </div>
 
@@ -1153,7 +1197,7 @@ export default function MatrixEditor({ id }: { id?: string }) {
                                     <Input readOnly value={String(r.evaluacion?.nr ?? '')} />
                                   </div>
 
-                                  <div className="md:col-span-3 mt-3 p-3 bg-slate-50 rounded">
+                                  <div className="md:col-span-3 mt-3 p-3 bg-[#f6faf6] rounded-md border border-[#dce8dc]">
                                     <div className="text-xs font-medium">Aceptabilidad Del Riesgo</div>
                                     <div className="mt-2 grid md:grid-cols-3 gap-4 items-center">
                                       <div className="flex flex-col">
@@ -1361,6 +1405,16 @@ export default function MatrixEditor({ id }: { id?: string }) {
           </div>
         </DialogContent>
       </Dialog>
+
+      <ConfirmModal
+        open={confirmDeleteOpen}
+        title={confirmDeleteTitle}
+        message={confirmDeleteMessage}
+        confirmLabel="Eliminar"
+        cancelLabel="Cancelar"
+        onConfirm={handleConfirmDelete}
+        onCancel={handleCancelDelete}
+      />
     </div>
   )
 }
