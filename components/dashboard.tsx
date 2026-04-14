@@ -123,7 +123,7 @@ export function Dashboard() {
   const [isLoading, setIsLoading] = useState(false)
   const [facetTipos, setFacetTipos] = useState<string[]>([])
 
-  const PAGE_SIZE = 10
+  const PAGE_SIZE = 6
 
   const loadSummaries = async (page = 1) => {
     setIsLoading(true)
