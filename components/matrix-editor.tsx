@@ -1157,7 +1157,7 @@ export default function MatrixEditor({ id }: { id?: string }) {
                           key={r.id}
                           ref={(el) => { if (el) peligroRefMap.current[r.id] = el }}
                           data-peligro-id={r.id}
-                          className={`border rounded bg-[#fafcfa] ${dragOverPeligroId===r.id ? 'bg-slate-100' : ''} ${dragOverPeligroId===r.id && dragOverPeligroEdge==='before' ? 'border-t-2 border-t-[#2d7a40]' : ''} ${dragOverPeligroId===r.id && dragOverPeligroEdge==='after' ? 'border-b-2 border-b-[#2d7a40]' : ''} ${peligroIdParam === r.id ? 'ring-2 ring-[#2d7a40] bg-blue-50' : ''}`}
+                          className={`border rounded bg-[#fafcfa] ${dragOverPeligroId===r.id ? 'bg-slate-100' : ''} ${dragOverPeligroId===r.id && dragOverPeligroEdge==='before' ? 'border-t-2 border-t-[#2d7a40]' : ''} ${dragOverPeligroId===r.id && dragOverPeligroEdge==='after' ? 'border-b-2 border-b-[#2d7a40]' : ''} ${peligroIdParam === r.id ? 'ring-2 ring-[#2d7a40] bg-[rgba(45,122,64,0.06)]' : ''}`}
                         >
                           <div
                             className="p-3 flex items-center justify-between cursor-pointer"
