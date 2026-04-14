@@ -74,7 +74,7 @@ export function ReportePeligros() {
   const [items, setItems] = useState<PeligroReporteItem[]>([])
   const [total, setTotal] = useState(0)
   const [page, setPage] = useState(0)
-  const [pageSize] = useState(15)
+  const [pageSize] = useState(12)
   const [search, setSearch] = useState('')
   const [selectedAceptabilidad, setSelectedAceptabilidad] = useState<string | null>(null)
   const [counts, setCounts] = useState<CountsResponse>({ muyAlto: 0, alto: 0, medio: 0, bajo: 0 })

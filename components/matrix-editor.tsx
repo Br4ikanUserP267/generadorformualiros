@@ -87,6 +87,7 @@ export default function MatrixEditor({ id }: { id?: string }) {
   const [matrix, setMatrix] = useState<any>(null)
   const [selected, setSelected] = useState<{procesoId?: string, zonaId?: string, actividadId?: string}>({})
   const peligroRefMap = useRef<Record<string, HTMLDivElement | null>>({})
+  const autoFocusPeligroKeyRef = useRef<string | null>(null)
 
   useEffect(() => {
     if (id && id !== 'nuevo') {
@@ -130,11 +131,19 @@ export default function MatrixEditor({ id }: { id?: string }) {
         procesos: []
       })
     }
-  }, [id, router, peligroIdParam])
+  }, [id, router])
+
+  useEffect(() => {
+    // Reset one-time foco when URL target changes
+    autoFocusPeligroKeyRef.current = null
+  }, [id, peligroIdParam])
 
   // Auto-expand and highlight peligro when accessed from report
   useEffect(() => {
     if (!matrix || !peligroIdParam) return
+
+    const autofocusKey = `${id || 'nuevo'}:${peligroIdParam}`
+    if (autoFocusPeligroKeyRef.current === autofocusKey) return
     
     // Find the peligro and its parent structure
     let targetProcesoId: string | null = null
@@ -161,6 +170,8 @@ export default function MatrixEditor({ id }: { id?: string }) {
     
     if (!foundPeligro || !targetZonaId || !targetActividadId) return
     
+    autoFocusPeligroKeyRef.current = autofocusKey
+
     // Update selected state to show the activity
     setSelected({ procesoId: targetProcesoId, zonaId: targetZonaId, actividadId: targetActividadId })
     
@@ -182,13 +193,17 @@ export default function MatrixEditor({ id }: { id?: string }) {
     })
     
     // Scroll to the peligro after a short delay to ensure DOM is ready
-    setTimeout(() => {
+    const timeoutId = window.setTimeout(() => {
       const element = peligroRefMap.current?.[peligroIdParam]
       if (element) {
         element.scrollIntoView({ behavior: 'smooth', block: 'center' })
       }
     }, 100)
-  }, [matrix, peligroIdParam])
+
+    return () => {
+      window.clearTimeout(timeoutId)
+    }
+  }, [matrix, peligroIdParam, id])
 
   const [showProcesoModal, setShowProcesoModal] = useState(false)
   const [editingProceso, setEditingProceso] = useState<any>(null)
