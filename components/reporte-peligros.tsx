@@ -147,22 +147,25 @@ export function ReportePeligros() {
 
   return (
     <div className="min-h-screen bg-[#f5f8f5]">
-      <div className="sticky top-0 z-10 flex items-center justify-between gap-3 border-b border-[#d4e8d4] bg-white px-4 py-3">
-        <div className="flex items-center gap-3">
-          <Button asChild variant="ghost" style={{ color: '#1a5c2a' }}>
-            <Link href="/dashboard">Volver</Link>
-          </Button>
-          <h1 className="text-xl font-semibold text-[#2d7a40]">Reporte de Peligros</h1>
+      <div className="sticky top-0 z-20 flex items-center justify-between bg-white" style={{ borderBottom: '0.5px solid #d4e8d4', padding: '16px 24px' }}>
+        <div className="flex items-center" style={{ gap: '12px' }}>
+          <img src="/matriz-riesgos/csmLOGO_1_.png" alt="Logo" style={{ height: '38px', objectFit: 'contain' }} />
+          <div style={{ width: '0.5px', height: '30px', background: '#c8dfc8' }}></div>
+          <div className="text-[16px] font-semibold text-[#1a5c2a]">Matriz de Riesgos</div>
         </div>
-        <div className="flex items-center gap-2 text-sm text-slate-600">
-          <div className="flex h-8 w-8 items-center justify-center rounded-full bg-[#e8f5e9] text-xs font-semibold uppercase text-[#1a5c2a]">
+        <div className="flex items-center" style={{ gap: '8px', fontSize: '13px', color: '#555' }}>
+          <div className="flex h-8 w-8 items-center justify-center rounded-full bg-[#e8f5e9] text-[13px] font-semibold uppercase text-[#1a5c2a]">
             {(user?.nombre || 'U')[0]}
           </div>
           <span>
             {user?.nombre || ''}
             {user?.cargo ? <><>&nbsp;·&nbsp;</>{user.cargo}</> : null}
           </span>
-          <span style={{ opacity: '.35' }}>|</span>
+          <span style={{opacity:'.3', margin:'0 4px', color:'#c8dfc8'}}>|</span>
+          <Link href="/dashboard" style={{cursor:'pointer', color:'#1a5c2a', fontWeight:500}}>Dashboard</Link>
+          <span style={{opacity:'.3', margin:'0 4px', color:'#c8dfc8'}}>|</span>
+          <span style={{ color: '#1a5c2a', fontWeight: 500 }}>Reporte de Peligros</span>
+          <span style={{opacity:'.3', margin:'0 4px', color:'#c8dfc8'}}>|</span>
           <button
             type="button"
             className="font-medium text-[#1a5c2a] hover:underline"

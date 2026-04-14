@@ -31,23 +31,25 @@ export function LoginForm() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background p-4">
+    <div className="min-h-screen flex items-center justify-center bg-[#f5f8f5] p-4">
+      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(80%_50%_at_50%_0%,rgba(45,122,64,0.08),transparent_70%)]" />
       <div className="w-full max-w-md">
-        <div className="flex flex-col items-center mb-8">
+        <div className="mb-7 flex flex-col items-center">
           <img
             src="/matriz-riesgos/csmLOGO_1_.png"
             alt="Clínica Santa María S.A.S"
-            className="h-32 w-auto mb-4 object-contain"
+            className="mb-4 h-28 w-auto object-contain"
           />
-          <h1 className="text-2xl font-semibold text-foreground text-center text-balance">
+          <h1 className="text-center text-2xl font-semibold text-[#1a5c2a] text-balance">
             Sistema de Matriz de Riesgos
           </h1>
+          <p className="mt-2 text-center text-sm text-[#6f8a75]">Clínica Santa María S.A.S</p>
         </div>
 
-        <Card className="border-border shadow-lg">
+        <Card className="relative border border-[#dde8dd] bg-white shadow-[0_10px_30px_rgba(21,53,34,0.08)] rounded-xl">
           <CardHeader className="space-y-1 pb-4">
-            <CardTitle className="text-xl text-center text-foreground">Iniciar Sesión</CardTitle>
-            <CardDescription className="text-center text-muted-foreground">
+            <CardTitle className="text-center text-xl text-[#153522]">Iniciar Sesión</CardTitle>
+            <CardDescription className="text-center text-[#6f8a75]">
               Ingrese sus credenciales para acceder al sistema
             </CardDescription>
           </CardHeader>
@@ -62,7 +64,7 @@ export function LoginForm() {
                     placeholder="usuario@clinicasantamaria.com"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    className="bg-card"
+                    className="border-[#d7e5d7] bg-[#f7fbf7] focus-visible:ring-[#2d7a40]"
                     disabled={isLoading}
                   />
                 </Field>
@@ -74,7 +76,7 @@ export function LoginForm() {
                     placeholder="••••••••"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    className="bg-card"
+                    className="border-[#d7e5d7] bg-[#f7fbf7] focus-visible:ring-[#2d7a40]"
                     disabled={isLoading}
                   />
                 </Field>
@@ -89,7 +91,7 @@ export function LoginForm() {
 
               <Button 
                 type="submit" 
-                className="w-full bg-primary text-primary-foreground hover:bg-primary/90"
+                className="w-full bg-[#1a5c2a] text-white hover:bg-[#144721]"
                 disabled={isLoading}
               >
                 {isLoading ? (
