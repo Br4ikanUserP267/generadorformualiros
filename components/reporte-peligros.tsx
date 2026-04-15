@@ -38,7 +38,7 @@ type CountsResponse = {
 
 const ACEPTABILIDAD_LEVELS = [
   { key: 'No Aceptable', color: '#a50000', icon: '🔴' },
-  { key: 'Aceptable con Control Especifico', color: '#dc3545', icon: '🟠' },
+  { key: 'Aceptable con Control Especifico', color: '#f59e0b', icon: '🟠' },
   { key: 'Mejorable', color: '#22c55e', icon: '🟢' },
   { key: 'Aceptable', color: '#198754', icon: '🟢' },
 ] as const
