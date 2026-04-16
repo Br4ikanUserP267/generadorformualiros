@@ -41,7 +41,7 @@ export function LoginForm() {
             className="mb-4 h-28 w-auto object-contain"
           />
           <h1 className="text-center text-2xl font-semibold text-[#1a5c2a] text-balance">
-            Sistema de Matriz de Riesgos
+            Sistema de Gestión de Seguridad y Salud en el Trabajo
           </h1>
           <p className="mt-2 text-center text-sm text-[#6f8a75]">Clínica Santa María S.A.S</p>
         </div>

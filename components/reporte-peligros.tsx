@@ -149,11 +149,38 @@ export function ReportePeligros() {
     <div className="min-h-screen bg-[#f5f8f5]">
       <div className="sticky top-0 z-20 flex items-center justify-between bg-white" style={{ borderBottom: '0.5px solid #d4e8d4', padding: '16px 24px' }}>
         <div className="flex items-center" style={{ gap: '12px' }}>
+          <div className="relative group">
+            <button
+              type="button"
+              aria-label="Abrir menu"
+              className="flex h-8 w-8 items-center justify-center rounded-md border border-[#d8e6d8] bg-[#f7fbf7] text-[#1a5c2a]"
+            >
+              ☰
+            </button>
+            <div className="absolute left-0 top-full z-40 mt-1 hidden min-w-[240px] rounded-md border border-[#dde8dd] bg-white p-1 shadow-[0_8px_30px_rgba(0,0,0,0.08)] group-hover:block group-focus-within:block">
+              <button
+                type="button"
+                onClick={() => router.push('/dashboard')}
+                className="block w-full rounded-md px-3 py-2 text-left text-[13px] text-[#153522] hover:bg-[#f7fbf7]"
+              >
+                Matriz de Riesgos
+              </button>
+              <button
+                type="button"
+                className="block w-full cursor-not-allowed rounded-md px-3 py-2 text-left text-[13px] text-[#153522]/60"
+              >
+                Registro de Accidentalidad
+              </button>
+            </div>
+          </div>
           <Button asChild variant="ghost" className="h-auto px-0 text-[13px] font-medium text-[#1a5c2a] hover:bg-transparent hover:text-[#1a5c2a]">
             <Link href="/dashboard">Volver</Link>
           </Button>
           <div style={{ width: '0.5px', height: '30px', background: '#c8dfc8' }}></div>
-          <div className="text-[16px] font-semibold text-[#1a5c2a]">Reporte de Riesgos</div>
+          <div>
+            <div className="text-[16px] font-semibold text-[#1a5c2a]">Sistema de Gestión de Seguridad y Salud en el Trabajo</div>
+            <div className="text-[12px] text-[#6f8a75]">Reporte de Riesgos</div>
+          </div>
         </div>
         <div className="flex items-center" style={{ gap: '8px', fontSize: '13px', color: '#555' }}>
           <div className="flex h-8 w-8 items-center justify-center rounded-full bg-[#e8f5e9] text-[13px] font-semibold uppercase text-[#1a5c2a]">

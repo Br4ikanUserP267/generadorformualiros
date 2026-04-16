@@ -8,8 +8,8 @@ const inter = Inter({ subsets: ["latin"], variable: "--font-inter" });
 const syne = Syne({ subsets: ["latin"], variable: "--font-syne" });
 
 export const metadata: Metadata = {
-  title: 'Matriz de Riesgos - Clínica Santa María S.A.S',
-  description: 'Sistema de gestión de matriz de riesgos para Clínica Santa María S.A.S',
+  title: 'Sistema de Gestión de Seguridad y Salud en el Trabajo - Clínica Santa María S.A.S',
+  description: 'Sistema de Gestión de Seguridad y Salud en el Trabajo para Clínica Santa María S.A.S',
   generator: 'v0.app',
   icons: {
     icon: '/matriz-riesgos/csmLOGO_1_.png',

@@ -338,6 +338,15 @@ export function Dashboard() {
         .html-wrapper * { box-sizing:border-box;margin:0;padding:0;font-family:inherit; }
         .html-wrapper { width:100%; min-height: 100vh; display: flex; flex-direction: column; background: var(--color-background-tertiary); }
         .topbar {background:#ffffff;border-bottom: 0.5px solid #d4e8d4;padding:16px 24px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:20;}
+        .left-nav {display:flex;align-items:center;gap:12px;min-width:0}
+        .app-menu-wrap {position:relative}
+        .menu-trigger {display:flex;align-items:center;justify-content:center;width:32px;height:32px;border-radius:8px;border:0.5px solid var(--color-border-tertiary);background:var(--color-background-secondary);cursor:pointer;color:#1a5c2a;font-size:16px;line-height:1}
+        .menu-trigger:hover {background:#ecf5ed}
+        .app-menu {position:absolute;left:0;top:calc(100% + 6px);min-width:240px;background:var(--color-background-primary);border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-md);box-shadow:0 8px 30px rgba(0,0,0,.08);padding:6px;display:none;z-index:40}
+        .app-menu-wrap:hover .app-menu, .app-menu-wrap:focus-within .app-menu {display:block}
+        .app-menu-item {display:block;width:100%;text-align:left;background:transparent;border:none;padding:9px 10px;font-size:13px;border-radius:8px;color:var(--color-text-primary);cursor:pointer}
+        .app-menu-item:hover {background:var(--color-background-secondary)}
+        .app-menu-item.is-disabled {opacity:.6;cursor:not-allowed}
         .logo {display:flex;align-items:center;gap:12px}
         .logo-divider {width: 0.5px; height: 30px; background: #c8dfc8;}
         .logo-text {font-size:16px;font-weight:600;color:#1a5c2a}
@@ -406,11 +415,20 @@ export function Dashboard() {
 
       <div className="html-wrapper">
         <div className="topbar">
-          <div className="logo">
+          <div className="left-nav">
+            <div className="app-menu-wrap">
+              <button type="button" className="menu-trigger" aria-label="Abrir menu">☰</button>
+              <div className="app-menu">
+                <button type="button" className="app-menu-item" onClick={() => router.push('/dashboard')}>Matriz de Riesgos</button>
+                <button type="button" className="app-menu-item is-disabled">Registro de Accidentalidad</button>
+              </div>
+            </div>
+            <div className="logo">
             <img src="/matriz-riesgos/csmLOGO_1_.png" alt="Logo" style={{height: '38px', objectFit: 'contain'}} />
             <div className="logo-divider"></div>
             <div>
-              <div className="logo-text">Matriz de Riesgos</div>
+              <div className="logo-text">Sistema de Gestión de Seguridad y Salud en el Trabajo</div>
+            </div>
             </div>
           </div>
             <div className="user-pill">
