@@ -304,7 +304,7 @@ export function MatrixPreview({ matrizId, onClose }: MatrixPreviewProps) {
           </button>
           
           <div className="flex items-center gap-4">
-            <img src="/matriz-riesgos/csmLOGO_1_.png" alt="Logo" className="h-8 object-contain" />
+            <img src="/matriz-riesgos/csm_logo_long.png" alt="Logo" className="h-8 object-contain" />
             <div className="w-[1px] h-6 bg-[#e2e9e4]" />
             <div>
               <h2 className="text-sm font-bold text-[#1F7D3E] uppercase tracking-wide">Vista Previa de Matriz</h2>

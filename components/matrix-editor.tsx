@@ -936,7 +936,7 @@ export default function MatrixEditor({ id }: { id?: string }) {
           <img src="/matriz-riesgos/csm_logo_long.png" alt="CSM" className="h-7 object-contain" />
         </div>
 
-        <div className="flex-1 max-w-4xl flex items-center gap-4 px-8">
+        <div className="flex-1 flex items-center gap-4 px-8">
             <div className="flex-1 flex flex-col">
               <label className="text-[10px] font-bold text-[#8aa08f] uppercase tracking-widest ml-1 mb-0.5">Área / Proceso</label>
               <Input className="h-9 rounded-xl border-[#d1e2d6] bg-[#f0f9f1] text-[#1F7D3E] font-bold focus:ring-[#1F7D3E]/20" value={matrix.area} onChange={(e:any)=> updateMatrix((m:any)=>{ m.area = e.target.value; return m })} />

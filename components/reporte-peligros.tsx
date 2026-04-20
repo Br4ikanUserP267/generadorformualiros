@@ -186,7 +186,7 @@ export function ReportePeligros() {
           </button>
 
           <div className="hidden sm:flex flex-col items-end">
-            <span className="text-sm font-bold text-[#1F7D3E] leading-tight">{user?.nombre || 'Usuario'}</span>
+            <span className="text-sm font-bold text-[#5e6b62] leading-tight">{user?.nombre || 'Usuario'}</span>
             <span className="text-[10px] font-bold text-[#8aa08f] uppercase tracking-wider">{user?.cargo || 'Colaborador'}</span>
           </div>
           

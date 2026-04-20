@@ -346,9 +346,9 @@ export function Dashboard() {
             <div className="w-8 h-8 rounded-full bg-[#1F7D3E] text-white flex items-center justify-center text-sm font-bold shadow-sm">
               {(user?.nombre || 'U')[0]}
             </div>
-            <div className="hidden sm:flex items-center gap-2 text-sm font-medium text-[#1F7D3E]">
+            <div className="hidden sm:flex items-center gap-2 text-sm font-medium text-[#5e6b62]">
               <span>{user?.nombre}</span>
-              {user?.cargo && <span className="text-[#5e6b62] font-normal text-xs">• {user.cargo}</span>}
+              {user?.cargo && <span className="text-[#8aa08f] font-normal text-xs">• {user.cargo}</span>}
             </div>
           </div>
           
