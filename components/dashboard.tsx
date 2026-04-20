@@ -600,7 +600,7 @@ export function Dashboard() {
 
       {previewMatrixId && (
         <MatrixPreview
-          matrizId={previewMatrixId}
+          matrizId={previewMatrixId!}
           onClose={() => setPreviewMatrixId(null)}
         />
       )}
