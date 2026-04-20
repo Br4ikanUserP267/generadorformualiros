@@ -326,7 +326,7 @@ export function Dashboard() {
           </div>
           
           <div className="flex items-center gap-3">
-            <img src="/matriz-riesgos/csmLOGO_1_.png" alt="Logo" className="h-10 object-contain" />
+            <img src="/matriz-riesgos/csm_logo_long.png" alt="Logo" className="h-10 object-contain" />
             <div className="w-[1px] h-8 bg-[#e2e9e4]" />
             <h1 className="text-base font-bold text-[#1F7D3E] leading-tight hidden md:block">
               Sistema de Gestión de Seguridad<br/>y Salud en el Trabajo

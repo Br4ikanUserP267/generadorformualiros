@@ -12,9 +12,9 @@ export const metadata: Metadata = {
   description: 'Sistema de Gestión de Seguridad y Salud en el Trabajo para Clínica Santa María S.A.S',
   generator: 'v0.app',
   icons: {
-    icon: '/matriz-riesgos/csmLOGO_1_.png',
-    shortcut: '/matriz-riesgos/csmLOGO_1_.png',
-    apple: '/matriz-riesgos/csmLOGO_1_.png',
+    icon: '/matriz-riesgos/csm_logo_only.png',
+    shortcut: '/matriz-riesgos/csm_logo_only.png',
+    apple: '/matriz-riesgos/csm_logo_only.png',
   },
 }
 

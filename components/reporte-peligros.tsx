@@ -38,7 +38,7 @@ type CountsResponse = {
 
 const ACEPTABILIDAD_LEVELS = [
   { key: 'No Aceptable', color: '#a50000', icon: '🔴' },
-  { key: 'Aceptable con Control Especifico', color: '#f59e0b', icon: '🟠' },
+  { key: 'Aceptable con Control Especifico', color: '#EAB308', icon: '🟠' },
   { key: 'Mejorable', color: '#22c55e', icon: '🟢' },
   { key: 'Aceptable', color: '#198754', icon: '🟢' },
 ] as const
@@ -173,7 +173,7 @@ export function ReportePeligros() {
               Volver
             </button>
             <div className="w-[1px] h-6 bg-[#e2e9e4]" />
-            <img src="/matriz-riesgos/csmLOGO_1_.png" alt="CSM" className="h-6 object-contain" />
+            <img src="/matriz-riesgos/csm_logo_long.png" alt="CSM" className="h-6 object-contain" />
           </div>
         </div>
 

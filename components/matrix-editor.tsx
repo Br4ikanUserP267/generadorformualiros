@@ -933,7 +933,7 @@ export default function MatrixEditor({ id }: { id?: string }) {
             Volver
           </button>
           <div className="w-[1px] h-6 bg-[#e2e9e4]" />
-          <img src="/matriz-riesgos/csmLOGO_1_.png" alt="CSM" className="h-7 object-contain" />
+          <img src="/matriz-riesgos/csm_logo_long.png" alt="CSM" className="h-7 object-contain" />
         </div>
 
         <div className="flex-1 max-w-4xl flex items-center gap-4 px-8">

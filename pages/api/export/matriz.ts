@@ -224,7 +224,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     ws.getCell('B2').value = '' 
     ws.getCell('B2').alignment = { horizontal: 'center', vertical: 'middle' }
     try {
-      const logoPath = path.join(process.cwd(), 'public', 'logo_csm.png')
+      const logoPath = path.join(process.cwd(), 'public', 'logocsm_excel.png')
       const logoBuffer = await fs.readFile(logoPath)
       const logoId = wb.addImage({
         buffer: logoBuffer as any,
