@@ -921,37 +921,48 @@ export default function MatrixEditor({ id }: { id?: string }) {
   }
 
   return (
-    <div className="min-h-screen bg-[#f8faf9] text-slate-800">
-      {/* Top bar */}
-      <div className="sticky top-0 px-4 py-3 flex items-center gap-4 z-20 bg-white/95 backdrop-blur border-b border-[#d7e5d7] shadow-[0_1px_0_rgba(0,0,0,0.03)]">
-        <div className="flex items-center gap-2">
-          <img src="/matriz-riesgos/csmLOGO_1_.png" style={{ height: '38px', objectFit: 'contain' }} alt="Logo" />
-          <div style={{ width: '0.5px', height: '30px', background: '#c8dfc8', margin: '0 4px' }} />
-          <Button variant="ghost" style={{color: '#1F7D3E'}} onClick={() => router.push('/dashboard')}>Volver</Button>
+    <div className="min-h-screen bg-[#f8faf9] text-[#2c3630]">
+      {/* Premium Topbar */}
+      <header className="sticky top-0 z-30 bg-white/80 backdrop-blur-md border-b border-[#e2e9e4] px-6 py-3 flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <button 
+            onClick={() => router.push('/dashboard')}
+            className="flex items-center gap-2 px-3 py-1.5 rounded-lg hover:bg-gray-100 transition-colors text-sm font-semibold text-[#1F7D3E]"
+          >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+            Volver
+          </button>
+          <div className="w-[1px] h-6 bg-[#e2e9e4]" />
+          <img src="/matriz-riesgos/csmLOGO_1_.png" alt="CSM" className="h-7 object-contain" />
         </div>
-        <div className="flex-1 flex items-center gap-3 justify-center text-[#1F7D3E]">
-            <div className="text-xs font-medium">Área / Proceso</div>
-            <Input className="h-9 rounded-md border-[#d1e2d6] bg-[#f0f9f1] text-[#1F7D3E] focus-visible:ring-[#1F7D3E]/20" value={matrix.area} onChange={(e:any)=> updateMatrix((m:any)=>{ m.area = e.target.value; return m })} />
-            <div className="text-xs font-medium">Responsable</div>
-            <Input className="h-9 rounded-md border-[#d1e2d6] bg-[#f0f9f1] text-[#1F7D3E] focus-visible:ring-[#1F7D3E]/20" value={matrix.responsable} onChange={(e:any)=> updateMatrix((m:any)=>{ m.responsable = e.target.value; return m })} />
-            <div className="text-xs font-medium">Fecha Elaboración</div>
-            <Input type="date" className="h-9 rounded-md border-[#d1e2d6] bg-[#f0f9f1] text-[#1F7D3E] focus-visible:ring-[#1F7D3E]/20" value={matrix.fecha_elaboracion} onChange={(e:any)=> updateMatrix((m:any)=>{ m.fecha_elaboracion = e.target.value; return m })} />
-            <div className="text-xs font-medium">Fecha Actualización</div>
-            <Input type="date" className="h-9 rounded-md border-[#d1e2d6] bg-[#f0f9f1] text-[#1F7D3E] focus-visible:ring-[#1F7D3E]/20" value={matrix.fecha_actualizacion || ''} onChange={(e:any)=> updateMatrix((m:any)=>{ m.fecha_actualizacion = e.target.value; return m })} />
-        
-        </div>
-        <div className="flex items-center gap-2">
-          <Button className="bg-[#1F7D3E] hover:bg-[#186331]" onClick={saveMatrix}>Guardar</Button>
-          <Button onClick={handleExportMatrix} variant="outline" className="border-[#1F7D3E] text-[#1F7D3E] hover:bg-[#f0f9f1]">Exportar Excel</Button>
-        </div>
-      </div>
 
-                <div className="p-4 flex items-start gap-6">
-                  <aside className="w-80 mr-6">
-                    <div className="overflow-hidden rounded-xl border border-[#d7e5d7] bg-white shadow-[0_8px_24px_rgba(17,24,39,0.04)]">
-                      <div className="flex items-center justify-between px-4 py-3 bg-[#1F7D3E] text-white">
-                        <div className="font-semibold text-sm uppercase tracking-wider">Procesos</div>
-                        <Button size="sm" variant="secondary" className="bg-white text-[#1F7D3E] hover:bg-slate-100" onClick={addProceso}>+ Proceso</Button>
+        <div className="flex-1 max-w-4xl flex items-center gap-4 px-8">
+            <div className="flex-1 flex flex-col">
+              <label className="text-[10px] font-bold text-[#8aa08f] uppercase tracking-widest ml-1 mb-0.5">Área / Proceso</label>
+              <Input className="h-9 rounded-xl border-[#d1e2d6] bg-[#f0f9f1] text-[#1F7D3E] font-bold focus:ring-[#1F7D3E]/20" value={matrix.area} onChange={(e:any)=> updateMatrix((m:any)=>{ m.area = e.target.value; return m })} />
+            </div>
+            <div className="flex-1 flex flex-col">
+              <label className="text-[10px] font-bold text-[#8aa08f] uppercase tracking-widest ml-1 mb-0.5">Responsable</label>
+              <Input className="h-9 rounded-xl border-[#d1e2d6] bg-[#f0f9f1] text-[#1F7D3E] font-bold focus:ring-[#1F7D3E]/20" value={matrix.responsable} onChange={(e:any)=> updateMatrix((m:any)=>{ m.responsable = e.target.value; return m })} />
+            </div>
+            <div className="flex-none w-32 flex flex-col">
+              <label className="text-[10px] font-bold text-[#8aa08f] uppercase tracking-widest ml-1 mb-0.5">Elaboración</label>
+              <Input type="date" className="h-9 rounded-xl border-[#d1e2d6] bg-[#f0f9f1] text-[#1F7D3E] text-[11px] focus:ring-[#1F7D3E]/20" value={matrix.fecha_elaboracion} onChange={(e:any)=> updateMatrix((m:any)=>{ m.fecha_elaboracion = e.target.value; return m })} />
+            </div>
+        </div>
+
+        <div className="flex items-center gap-3">
+          <Button onClick={handleExportMatrix} variant="outline" className="border-[#1F7D3E] text-[#1F7D3E] hover:bg-[#f0f9f1] font-bold rounded-xl shadow-sm">Exportar</Button>
+          <Button className="bg-[#1F7D3E] hover:bg-[#186331] font-bold rounded-xl shadow-md shadow-[#1F7D3E]/20" onClick={saveMatrix}>Guardar Matriz</Button>
+        </div>
+      </header>
+
+                <div className="p-6 flex items-start gap-8">
+                  <aside className="w-80 flex-none sticky top-24 h-[calc(100vh-120px)] overflow-y-auto">
+                    <div className="overflow-hidden rounded-2xl border border-[#e2e9e4] bg-white shadow-xl shadow-[#111827]/5">
+                      <div className="flex items-center justify-between px-5 py-4 bg-[#1F7D3E] text-white">
+                        <div className="font-black text-xs uppercase tracking-[0.15em]">Estructura Organizacional</div>
+                        <Button size="sm" variant="secondary" className="bg-white/10 border border-white/20 text-white hover:bg-white/20 h-7 px-2" onClick={addProceso}>+ Proceso</Button>
                       </div>
                       <div className="p-4 space-y-3">
                     { (matrix.procesos || []).map((p: any) => (

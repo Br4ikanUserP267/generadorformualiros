@@ -146,67 +146,63 @@ export function ReportePeligros() {
   }
 
   return (
-    <div className="min-h-screen bg-[#f5f8f5]">
-      <div className="sticky top-0 z-20 flex items-center justify-between bg-white" style={{ borderBottom: '0.5px solid #d4e8d4', padding: '16px 24px' }}>
-        <div className="flex items-center" style={{ gap: '12px' }}>
+    <div className="min-h-screen bg-[#f8faf9] text-[#2c3630]">
+      {/* Topbar */}
+      <header className="sticky top-0 z-30 bg-white/80 backdrop-blur-md border-b border-[#e2e9e4] px-6 py-4 flex items-center justify-between">
+        <div className="flex items-center gap-4">
           <div className="relative group">
-            <button
-              type="button"
-              aria-label="Abrir menu"
-              className="flex h-8 w-8 items-center justify-center rounded-md border border-[#d8e6d8] bg-[#f7fbf7] text-[#1a5c2a]"
-            >
-              ☰
+            <button className="flex items-center justify-center w-9 h-9 rounded-lg border border-[#e2e9e4] bg-white hover:bg-[#f0f9f1] hover:border-[#1F7D3E] transition-colors text-[#1F7D3E]">
+              <span className="text-xl">☰</span>
             </button>
-            <div className="absolute left-0 top-full z-40 mt-1 hidden min-w-[240px] rounded-md border border-[#dde8dd] bg-white p-1 shadow-[0_8px_30px_rgba(0,0,0,0.08)] group-hover:block group-focus-within:block">
-              <button
-                type="button"
-                onClick={() => router.push('/dashboard')}
-                className="block w-full rounded-md px-3 py-2 text-left text-[13px] text-[#153522] hover:bg-[#f7fbf7]"
-              >
+            <div className="absolute left-0 top-full mt-2 w-64 bg-white border border-[#e2e9e4] rounded-xl shadow-xl py-2 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-40">
+              <button className="w-full text-left px-4 py-2 text-sm hover:bg-[#f0f9f1] text-[#1F7D3E] font-medium" onClick={() => router.push('/dashboard')}>
                 Matriz de Riesgos
               </button>
-              <button
-                type="button"
-                className="block w-full cursor-not-allowed rounded-md px-3 py-2 text-left text-[13px] text-[#153522]/60"
-              >
+              <button className="w-full text-left px-4 py-2 text-sm text-gray-400 cursor-not-allowed">
                 Registro de Accidentalidad
               </button>
             </div>
           </div>
-          <Button asChild variant="ghost" className="h-auto px-0 text-[13px] font-medium text-[#1a5c2a] hover:bg-transparent hover:text-[#1a5c2a]">
-            <Link href="/dashboard">Volver</Link>
-          </Button>
-          <div style={{ width: '0.5px', height: '30px', background: '#c8dfc8' }}></div>
-          <div>
-            <div className="text-[16px] font-semibold text-[#1a5c2a]">Sistema de Gestión de Seguridad y Salud en el Trabajo</div>
-            <div className="text-[12px] text-[#6f8a75]">Reporte de Riesgos</div>
+          
+          <div className="flex items-center gap-3">
+            <button 
+              onClick={() => router.push('/dashboard')}
+              className="flex items-center gap-2 px-3 py-1.5 rounded-lg hover:bg-gray-100 transition-colors text-sm font-semibold text-[#1F7D3E]"
+            >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+              Volver
+            </button>
+            <div className="w-[1px] h-6 bg-[#e2e9e4]" />
+            <img src="/matriz-riesgos/csmLOGO_1_.png" alt="CSM" className="h-6 object-contain" />
           </div>
         </div>
-        <div className="flex items-center" style={{ gap: '8px', fontSize: '13px', color: '#555' }}>
-          <div className="flex h-8 w-8 items-center justify-center rounded-full bg-[#e8f5e9] text-[13px] font-semibold uppercase text-[#1a5c2a]">
-            {(user?.nombre || 'U')[0]}
+
+        <div className="flex items-center gap-6">
+          <div className="hidden sm:flex flex-col items-end">
+            <span className="text-sm font-bold text-[#1F7D3E] leading-tight">{user?.nombre || 'Usuario'}</span>
+            <span className="text-[10px] font-bold text-[#8aa08f] uppercase tracking-wider">{user?.cargo || 'Colaborador'}</span>
           </div>
-          <span>
-            {user?.nombre || ''}
-            {user?.cargo ? <><>&nbsp;·&nbsp;</>{user.cargo}</> : null}
-          </span>
-          <span style={{opacity:'.3', margin:'0 4px', color:'#c8dfc8'}}>|</span>
-          <button
-            type="button"
-            className="font-medium text-[#1a5c2a] hover:underline"
-            onClick={() => {
-              logout()
-              router.push('/')
-            }}
+          
+          <button 
+            onClick={() => { logout(); router.push('/') }}
+            className="text-sm font-medium text-red-600 hover:text-red-700 hover:underline"
           >
             Cerrar sesión
           </button>
         </div>
-      </div>
+      </header>
 
-      <div className="mx-auto max-w-7xl space-y-6 p-6">
+      <main className="max-w-[1400px] mx-auto p-6 space-y-6">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div>
+            <h1 className="text-2xl font-black text-[#1F7D3E] tracking-tight">Reporte General de Riesgos</h1>
+            <p className="text-sm font-medium text-[#5e6b62]">Análisis consolidado de peligros y niveles de aceptabilidad</p>
+          </div>
+          <Button onClick={clearFilters} variant="outline" className="border-[#1F7D3E] text-[#1F7D3E] hover:bg-[#f0f9f1]">Limpiar filtros</Button>
+        </div>
 
-        <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-4">
+        {/* Stats Grid */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           {ACEPTABILIDAD_LEVELS.map((card) => {
             const selected = selectedAceptabilidad === card.key
             const count =
@@ -216,113 +212,139 @@ export function ReportePeligros() {
             const percentage = totalCardsCount > 0 ? Math.round((count / totalCardsCount) * 100) : 0
 
             return (
-              <Card
+              <div 
                 key={card.key}
-                className={`cursor-pointer overflow-hidden border-[#dde8dd] py-0 gap-0 transition min-h-[170px] ${selected ? 'ring-2 ring-[#2d7a40]' : ''}`}
                 onClick={() => toggleAceptabilidad(card.key)}
+                className={`bg-white border transition-all cursor-pointer rounded-2xl p-5 shadow-sm space-y-3 ${selected ? 'ring-2 ring-[#1F7D3E] border-[#1F7D3E]' : 'border-[#e2e9e4] hover:shadow-md'}`}
               >
-                <CardHeader className="rounded-none bg-[#2d7a40] py-3">
-                  <CardTitle className="text-sm text-white">{card.icon} {card.key}</CardTitle>
-                </CardHeader>
-                <CardContent className="pt-5 pb-5">
-                  <div className="text-3xl font-semibold" style={{ color: card.color }}>{count}</div>
-                  <div className="mt-1 text-xs text-slate-500">{percentage}% del total</div>
-                  <div className="mt-3 h-2 w-full rounded-full bg-slate-100">
-                    <div
-                      className="h-2 rounded-full"
-                      style={{ width: `${percentage}%`, backgroundColor: card.color }}
-                    />
-                  </div>
-                  {selected && <div className="mt-2 text-xs font-medium text-[#2d7a40]">Filtro activo</div>}
-                </CardContent>
-              </Card>
+                <div className="flex items-center justify-between">
+                  <span className="text-3xl font-bold block leading-none" style={{ color: card.color }}>{count}</span>
+                  <span className="text-xl">{card.icon}</span>
+                </div>
+                <div className="space-y-1">
+                    <span className="text-xs font-bold text-[#5e6b62] uppercase tracking-wider block">{card.key}</span>
+                    <span className="text-[10px] font-bold text-gray-400">{percentage}% del total</span>
+                </div>
+                <div className="h-1.5 w-full rounded-full bg-gray-100 overflow-hidden">
+                  <div
+                    className="h-full rounded-full transition-all duration-500"
+                    style={{ width: `${percentage}%`, backgroundColor: card.color }}
+                  />
+                </div>
+                {selected && <div className="text-[10px] font-bold text-[#1F7D3E] uppercase tracking-widest text-center mt-2">Filtro Activo</div>}
+              </div>
             )
           })}
         </div>
 
-        <div className="rounded-xl border border-[#dde8dd] bg-white p-4">
-          <div className="flex flex-wrap items-center gap-3">
-            <Input
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              placeholder="Buscar por descripción de peligro..."
-              className="max-w-md border-[#dde8dd]"
-            />
-            <Button variant="outline" onClick={clearFilters}>Limpiar filtros</Button>
+        {/* Table & Controls Section */}
+        <div className="bg-white border border-[#e2e9e4] rounded-2xl overflow-hidden shadow-sm">
+          <div className="p-4 border-b border-[#e2e9e4] flex flex-wrap items-center gap-4 bg-[#f8faf9]/30">
+            <div className="flex-1 min-w-[300px] relative">
+              <input 
+                type="text" 
+                placeholder="Buscar por descripción de peligro..." 
+                className="w-full pl-4 pr-10 py-2 rounded-xl border border-[#e2e9e4] bg-white text-sm focus:outline-none focus:ring-2 focus:ring-[#1F7D3E]/20 focus:border-[#1F7D3E] transition-all"
+                value={search} 
+                onChange={e=>setSearch(e.target.value)} 
+              />
+            </div>
+            <div className="text-xs font-bold text-[#5e6b62] uppercase tracking-wider">{total} peligros encontrados</div>
           </div>
-        </div>
 
-        <div className="overflow-hidden rounded-xl border border-[#dde8dd] bg-white">
-          <div className="bg-[#2d7a40] px-4 py-3 text-sm font-medium text-white">Resultados</div>
-          <div className="overflow-auto">
-            <table className="min-w-full text-sm">
-              <thead className="bg-[#f7fbf7] text-left">
+          <div className="overflow-x-auto min-h-[400px]">
+            <table className="w-full border-collapse text-[13px]">
+              <thead className="bg-[#f8faf9] sticky top-0 z-10 border-b border-[#e2e9e4]">
                 <tr>
-                  <th className="px-4 py-3">Peligro</th>
-                  <th className="px-4 py-3">Clasificación</th>
-                  <th className="px-4 py-3">Nivel</th>
-                  <th className="px-4 py-3">Nombre Matriz</th>
-                  <th className="px-4 py-3">Actividad</th>
-                  <th className="px-4 py-3">Aceptabilidad</th>
+                  <th className="px-6 py-4 text-left font-bold text-[#5e6b62] uppercase tracking-wider">Peligro</th>
+                  <th className="px-6 py-4 text-left font-bold text-[#5e6b62] uppercase tracking-wider">Clasificación</th>
+                  <th className="px-6 py-4 text-center font-bold text-[#5e6b62] uppercase tracking-wider">Nivel</th>
+                  <th className="px-6 py-4 text-left font-bold text-[#5e6b62] uppercase tracking-wider">Origen (Matriz)</th>
+                  <th className="px-6 py-4 text-left font-bold text-[#5e6b62] uppercase tracking-wider">Actividad</th>
+                  <th className="px-6 py-4 text-center font-bold text-[#5e6b62] uppercase tracking-wider">Aceptabilidad</th>
                 </tr>
               </thead>
-              <tbody>
+              <tbody className="divide-y divide-[#e2e9e4]/50">
                 {items.map((item) => {
                   const nivelLabel = item.interpRiesgo || aceptabilidadToLevel(item.aceptabilidad)
-                  const nivelColor = levelColor(nivelLabel)
-                  const colorAceptabilidad = aceptabilidadColor(item.aceptabilidad)
+                  const nColor = levelColor(nivelLabel)
+                  const aColor = aceptabilidadColor(item.aceptabilidad)
 
                   return (
-                    <tr key={item.id} className="border-t border-[#edf3ed]">
-                      <td className="px-4 py-3">{item.peligro}</td>
-                      <td className="px-4 py-3">{item.clasificacion || '—'}</td>
-                      <td className="px-4 py-3">
-                        <Badge className="border-0 text-white" style={{ backgroundColor: nivelColor }}>
-                          {nivelLabel || 'Sin nivel'}
-                        </Badge>
+                    <tr key={item.id} className="hover:bg-[#f0f9f1]/20 transition-colors group">
+                      <td className="px-6 py-4 font-medium text-[#2c3630]">{item.peligro}</td>
+                      <td className="px-6 py-4"><span className="text-[#5e6b62]">{item.clasificacion || '—'}</span></td>
+                      <td className="px-6 py-4 text-center">
+                        <span 
+                          className="px-3 py-1 rounded-full text-[11px] font-bold text-white shadow-sm"
+                          style={{ backgroundColor: nColor }}
+                        >
+                          {nivelLabel || '—'}
+                        </span>
                       </td>
-                      <td className="px-4 py-3">
+                      <td className="px-6 py-4">
                         {item.matrizId ? (
-                          <Link href={`/matriz/${item.matrizId}?peligroId=${item.id}`} className="text-[#2d7a40] underline-offset-2 hover:underline">
+                          <Link href={`/matriz/${item.matrizId}?peligroId=${item.id}`} className="text-[#1F7D3E] font-bold hover:underline decoration-2 underline-offset-2">
                             {item.nombreMatriz}
                           </Link>
                         ) : (
-                          item.nombreMatriz
+                          <span className="text-gray-400">{item.nombreMatriz}</span>
                         )}
                       </td>
-                      <td className="px-4 py-3">{item.actividad}</td>
-                      <td className="px-4 py-3">
-                        <Badge className="border-0 text-white" style={{ backgroundColor: colorAceptabilidad }}>
-                          {item.aceptabilidad || 'Sin aceptabilidad'}
-                        </Badge>
+                      <td className="px-6 py-4 text-[#5e6b62]">{item.actividad}</td>
+                      <td className="px-6 py-4 text-center">
+                        <span 
+                          className="px-3 py-1 rounded-full text-[11px] font-bold text-white shadow-sm"
+                          style={{ backgroundColor: aColor }}
+                        >
+                          {item.aceptabilidad || '—'}
+                        </span>
                       </td>
                     </tr>
                   )
                 })}
                 {!loading && items.length === 0 && (
                   <tr>
-                    <td className="px-4 py-8 text-center text-slate-500" colSpan={6}>No se encontraron peligros.</td>
+                    <td className="px-6 py-20 text-center text-[#5e6b62] font-semibold italic bg-gray-50/30" colSpan={6}>No se encontraron peligros que coincidan con los filtros.</td>
                   </tr>
                 )}
                 {loading && (
                   <tr>
-                    <td className="px-4 py-8 text-center text-slate-500" colSpan={6}>Cargando reporte...</td>
+                    <td className="px-6 py-20 text-center text-[#5e6b62]" colSpan={6}>Actualizando información...</td>
                   </tr>
                 )}
               </tbody>
             </table>
           </div>
 
-          <div className="flex flex-wrap items-center justify-between gap-3 border-t border-[#edf3ed] px-4 py-3 text-sm text-slate-600">
-            <div>{total} peligros encontrados</div>
+          {/* Pagination */}
+          <div className="px-6 py-4 border-t border-[#e2e9e4] flex items-center justify-between bg-[#f8faf9]/30">
+             <div className="text-[11px] font-bold text-[#8aa08f] uppercase tracking-widest">
+              Página {Math.min(page + 1, totalPages)} de {totalPages}
+            </div>
             <div className="flex items-center gap-2">
-              <Button variant="outline" disabled={page <= 0} onClick={() => setPage((p) => Math.max(0, p - 1))}>Anterior</Button>
-              <span>Página {Math.min(page + 1, totalPages)} de {totalPages}</span>
-              <Button variant="outline" disabled={page + 1 >= totalPages} onClick={() => setPage((p) => p + 1)}>Siguiente</Button>
+              <Button 
+                variant="outline" 
+                size="sm"
+                className="border-[#e2e9e4] text-[#1F7D3E] font-bold rounded-xl"
+                disabled={page <= 0} 
+                onClick={() => setPage((p) => Math.max(0, p - 1))}
+              >
+                Anterior
+              </Button>
+              <Button 
+                variant="outline" 
+                size="sm"
+                className="border-[#e2e9e4] text-[#1F7D3E] font-bold rounded-xl"
+                disabled={page + 1 >= totalPages} 
+                onClick={() => setPage((p) => p + 1)}
+              >
+                Siguiente
+              </Button>
             </div>
           </div>
         </div>
-      </div>
+      </main>
     </div>
   )
 }

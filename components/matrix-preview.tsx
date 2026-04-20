@@ -42,8 +42,8 @@ export function MatrixPreview({ matrizId, onClose }: MatrixPreviewProps) {
     ne: 60,
     nc: 60,
     nr: 60,
-    interpNr: 120,
-    aceptabilidad: 120,
+    interpNr: 160,
+    aceptabilidad: 180,
     numExpuestos: 100,
     peorConsecuencia: 150,
     requisitoLegal: 100,
@@ -413,7 +413,7 @@ export function MatrixPreview({ matrizId, onClose }: MatrixPreviewProps) {
                                   <td 
                                     key={col.key} 
                                     rowSpan={span} 
-                                    className={`px-4 py-3 border-r border-[#e2e9e4] last:border-r-0 align-top text-[#2c3630] leading-relaxed break-words font-medium ${col.key === 'zona' ? 'cursor-pointer hover:bg-gray-100 transition-colors' : ''} ${isNumeric ? 'text-center' : 'text-left'}`}
+                                    className={`px-4 py-3 border-r border-[#e2e9e4] last:border-r-0 align-top text-[#2c3630] leading-relaxed ${isEvaluationField ? 'whitespace-nowrap font-bold' : 'break-words font-medium'} ${col.key === 'zona' ? 'cursor-pointer hover:bg-gray-100 transition-colors' : ''} ${isNumeric ? 'text-center' : 'text-left'}`}
                                     style={evalStyle}
                                     onClick={col.key === 'zona' ? () => toggleZona(zonaName) : undefined}
                                   >
@@ -427,7 +427,7 @@ export function MatrixPreview({ matrizId, onClose }: MatrixPreviewProps) {
                               return (
                                 <td 
                                   key={col.key} 
-                                  className={`px-4 py-3 border-r border-[#e2e9e4] last:border-r-0 align-top text-[#2c3630] leading-relaxed break-words ${isNumeric ? 'text-center' : 'text-left'}`}
+                                  className={`px-4 py-3 border-r border-[#e2e9e4] last:border-r-0 align-top text-[#2c3630] leading-relaxed ${isEvaluationField ? 'whitespace-nowrap font-bold' : 'break-words font-medium'} ${isNumeric ? 'text-center' : 'text-left'}`}
                                   style={bgStyle}
                                 >
                                   {col.key === 'requisitoLegal' || col.key === 'cumple' ? (
