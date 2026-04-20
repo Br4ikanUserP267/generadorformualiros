@@ -1,4 +1,4 @@
-"use client"
+  "use client"
 
 import { AuthProvider, useAuth } from "@/lib/auth-context"
 import { LoginForm } from "@/components/login-form"

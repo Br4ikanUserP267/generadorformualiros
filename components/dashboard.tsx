@@ -307,280 +307,277 @@ export function Dashboard() {
   }
 
   return (
-    <div className="min-h-screen bg-var-background-tertiary">
-      <style dangerouslySetInnerHTML={{__html: `
-        :root {
-          --color-background-primary: #ffffff;
-          --color-background-secondary: #f8fbf8;
-          --color-background-tertiary: #f5f8f5;
-          --color-border-primary: #c7d8c9;
-          --color-border-secondary: #dde8dd;
-          --color-border-tertiary: #dde8dd;
-          --color-text-primary: #153522;
-          --color-text-secondary: #647a6a;
-          --color-text-tertiary: #8aa08f;
-          --border-radius-lg: 12px;
-          --border-radius-md: 8px;
-        }
-        @media (prefers-color-scheme: dark) {
-          :root {
-            --color-background-primary: #1e293b;
-            --color-background-secondary: #0f172a;
-            --color-background-tertiary: #020617;
-            --color-border-primary: #475569;
-            --color-border-secondary: #334155;
-            --color-border-tertiary: #1e293b;
-            --color-text-primary: #f8fafc;
-            --color-text-secondary: #cbd5e1;
-            --color-text-tertiary: #64748b;
-          }
-        }
-        .html-wrapper * { box-sizing:border-box;margin:0;padding:0;font-family:inherit; }
-        .html-wrapper { width:100%; min-height: 100vh; display: flex; flex-direction: column; background: var(--color-background-tertiary); }
-        .topbar {background:#ffffff;border-bottom: 0.5px solid #d4e8d4;padding:16px 24px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:20;}
-        .left-nav {display:flex;align-items:center;gap:12px;min-width:0}
-        .app-menu-wrap {position:relative}
-        .menu-trigger {display:flex;align-items:center;justify-content:center;width:32px;height:32px;border-radius:8px;border:0.5px solid var(--color-border-tertiary);background:var(--color-background-secondary);cursor:pointer;color:#1a5c2a;font-size:16px;line-height:1}
-        .menu-trigger:hover {background:#ecf5ed}
-        .app-menu {position:absolute;left:0;top:calc(100% + 6px);min-width:240px;background:var(--color-background-primary);border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-md);box-shadow:0 8px 30px rgba(0,0,0,.08);padding:6px;display:none;z-index:40}
-        .app-menu-wrap:hover .app-menu, .app-menu-wrap:focus-within .app-menu {display:block}
-        .app-menu-item {display:block;width:100%;text-align:left;background:transparent;border:none;padding:9px 10px;font-size:13px;border-radius:8px;color:var(--color-text-primary);cursor:pointer}
-        .app-menu-item:hover {background:var(--color-background-secondary)}
-        .app-menu-item.is-disabled {opacity:.6;cursor:not-allowed}
-        .logo {display:flex;align-items:center;gap:12px}
-        .logo-divider {width: 0.5px; height: 30px; background: #c8dfc8;}
-        .logo-text {font-size:16px;font-weight:600;color:#1a5c2a}
-        .logo-sub {font-size:12px;color:#7aaa7a}
-        .user-pill {display:flex;align-items:center;gap:8px;font-size:13px;color:#555}
-        .user-dot {width:32px;height:32px;border-radius:50%;background:#e8f5e9;color:#1a5c2a;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:600;text-transform:uppercase;}
-        
-        .page {flex: 1; padding: 24px; max-width: 1400px; margin: 0 auto; width: 100%;}
-        
-        .stat-row {display:grid;grid-template-columns:repeat(6,1fr);gap:12px;margin-bottom:16px}
-        @media (max-width: 768px) { .stat-row { grid-template-columns:repeat(3,1fr); } }
-        @media (max-width: 480px) { .stat-row { grid-template-columns:1fr 1fr; } }
-        .scard {background:var(--color-background-primary);border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-lg);padding:16px 20px;display:flex;flex-direction:column;gap:6px;min-height:104px;box-shadow:0 2px 8px rgba(21,53,34,0.04)}
-        .scard-num {font-size:28px;font-weight:600;line-height:1}
-        .scard-lbl {font-size:12px;color:var(--color-text-secondary);font-weight:500;}
-        .scard-bar {height:4px;border-radius:2px;margin-top:5px}
-        
-        .filters {background:var(--color-background-primary);border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-lg);padding:14px 16px;margin-bottom:16px;box-shadow:0 2px 8px rgba(21,53,34,0.04)}
-        .filter-row {display:flex;align-items:center;gap:12px;flex-wrap:wrap}
-        .fi {position:relative;display:flex;align-items:center}
-        .fi input {padding:8px 10px;font-size:13px;border-radius:var(--border-radius-md);border:0.5px solid var(--color-border-secondary);background:var(--color-background-secondary);color:var(--color-text-primary);width:220px;outline:none}
-        .fi input::placeholder {color:var(--color-text-tertiary)}
-        .fsel {padding:8px 12px;font-size:13px;border-radius:var(--border-radius-md);border:0.5px solid var(--color-border-secondary);background:var(--color-background-secondary);color:var(--color-text-secondary);cursor:pointer;outline:none;appearance:auto}
-        .fdate {padding:8px 12px;font-size:13px;border-radius:var(--border-radius-md);border:0.5px solid var(--color-border-secondary);background:var(--color-background-secondary);color:var(--color-text-secondary);width:130px;outline:none}
-        .flabel {font-size:13px;color:var(--color-text-secondary);white-space:nowrap}
-        .filter-actions {display:flex;align-items:center;gap:8px;margin-left:auto;flex-wrap:wrap}
-        .new-menu-wrap {margin-left:auto;position:relative}
-        .new-btn {padding:9px 20px;font-size:13px;border-radius:var(--border-radius-md);border:none;background:#1a5c2a;color:#fff;cursor:pointer;font-weight:600;white-space:nowrap;transition:opacity 0.2s;}
-        .new-btn:hover {opacity:0.9;}
-        .new-menu {position:absolute;right:0;top:calc(100% + 6px);min-width:230px;background:var(--color-background-primary);border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-md);box-shadow:0 8px 30px rgba(0,0,0,.08);padding:6px;display:none;z-index:20}
-        .new-menu-wrap:hover .new-menu, .new-menu-wrap:focus-within .new-menu {display:block}
-        .new-menu-item {display:block;width:100%;text-align:left;background:transparent;border:none;padding:9px 10px;font-size:13px;border-radius:8px;color:var(--color-text-primary);cursor:pointer}
-        .new-menu-item:hover {background:var(--color-background-secondary)}
-        
-        .results-label {font-size:11px;color:var(--color-text-secondary);margin-bottom:8px}
-        
-        .mlist {display:flex;flex-direction:column;gap:8px}
-        
-        .mcard {background:var(--color-background-primary);border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-lg);padding:14px 16px;display:flex;align-items:center;gap:16px;cursor:pointer;transition:all .15s;box-shadow:0 2px 8px rgba(21,53,34,0.04)}
-        .mcard:hover {border-color:var(--color-border-primary); transform:translateY(-1px); box-shadow:0 8px 18px rgba(21,53,34,0.08)}
-        
-        .mcard-left {flex:1;min-width:0}
-        .mcard-title {font-size:14px;font-weight:500;color:var(--color-text-primary);margin-bottom:2px}
-        .mcard-date {font-size:11px;color:var(--color-text-secondary)}
-        .mcard-tags {display:flex;gap:6px;margin-top:8px;flex-wrap:wrap}
-        .proceso-tag {display:flex;align-items:center;gap:5px;padding:3px 9px;border-radius:var(--border-radius-md);border:0.5px solid var(--color-border-tertiary);background:var(--color-background-secondary);font-size:11px;color:var(--color-text-secondary)}
-        .proceso-tag svg {flex-shrink:0}
-        
-        .mcard-stats {display:flex;flex-direction:column;gap:6px;align-items:flex-end}
-        @media (max-width: 600px) { .mcard-stats { display:none; } }
-        .stat-nums {display:flex;gap:6px}
-        .snum {display:flex;flex-direction:column;align-items:center;padding:6px 10px;border-radius:var(--border-radius-md);min-width:48px}
-        .snum-val {font-size:18px;font-weight:500;line-height:1}
-        .snum-lbl {font-size:9px;margin-top:2px;font-weight:500}
-        
-        .mcard-actions {display:flex;flex-direction:row;gap:6px;flex-shrink:0;align-items:center}
-        .ibt {width:28px;height:28px;border-radius:var(--border-radius-md);border:0.5px solid var(--color-border-tertiary);background:transparent;cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--color-text-secondary);transition:all 0.15s;}
-        .ibt:hover {background:var(--color-background-secondary);color:var(--color-text-primary);}
-
-        .pagination {display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:12px;flex-wrap:wrap}
-        .pagination-info {font-size:12px;color:var(--color-text-secondary)}
-        .pagination-actions {display:flex;align-items:center;gap:8px}
-        .pbtn {padding:6px 10px;border-radius:var(--border-radius-md);border:0.5px solid var(--color-border-tertiary);background:var(--color-background-primary);font-size:12px;cursor:pointer;color:var(--color-text-primary)}
-        .pbtn:disabled {opacity:.45;cursor:not-allowed}
-      `}} />
-
-      <div className="html-wrapper">
-        <div className="topbar">
-          <div className="left-nav">
-            <div className="app-menu-wrap">
-              <button type="button" className="menu-trigger" aria-label="Abrir menu">☰</button>
-              <div className="app-menu">
-                <button type="button" className="app-menu-item" onClick={() => router.push('/dashboard')}>Matriz de Riesgos</button>
-                <button type="button" className="app-menu-item is-disabled">Registro de Accidentalidad</button>
-              </div>
-            </div>
-            <div className="logo">
-            <img src="/matriz-riesgos/csmLOGO_1_.png" alt="Logo" style={{height: '38px', objectFit: 'contain'}} />
-            <div className="logo-divider"></div>
-            <div>
-              <div className="logo-text">Sistema de Gestión de Seguridad y Salud en el Trabajo</div>
-            </div>
+    <div className="min-h-screen bg-[#f8faf9] text-[#2c3630]">
+      {/* Topbar */}
+      <header className="sticky top-0 z-30 bg-white/80 backdrop-blur-md border-b border-[#e2e9e4] px-6 py-4 flex items-center justify-between">
+        <div className="flex items-center gap-4">
+          <div className="relative group">
+            <button className="flex items-center justify-center w-9 h-9 rounded-lg border border-[#e2e9e4] bg-white hover:bg-[#f0f9f1] hover:border-[#1F7D3E] transition-colors text-[#1F7D3E]">
+              <span className="text-xl">☰</span>
+            </button>
+            <div className="absolute left-0 top-full mt-2 w-64 bg-white border border-[#e2e9e4] rounded-xl shadow-xl py-2 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-40">
+              <button className="w-full text-left px-4 py-2 text-sm hover:bg-[#f0f9f1] text-[#1F7D3E] font-medium" onClick={() => router.push('/dashboard')}>
+                Matriz de Riesgos
+              </button>
+              <button className="w-full text-left px-4 py-2 text-sm text-[#5e6b62] cursor-not-allowed opacity-50">
+                Registro de Accidentalidad
+              </button>
             </div>
           </div>
-            <div className="user-pill">
-            <div className="user-dot">{(user?.nombre || 'U')[0]}</div>
-            <span>
-              {user?.nombre || ''}
-              {user?.cargo ? <><>&nbsp;·&nbsp;</>{user.cargo}</> : null}
-            </span>
-            <span style={{opacity:'.3', margin:'0 4px', color:'#c8dfc8'}}>|</span>
-            <span style={{cursor:'pointer', color:'#1a5c2a', fontWeight:500}} onClick={() => router.push('/dashboard/reporte')}>Reporte de Peligros</span>
-            <span style={{opacity:'.3', margin:'0 4px', color:'#c8dfc8'}}>|</span>
-            <span style={{cursor:'pointer', color:'#1a5c2a', fontWeight:500}} onClick={() => { logout(); router.push('/') }}>Cerrar sesión</span>
+          
+          <div className="flex items-center gap-3">
+            <img src="/matriz-riesgos/csmLOGO_1_.png" alt="Logo" className="h-10 object-contain" />
+            <div className="w-[1px] h-8 bg-[#e2e9e4]" />
+            <h1 className="text-base font-bold text-[#1F7D3E] leading-tight hidden md:block">
+              Sistema de Gestión de Seguridad<br/>y Salud en el Trabajo
+            </h1>
           </div>
         </div>
 
-        <div className="page">
-          <div className="stat-row">
-            <div className="scard">
-              <span className="scard-num" style={{color:'#1a5c2a'}}>{stats.totM}</span>
-              <span className="scard-lbl">Total matrices</span>
-              <div className="scard-bar" style={{background:'#1a5c2a'}}></div>
+        <div className="flex items-center gap-4">
+          <div className="flex items-center gap-3 bg-[#f0f9f1] px-3 py-1.5 rounded-full border border-[#d1e2d6]">
+            <div className="w-8 h-8 rounded-full bg-[#1F7D3E] text-white flex items-center justify-center text-sm font-bold shadow-sm">
+              {(user?.nombre || 'U')[0]}
             </div>
-            <div className="scard">
-              <span className="scard-num" style={{color:'var(--color-text-primary)'}}>{stats.totP}</span>
-              <span className="scard-lbl">Total riesgos</span>
-              <div className="scard-bar" style={{background:'var(--color-border-secondary)'}}></div>
-            </div>
-            <div className="scard">
-              <span className="scard-num" style={{color:'#a50000'}}>{stats.ma}</span>
-              <span className="scard-lbl">Muy alto</span>
-              <div className="scard-bar" style={{background:'#a50000'}}></div>
-            </div>
-            <div className="scard">
-              <span className="scard-num" style={{color:'#dc3545'}}>{stats.al}</span>
-              <span className="scard-lbl">Alto</span>
-              <div className="scard-bar" style={{background:'#dc3545'}}></div>
-            </div>
-            <div className="scard">
-              <span className="scard-num" style={{color:'#fd7e14'}}>{stats.me}</span>
-              <span className="scard-lbl">Medio</span>
-              <div className="scard-bar" style={{background:'#fd7e14'}}></div>
-            </div>
-            <div className="scard">
-              <span className="scard-num" style={{color:'#198754'}}>{stats.ba}</span>
-              <span className="scard-lbl">Bajo</span>
-              <div className="scard-bar" style={{background:'#198754'}}></div>
+            <div className="hidden sm:flex items-center gap-2 text-sm font-medium text-[#1F7D3E]">
+              <span>{user?.nombre}</span>
+              {user?.cargo && <span className="text-[#5e6b62] font-normal text-xs">• {user.cargo}</span>}
             </div>
           </div>
-
-          <div className="filters">
-            <div className="filter-row">
-              <div className="fi">
-                <input type="text" placeholder="Área / Proceso, Zona…" value={search} onChange={e=>setSearch(e.target.value)} />
-              </div>
-              <div className="fi">
-                <input className="fdate" type="date" value={dateDesde} onChange={e=>setDateDesde(e.target.value)} />
-              </div>
-              <span className="flabel">Hasta</span>
-              <input className="fdate" type="date" value={dateHasta} onChange={e=>setDateHasta(e.target.value)} />
-              <select className="fsel" value={tipoFilter} onChange={e=>setTipoFilter(e.target.value)}>
-                <option value="">Tipo: Todos</option>
-                {tiposList.map(t => (
-                  <option key={t} value={t}>{t}</option>
-                ))}
-              </select>
-              <div className="filter-actions">
-                <button className="pbtn" onClick={() => { setSearch(''); setDateDesde(''); setDateHasta(''); setTipoFilter(''); setCurrentPage(1) }}>Limpiar</button>
-                <div className="new-menu-wrap">
-                  <button className="new-btn">Nueva Matriz</button>
-                  <div className="new-menu">
-                    <button className="new-menu-item" onClick={handleNew}>Crear Nueva Matriz</button>
-                    <button className="new-menu-item" onClick={handleOpenImport}>Importar Matriz desde Excel</button>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div className="results-label">{totalMatrices} matri{totalMatrices === 1 ? 'z' : 'ces'}</div>
           
-          <div className="mlist">
-            {matrices.map(m => (
-              <div key={m.id} className="mcard" onClick={() => router.push('/matriz/' + m.id)}>
-                <div className="mcard-left">
-                  <div className="mcard-title">{m.area || m.responsable || 'Matriz sin área'}</div>
-                  <div className="mcard-date">{m.date}</div>
-                  <div className="mcard-tags">
-                    {m.tipos.length === 0 ? (
-                      <span className="proceso-tag">{getIcon('')}<span>General</span></span>
-                    ) : (
-                      m.tipos.map((t: string, i: number) => (
-                        <span key={i} className="proceso-tag">{getIcon(t)}<span>{t}</span></span>
-                      ))
-                    )}
-                  </div>
-                </div>
-                <div className="mcard-stats">
-                  <div className="stat-nums">
-                    {m.counts.map((c: number, idx: number) => (
-                      <div key={idx} className="snum" style={{background: COLORS[idx].bg}}>
-                        <span className="snum-val" style={{color: COLORS[idx].txt}}>{c}</span>
-                        <span className="snum-lbl" style={{color: COLORS[idx].txt}}>{COLORS[idx].lbl}</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-                <div className="mcard-actions" onClick={e => e.stopPropagation()}>
-                  <button className="ibt" title="Preview" onClick={(e) => { e.stopPropagation(); setPreviewMatrixId(m.id) }}>
-                    <svg width="13" height="13" viewBox="0 0 12 12" fill="none"><path d="M6 2c-2.2 0-4 1.8-4 4s1.8 4 4 4 4-1.8 4-4-1.8-4-4-4z" stroke="currentColor" strokeWidth="1.2"/><circle cx="6" cy="6" r="1.5" fill="currentColor"/></svg>
-                  </button>
-                  <button className="ibt" title="Descargar" onClick={(e) => { e.stopPropagation(); handleDownloadMatrix(m.id) }}>
-                    <svg width="13" height="13" viewBox="0 0 12 12" fill="none"><path d="M6 8.5v-5M3.5 6L6 8.5l2.5-2.5" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round"/><path d="M1 10.5h10" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round"/></svg>
-                  </button>
-                  <button className="ibt" title="Duplicar" onClick={(e) => { e.stopPropagation(); handleDuplicateMatrix(m.id) }}>
-                    <svg width="13" height="13" viewBox="0 0 12 12" fill="none"><path d="M2 4h6v6H2V4zM4 2h6v6" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round"/></svg>
-                  </button>
-                  <button className="ibt" title="Editar" onClick={(e) => { e.stopPropagation(); router.push('/matriz/' + m.id) }}>
-                    <svg width="13" height="13" viewBox="0 0 12 12" fill="none"><path d="M8 2l2 2-6 6H2V8l6-6z" stroke="currentColor" strokeWidth="1.2" strokeLinejoin="round"/></svg>
-                  </button>
-                  <button className="ibt" title="Eliminar" onClick={(e) => { e.stopPropagation(); setDeleteTarget(m.id); setConfirmOpen(true) }}>
-                    <svg width="13" height="13" viewBox="0 0 12 12" fill="none"><path d="M2 3h8M5 3V2h2v1M4 3v7h4V3" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round"/></svg>
-                  </button>
-                </div>
-              </div>
-            ))}
-            {matrices.length === 0 && !isLoading && (
-              <div className="text-center py-12 text-sm text-slate-500">
-                No se encontraron matrices que coincidan con los filtros.
-              </div>
-            )}
-            {isLoading && (
-              <div className="text-center py-12 text-sm text-slate-500">
-                Cargando matrices...
-              </div>
-            )}
-          </div>
+          <div className="h-6 w-[1px] bg-[#e2e9e4] hidden md:block" />
+          
+          <button 
+            onClick={() => router.push('/dashboard/reporte')}
+            className="text-sm font-semibold text-[#1F7D3E] hover:underline hidden lg:block"
+          >
+            Reporte de Peligros
+          </button>
+          
+          <button 
+            onClick={() => { logout(); router.push('/') }}
+            className="text-sm font-medium text-red-600 hover:text-red-700 hover:underline"
+          >
+            Saliendo
+          </button>
+        </div>
+      </header>
 
-          {totalMatrices > 0 && (
-            <div className="pagination">
-              <div className="pagination-info">
-                Página {currentPage} de {totalPages} · Mostrando {matrices.length} de {totalMatrices}
+      <main className="max-w-[1400px] mx-auto p-6 space-y-6">
+        {/* Stats Grid */}
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+          {[
+            { label: 'Total matrices', val: stats.totM, color: '#1F7D3E', bg: 'bg-[#f0f9f1]' },
+            { label: 'Total riesgos', val: stats.totP, color: '#2c3630', bg: 'bg-gray-100' },
+            { label: 'Muy alto', val: stats.ma, color: '#a50000', bg: 'bg-[#fce8e8]' },
+            { label: 'Alto', val: stats.al, color: '#dc3545', bg: 'bg-[#fdecea]' },
+            { label: 'Medio', val: stats.me, color: '#fd7e14', bg: 'bg-[#fff3e0]' },
+            { label: 'Bajo', val: stats.ba, color: '#198754', bg: 'bg-[#e8f5e9]' }
+          ].map((s, i) => (
+            <div key={i} className="bg-white border border-[#e2e9e4] rounded-2xl p-5 shadow-sm space-y-2">
+              <span className="text-3xl font-bold block leading-none" style={{ color: s.color }}>{s.val}</span>
+              <span className="text-xs font-semibold text-[#5e6b62] uppercase tracking-wider">{s.label}</span>
+              <div className={`h-1.5 w-full rounded-full ${s.bg}`} style={{ background: i > 1 ? s.color : undefined }} />
+            </div>
+          ))}
+        </div>
+
+        {/* Filters Bar */}
+        <div className="bg-white border border-[#e2e9e4] rounded-2xl p-5 shadow-sm">
+          <div className="flex flex-wrap items-center gap-4">
+            <div className="flex-1 min-w-[280px] relative">
+              <input 
+                type="text" 
+                placeholder="Buscar por Área, Proceso, Zona..." 
+                className="w-full pl-4 pr-10 py-2.5 rounded-xl border border-[#e2e9e4] bg-[#f8faf9] text-sm focus:outline-none focus:ring-2 focus:ring-[#1F7D3E]/20 focus:border-[#1F7D3E] transition-all"
+                value={search} 
+                onChange={e=>setSearch(e.target.value)} 
+              />
+            </div>
+            
+            <div className="flex items-center gap-3">
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-bold text-[#5e6b62] uppercase">Desde</span>
+                <input 
+                  type="date" 
+                  className="px-3 py-2 rounded-xl border border-[#e2e9e4] bg-[#f8faf9] text-sm font-medium focus:outline-none focus:border-[#1F7D3E]"
+                  value={dateDesde} 
+                  onChange={e=>setDateDesde(e.target.value)} 
+                />
               </div>
-              <div className="pagination-actions">
-                <button className="pbtn" disabled={currentPage <= 1} onClick={() => setCurrentPage(1)}>Primera</button>
-                <button className="pbtn" disabled={currentPage <= 1} onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}>Anterior</button>
-                <button className="pbtn" disabled={currentPage >= totalPages} onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}>Siguiente</button>
-                <button className="pbtn" disabled={currentPage >= totalPages} onClick={() => setCurrentPage(totalPages)}>Última</button>
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-bold text-[#5e6b62] uppercase">Hasta</span>
+                <input 
+                  type="date" 
+                  className="px-3 py-2 rounded-xl border border-[#e2e9e4] bg-[#f8faf9] text-sm font-medium focus:outline-none focus:border-[#1F7D3E]"
+                  value={dateHasta} 
+                  onChange={e=>setDateHasta(e.target.value)} 
+                />
               </div>
+            </div>
+
+            <select 
+              className="px-4 py-2.5 rounded-xl border border-[#e2e9e4] bg-[#f8faf9] text-sm font-medium text-[#2c3630] cursor-pointer focus:outline-none focus:border-[#1F7D3E]"
+              value={tipoFilter} 
+              onChange={e=>setTipoFilter(e.target.value)}
+            >
+              <option value="">Tipo: Todos</option>
+              {tiposList.map(t => (
+                <option key={t} value={t}>{t}</option>
+              ))}
+            </select>
+
+            <div className="flex items-center gap-2 ml-auto">
+              <button 
+                className="px-5 py-2.5 rounded-xl border border-[#e2e9e4] text-sm font-bold text-[#5e6b62] hover:bg-gray-50 transition-colors"
+                onClick={() => { setSearch(''); setDateDesde(''); setDateHasta(''); setTipoFilter(''); setCurrentPage(1) }}
+              >
+                Limpiar
+              </button>
+              
+              <div className="relative group">
+                <button className="px-6 py-2.5 rounded-xl bg-[#1F7D3E] text-white text-sm font-bold shadow-lg shadow-[#1F7D3E]/20 hover:bg-[#186331] transition-all flex items-center gap-2">
+                  <span>+</span> Nueva Matriz
+                </button>
+                <div className="absolute right-0 top-full mt-2 w-64 bg-white border border-[#e2e9e4] rounded-xl shadow-xl py-2 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-40">
+                  <button className="w-full text-left px-4 py-2 text-sm hover:bg-[#f0f9f1] text-[#1F7D3E] font-medium" onClick={handleNew}>
+                    Crear desde cero
+                  </button>
+                  <button className="w-full text-left px-4 py-2 text-sm hover:bg-[#f0f9f1] text-[#1F7D3E] font-medium" onClick={handleOpenImport}>
+                    Importar desde Excel
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Results Info */}
+        <div className="flex items-center justify-between text-[#5e6b62]">
+          <p className="text-sm font-medium">{totalMatrices} matri{totalMatrices === 1 ? 'z' : 'ces'} encontradas</p>
+        </div>
+        
+        {/* Matrix List */}
+        <div className="space-y-4">
+          {matrices.map(m => (
+            <div 
+              key={m.id} 
+              className="group relative bg-white border border-[#e2e9e4] rounded-2xl p-5 flex items-center gap-6 cursor-pointer hover:border-[#1F7D3E] hover:shadow-xl hover:-translate-y-0.5 transition-all"
+              onClick={() => router.push('/matriz/' + m.id)}
+            >
+              <div className="flex-1 space-y-3">
+                <div className="space-y-0.5">
+                  <h3 className="text-base font-bold text-[#0f2b1a] group-hover:text-[#1F7D3E] transition-colors line-clamp-1">
+                    {m.area || m.responsable || 'Matriz sin área'}
+                  </h3>
+                  <p className="text-xs font-semibold text-[#8aa08f] uppercase tracking-wide">{m.date}</p>
+                </div>
+                
+                <div className="flex flex-wrap gap-2">
+                  {m.tipos.length === 0 ? (
+                    <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#f8faf9] border border-[#e2e9e4] text-[10px] font-bold text-[#5e6b62] uppercase">
+                      {getIcon('')} General
+                    </span>
+                  ) : (
+                    m.tipos.map((t: string, i: number) => (
+                      <span key={i} className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#f8faf9] border border-[#e2e9e4] text-[10px] font-bold text-[#5e6b62] uppercase">
+                        {getIcon(t)} {t}
+                      </span>
+                    ))
+                  )}
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2 sm:gap-4 md:gap-8">
+                <div className="flex gap-2 mr-4 hidden sm:flex">
+                  {m.counts.map((c: number, idx: number) => (
+                    <div key={idx} className="flex flex-col items-center justify-center w-14 h-14 rounded-xl border border-transparent transition-all" style={{ background: COLORS[idx].bg + '80' }}>
+                      <span className="text-lg font-bold" style={{ color: COLORS[idx].txt }}>{c}</span>
+                      <span className="text-[8px] font-bold uppercase" style={{ color: COLORS[idx].txt }}>{COLORS[idx].lbl.split(' ')[0]}</span>
+                    </div>
+                  ))}
+                </div>
+
+                <div className="flex items-center gap-1" onClick={e => e.stopPropagation()}>
+                  {[
+                    { title: 'Vista Previa', icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M2.062 12.348a1 1 0 0 1 0-.696 10.75 10.75 0 0 1 19.876 0 1 1 0 0 1 0 .696 10.75 10.75 0 0 1-19.876 0z"/><circle cx="12" cy="12" r="3"/></svg>, action: () => setPreviewMatrixId(m.id) },
+                    { title: 'Descargar Excel', icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>, action: () => handleDownloadMatrix(m.id) },
+                    { title: 'Duplicar', icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>, action: () => handleDuplicateMatrix(m.id) },
+                    { title: 'Editar', icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>, action: () => router.push('/matriz/' + m.id) },
+                    { title: 'Eliminar', icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>, action: () => { setDeleteTarget(m.id); setConfirmOpen(true) }, color: 'text-red-500 hover:bg-red-50 hover:border-red-200' }
+                  ].map((btn, idx) => (
+                    <button 
+                      key={idx}
+                      title={btn.title}
+                      onClick={btn.action}
+                      className={`p-2.5 rounded-xl border border-transparent transition-all ${btn.color || 'text-[#5e6b62] hover:bg-[#f0f9f1] hover:border-[#d1e2d6] hover:text-[#1F7D3E]'}`}
+                    >
+                      {btn.icon}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+          ))}
+          
+          {matrices.length === 0 && !isLoading && (
+            <div className="bg-white border border-dashed border-[#e2e9e4] rounded-2xl py-20 text-center space-y-2">
+              <p className="text-sm font-medium text-[#5e6b62]">No se encontraron resultados para los filtros aplicados</p>
+              <button 
+                className="text-xs font-bold text-[#1F7D3E] hover:underline"
+                onClick={() => { setSearch(''); setDateDesde(''); setDateHasta(''); setTipoFilter('') }}
+              >
+                Restablecer filtros
+              </button>
+            </div>
+          )}
+          
+          {isLoading && (
+            <div className="py-20 text-center text-sm font-medium text-[#5e6b62] animate-pulse">
+              Cargando matrices...
             </div>
           )}
         </div>
-      </div>
+
+        {/* Pagination */}
+        {totalMatrices > 0 && (
+          <div className="flex items-center justify-between pt-4 border-t border-[#e2e9e4]">
+            <p className="text-xs font-semibold text-[#5e6b62] uppercase tracking-wider">
+              Página {currentPage} de {totalPages} <span className="mx-2 opacity-30">|</span> {totalMatrices} totales
+            </p>
+            <div className="flex items-center gap-2">
+              <button 
+                className="px-4 py-2 rounded-xl border border-[#e2e9e4] bg-white text-xs font-bold text-[#2c3630] disabled:opacity-30 disabled:cursor-not-allowed hover:bg-gray-50 transition-colors"
+                disabled={currentPage <= 1} 
+                onClick={() => setCurrentPage(1)}
+              >
+                Primera
+              </button>
+              <button 
+                className="px-4 py-2 rounded-xl border border-[#e2e9e4] bg-white text-xs font-bold text-[#2c3630] disabled:opacity-30 disabled:cursor-not-allowed hover:bg-gray-50 transition-colors"
+                disabled={currentPage <= 1} 
+                onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+              >
+                Anterior
+              </button>
+              <button 
+                className="px-4 py-2 rounded-xl border border-[#e2e9e4] bg-white text-xs font-bold text-[#2c3630] disabled:opacity-30 disabled:cursor-not-allowed hover:bg-gray-50 transition-colors"
+                disabled={currentPage >= totalPages} 
+                onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+              >
+                Siguiente
+              </button>
+              <button 
+                className="px-4 py-2 rounded-xl border border-[#e2e9e4] bg-white text-xs font-bold text-[#2c3630] disabled:opacity-30 disabled:cursor-not-allowed hover:bg-gray-50 transition-colors"
+                disabled={currentPage >= totalPages} 
+                onClick={() => setCurrentPage(totalPages)}
+              >
+                Última
+              </button>
+            </div>
+          </div>
+        )}
+      </main>
 
         <ImportMatrizModal open={importOpen} onOpenChange={setImportOpen} />
 

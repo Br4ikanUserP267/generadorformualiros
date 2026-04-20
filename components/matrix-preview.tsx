@@ -291,131 +291,164 @@ export function MatrixPreview({ matrizId, onClose }: MatrixPreviewProps) {
   }
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-0">
-      <div className="bg-white w-screen h-screen flex flex-col">
-        {/* Header */}
-        <div className="sticky top-0 bg-white border-b p-4 flex justify-between items-center z-10 flex-shrink-0">
-          <div>
-            <h2 className="text-xl font-bold">{matrizData.area || 'Matriz'}</h2>
-            <p className="text-sm text-gray-500">
-              Responsable: {matrizData.responsable || 'N/A'} • Fecha: {matrizData.fecha_elaboracion || 'N/A'}
-            </p>
-          </div>
-          <button
+    <div className="fixed inset-0 w-full h-full bg-white z-[9999] flex flex-col overflow-hidden animate-in fade-in zoom-in duration-300">
+      {/* Top Header */}
+      <div className="flex items-center justify-between px-6 py-4 border-b border-[#e2e9e4] bg-[#f8faf9]/50 backdrop-blur-sm sticky top-0 z-50">
+        <div className="flex items-center gap-6">
+          <button 
             onClick={onClose}
-            className="text-2xl font-bold text-gray-400 hover:text-gray-600"
+            className="flex items-center justify-center p-2 rounded-full hover:bg-gray-100 transition-colors text-[#5e6b62]"
+            title="Volver"
           >
-            ✕
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
           </button>
+          
+          <div className="flex items-center gap-4">
+            <img src="/matriz-riesgos/csmLOGO_1_.png" alt="Logo" className="h-8 object-contain" />
+            <div className="w-[1px] h-6 bg-[#e2e9e4]" />
+            <div>
+              <h2 className="text-sm font-bold text-[#1F7D3E] uppercase tracking-wide">Vista Previa de Matriz</h2>
+              <p className="text-[10px] font-bold text-[#8aa08f] uppercase tracking-widest">{matrizData.area || 'Matriz de Riesgos'}</p>
+            </div>
+          </div>
         </div>
+      </div>
 
-        {/* Content */}
-        <div className="overflow-auto flex-1">
-          <div className="p-4">
-            <table style={tableStyle}>
-            <thead>
-              <tr>
-                {columns.map(col => (
-                  <HeaderCell key={col.key} column={col} />
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {rows.length === 0 ? (
+      {/* Metadata Fields Section */}
+      <div className="px-8 py-6 bg-white border-b border-[#e2e9e4] grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="space-y-1.5">
+          <label className="text-[10px] font-extrabold text-[#8aa08f] uppercase tracking-wider block">Área / Proceso</label>
+          <div className="bg-[#f0f9f1] border border-[#d1e2d6] rounded-xl px-4 py-2.5 text-sm font-bold text-[#1F7D3E]">
+            {matrizData.area || '—'}
+          </div>
+        </div>
+        <div className="space-y-1.5">
+          <label className="text-[10px] font-extrabold text-[#8aa08f] uppercase tracking-wider block">Fecha de Actualización</label>
+          <div className="bg-white border border-[#e2e9e4] rounded-xl px-4 py-2.5 text-sm font-medium text-[#2c3630]">
+            {matrizData.fecha_elaboracion || '—'}
+          </div>
+        </div>
+        <div className="space-y-1.5">
+          <label className="text-[10px] font-extrabold text-[#8aa08f] uppercase tracking-wider block">Responsable</label>
+          <div className="bg-white border border-[#e2e9e4] rounded-xl px-4 py-2.5 text-sm font-medium text-[#2c3630]">
+            {matrizData.responsable || '—'}
+          </div>
+        </div>
+      </div>
+
+      {/* Main Table Content */}
+      <div className="flex-1 overflow-auto bg-[#f8faf9] p-8">
+        <div className="bg-white rounded-2xl border border-[#e2e9e4] shadow-xl shadow-gray-200/50 overflow-hidden">
+          <div className="overflow-x-auto min-h-[60vh]">
+            <table className="w-full border-collapse table-fixed text-[11px] font-sans">
+              <thead className="sticky top-0 z-10">
                 <tr>
-                  <td colSpan={columns.length} style={{ ...cellStyle, textAlign: 'center', padding: '20px' }}>
-                    No hay peligros registrados
-                  </td>
+                  {columns.map(col => (
+                    <th 
+                      key={col.key} 
+                      className="px-4 py-3 bg-[#f8faf9] border-b border-r border-[#e2e9e4] text-[10px] font-bold text-[#5e6b62] uppercase tracking-wider text-center relative group select-none last:border-r-0"
+                      style={{ width: columnWidths[col.key] || 100 }}
+                    >
+                      <div className="flex items-center justify-center gap-2">
+                        <span>{col.label}</span>
+                        <div
+                          onMouseDown={(e) => {
+                            e.preventDefault()
+                            setResizingColumn(col.key)
+                            setResizeStartX(e.clientX)
+                            try { document.body.style.userSelect = 'none' } catch {}
+                            try { document.body.style.cursor = 'col-resize' } catch {}
+                          }}
+                          className="absolute right-0 top-0 w-1 h-full cursor-col-resize hover:bg-[#1F7D3E]/30 transition-colors"
+                        />
+                      </div>
+                    </th>
+                  ))}
                 </tr>
-              ) : (
-                (() => {
-                  const elements: any[] = []
-                  let i = 0
-                  while (i < rows.length) {
-                    const zonaSpan = rowSpans['zona'][i] || 1
-                    const zonaName = rows[i].zona || ''
-                    const isCollapsed = (collapsedZonas && collapsedZonas[zonaName]) === true
+              </thead>
+              <tbody className="divide-y divide-[#e2e9e4]/50">
+                {rows.length === 0 ? (
+                  <tr>
+                    <td colSpan={columns.length} className="px-8 py-20 text-center text-[#5e6b62] font-medium italic bg-gray-50/50">
+                      No se encontraron registros en esta matriz
+                    </td>
+                  </tr>
+                ) : (
+                  (() => {
+                    const elements: any[] = []
+                    let i = 0
+                    while (i < rows.length) {
+                      const zonaSpan = rowSpans['zona'][i] || 1
+                      const zonaName = rows[i].zona || ''
+                      const isCollapsed = (collapsedZonas && collapsedZonas[zonaName]) === true
 
-                    if (isCollapsed) {
-                      // render single collapsed row for this zona
-                      elements.push(
-                        <tr key={`zona-c-${i}`}>
-                          <td colSpan={columns.length} style={{ ...cellStyle, backgroundColor: '#f1f5f9', cursor: 'pointer' }} onClick={() => toggleZona(zonaName)}>
-                            {zonaName}
-                          </td>
-                        </tr>
-                      )
-                      i += zonaSpan
-                      continue
-                    }
+                      if (isCollapsed) {
+                        elements.push(
+                          <tr key={`zona-c-${i}`} className="group cursor-pointer hover:bg-[#f0f9f1] transition-colors" onClick={() => toggleZona(zonaName)}>
+                            <td colSpan={columns.length} className="px-6 py-3 bg-[#f8faf9] border-r border-[#e2e9e4] last:border-r-0 font-bold text-[#1F7D3E] flex items-center gap-2">
+                              <span className="text-xs">▶</span> {zonaName} <span className="text-[9px] font-normal text-[#8aa08f]">(Expandir)</span>
+                            </td>
+                          </tr>
+                        )
+                        i += zonaSpan
+                        continue
+                      }
 
-                    // expanded: render each row in the zona group
-                    const end = i + zonaSpan
-                    for (let r = i; r < end; r++) {
-                      const row = rows[r]
-                      elements.push(
-                        <tr key={`row-${r}`}>
-                          {columns.map(col => {
-                            const value = row[col.key as keyof typeof row]
-                            const isNumeric = ['nd', 'ne', 'nc', 'nr', 'numExpuestos'].includes(col.key)
-                            const isEvaluationField = ['nd', 'ne', 'nc', 'nr', 'interpNr', 'aceptabilidad'].includes(col.key)
+                      const end = i + zonaSpan
+                      for (let r = i; r < end; r++) {
+                        const row = rows[r]
+                        elements.push(
+                          <tr key={`row-${r}`} className="hover:bg-gray-50/50 transition-colors">
+                            {columns.map((col, colIdx) => {
+                              const value = row[col.key as keyof typeof row]
+                              const isNumeric = ['nd', 'ne', 'nc', 'nr', 'numExpuestos'].includes(col.key)
+                              const isEvaluationField = ['nd', 'ne', 'nc', 'nr', 'interpNr', 'aceptabilidad'].includes(col.key)
 
-                            if (mergeKeys.includes(col.key)) {
-                              const span = rowSpans[col.key][r] || 0
-                              if (span === 0) return null
-                              const evalStyle = (isEvaluationField && row.nr) ? { backgroundColor: getRiskColor(row.nr).bg, color: getRiskColor(row.nr).text } : {}
-                              // make zona cell clickable to toggle
-                              if (col.key === 'zona') {
+                              if (mergeKeys.includes(col.key)) {
+                                const span = rowSpans[col.key][r] || 0
+                                if (span === 0) return null
+                                const evalStyle = (isEvaluationField && row.nr) ? { backgroundColor: getRiskColor(row.nr).bg, color: getRiskColor(row.nr).text } : {}
+                                
                                 return (
-                                  <td key={col.key} rowSpan={span} style={{ ...cellStyle, width: columnWidths[col.key] || 100, verticalAlign: 'top', textAlign: isNumeric ? 'center' : 'left', ...evalStyle }} onClick={() => toggleZona(zonaName)}>
+                                  <td 
+                                    key={col.key} 
+                                    rowSpan={span} 
+                                    className={`px-4 py-3 border-r border-[#e2e9e4] last:border-r-0 align-top text-[#2c3630] leading-relaxed break-words font-medium ${col.key === 'zona' ? 'cursor-pointer hover:bg-gray-100 transition-colors' : ''} ${isNumeric ? 'text-center' : 'text-left'}`}
+                                    style={evalStyle}
+                                    onClick={col.key === 'zona' ? () => toggleZona(zonaName) : undefined}
+                                  >
+                                    {col.key === 'zona' && <span className="mr-1.5 text-[9px] text-[#8aa08f]">▼</span>}
                                     {value}
                                   </td>
                                 )
                               }
+
+                              const bgStyle = (isEvaluationField && row.nr) ? { backgroundColor: getRiskColor(row.nr).bg, color: getRiskColor(row.nr).text, fontWeight: '700' } : {}
                               return (
-                                <td key={col.key} rowSpan={span} style={{ ...cellStyle, width: columnWidths[col.key] || 100, verticalAlign: 'top', textAlign: isNumeric ? 'center' : 'left', ...evalStyle }}>
-                                  {value}
+                                <td 
+                                  key={col.key} 
+                                  className={`px-4 py-3 border-r border-[#e2e9e4] last:border-r-0 align-top text-[#2c3630] leading-relaxed break-words ${isNumeric ? 'text-center' : 'text-left'}`}
+                                  style={bgStyle}
+                                >
+                                  {col.key === 'requisitoLegal' || col.key === 'cumple' ? (
+                                    <span className={`px-2.5 py-0.5 rounded-full text-[9px] font-bold ${value === 'Sí' || value === 'SI' ? 'bg-[#e8f5e9] text-[#198754]' : 'bg-gray-100 text-gray-500'}`}>
+                                      {value}
+                                    </span>
+                                  ) : value}
                                 </td>
                               )
-                            }
-
-                            const bgStyle = (isEvaluationField && row.nr) ? { backgroundColor: getRiskColor(row.nr).bg, color: getRiskColor(row.nr).text } : {}
-                            return (
-                              <td key={col.key} style={{ ...cellStyle, width: columnWidths[col.key] || 100, textAlign: isNumeric ? 'center' : 'left', verticalAlign: 'top', ...bgStyle }}>
-                                {value}
-                              </td>
-                            )
-                          })}
-                        </tr>
-                      )
+                            })}
+                          </tr>
+                        )
+                      }
+                      i = end
                     }
-                    i = end
-                  }
-                  return elements
-                })()
-              )}
-            </tbody>
-          </table>
+                    return elements
+                  })()
+                )}
+              </tbody>
+            </table>
           </div>
-        </div>
-
-        {/* Footer */}
-        <div className="sticky bottom-0 bg-white border-t p-4 flex justify-end gap-3 flex-shrink-0">
-          <button
-            onClick={onClose}
-            className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 font-medium"
-          >
-            Cerrar
-          </button>
-          <button
-            onClick={() => {
-              onClose()
-              router.push(`/matriz/${matrizId}`)
-            }}
-            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium"
-          >
-            Editar Matriz
-          </button>
         </div>
       </div>
     </div>

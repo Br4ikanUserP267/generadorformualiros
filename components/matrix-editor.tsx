@@ -146,9 +146,9 @@ export default function MatrixEditor({ id }: { id?: string }) {
     if (autoFocusPeligroKeyRef.current === autofocusKey) return
     
     // Find the peligro and its parent structure
-    let targetProcesoId: string | null = null
-    let targetZonaId: string | null = null
-    let targetActividadId: string | null = null
+    let targetProcesoId: string | undefined = undefined
+    let targetZonaId: string | undefined = undefined
+    let targetActividadId: string | undefined = undefined
     let foundPeligro: any = null
     
     for (const proceso of matrix.procesos || []) {
@@ -921,43 +921,43 @@ export default function MatrixEditor({ id }: { id?: string }) {
   }
 
   return (
-    <div className="min-h-screen bg-[#f3f7f3] text-slate-800">
+    <div className="min-h-screen bg-[#f8faf9] text-slate-800">
       {/* Top bar */}
       <div className="sticky top-0 px-4 py-3 flex items-center gap-4 z-20 bg-white/95 backdrop-blur border-b border-[#d7e5d7] shadow-[0_1px_0_rgba(0,0,0,0.03)]">
         <div className="flex items-center gap-2">
           <img src="/matriz-riesgos/csmLOGO_1_.png" style={{ height: '38px', objectFit: 'contain' }} alt="Logo" />
           <div style={{ width: '0.5px', height: '30px', background: '#c8dfc8', margin: '0 4px' }} />
-          <Button variant="ghost" style={{color: '#1a5c2a'}} onClick={() => router.push('/dashboard')}>Volver</Button>
+          <Button variant="ghost" style={{color: '#1F7D3E'}} onClick={() => router.push('/dashboard')}>Volver</Button>
         </div>
-        <div className="flex-1 flex items-center gap-3 justify-center text-[#1a5c2a]">
+        <div className="flex-1 flex items-center gap-3 justify-center text-[#1F7D3E]">
             <div className="text-xs font-medium">Área / Proceso</div>
-            <Input className="h-9 rounded-md border-[#c8dfc8] bg-[#f4faf4] text-[#1a5c2a] focus-visible:ring-[#2d7a40]" value={matrix.area} onChange={(e:any)=> updateMatrix((m:any)=>{ m.area = e.target.value; return m })} />
+            <Input className="h-9 rounded-md border-[#d1e2d6] bg-[#f0f9f1] text-[#1F7D3E] focus-visible:ring-[#1F7D3E]/20" value={matrix.area} onChange={(e:any)=> updateMatrix((m:any)=>{ m.area = e.target.value; return m })} />
             <div className="text-xs font-medium">Responsable</div>
-            <Input className="h-9 rounded-md border-[#c8dfc8] bg-[#f4faf4] text-[#1a5c2a] focus-visible:ring-[#2d7a40]" value={matrix.responsable} onChange={(e:any)=> updateMatrix((m:any)=>{ m.responsable = e.target.value; return m })} />
+            <Input className="h-9 rounded-md border-[#d1e2d6] bg-[#f0f9f1] text-[#1F7D3E] focus-visible:ring-[#1F7D3E]/20" value={matrix.responsable} onChange={(e:any)=> updateMatrix((m:any)=>{ m.responsable = e.target.value; return m })} />
             <div className="text-xs font-medium">Fecha Elaboración</div>
-            <Input type="date" className="h-9 rounded-md border-[#c8dfc8] bg-[#f4faf4] text-[#1a5c2a] focus-visible:ring-[#2d7a40]" value={matrix.fecha_elaboracion} onChange={(e:any)=> updateMatrix((m:any)=>{ m.fecha_elaboracion = e.target.value; return m })} />
+            <Input type="date" className="h-9 rounded-md border-[#d1e2d6] bg-[#f0f9f1] text-[#1F7D3E] focus-visible:ring-[#1F7D3E]/20" value={matrix.fecha_elaboracion} onChange={(e:any)=> updateMatrix((m:any)=>{ m.fecha_elaboracion = e.target.value; return m })} />
             <div className="text-xs font-medium">Fecha Actualización</div>
-            <Input type="date" className="h-9 rounded-md border-[#c8dfc8] bg-[#f4faf4] text-[#1a5c2a] focus-visible:ring-[#2d7a40]" value={matrix.fecha_actualizacion || ''} onChange={(e:any)=> updateMatrix((m:any)=>{ m.fecha_actualizacion = e.target.value; return m })} />
+            <Input type="date" className="h-9 rounded-md border-[#d1e2d6] bg-[#f0f9f1] text-[#1F7D3E] focus-visible:ring-[#1F7D3E]/20" value={matrix.fecha_actualizacion || ''} onChange={(e:any)=> updateMatrix((m:any)=>{ m.fecha_actualizacion = e.target.value; return m })} />
         
         </div>
         <div className="flex items-center gap-2">
-          <Button onClick={saveMatrix}>Guardar</Button>
-          <Button onClick={handleExportMatrix} variant="outline">Exportar Excel</Button>
+          <Button className="bg-[#1F7D3E] hover:bg-[#186331]" onClick={saveMatrix}>Guardar</Button>
+          <Button onClick={handleExportMatrix} variant="outline" className="border-[#1F7D3E] text-[#1F7D3E] hover:bg-[#f0f9f1]">Exportar Excel</Button>
         </div>
       </div>
 
                 <div className="p-4 flex items-start gap-6">
                   <aside className="w-80 mr-6">
                     <div className="overflow-hidden rounded-xl border border-[#d7e5d7] bg-white shadow-[0_8px_24px_rgba(17,24,39,0.04)]">
-                      <div className="flex items-center justify-between px-4 py-3 bg-[#1f6f36] text-white">
-                        <div className="font-semibold text-sm">Procesos</div>
-                        <Button size="sm" variant="secondary" className="bg-white text-[#2d7a40] hover:bg-slate-100" onClick={addProceso}>+ Proceso</Button>
+                      <div className="flex items-center justify-between px-4 py-3 bg-[#1F7D3E] text-white">
+                        <div className="font-semibold text-sm uppercase tracking-wider">Procesos</div>
+                        <Button size="sm" variant="secondary" className="bg-white text-[#1F7D3E] hover:bg-slate-100" onClick={addProceso}>+ Proceso</Button>
                       </div>
                       <div className="p-4 space-y-3">
                     { (matrix.procesos || []).map((p: any) => (
                       <div key={p.id} className="border border-[#e1ebe1] rounded-lg p-2 bg-[#fbfdfb]">
                         <div className="flex items-center justify-between">
-                          <div className="font-medium bg-[#2d7a40] text-white px-2 py-1 rounded">{p.nombre}</div>
+                          <div className="font-medium bg-[#1F7D3E] text-white px-2 py-1 rounded tracking-wide">{p.nombre}</div>
                           <div className="flex items-center gap-2">
                             <Button size="sm" variant="ghost" onClick={()=>addZona(p.id)}>+ Zona</Button>
                             <button onClick={()=>editProceso(p)} className="text-slate-500 hover:text-slate-700" aria-label="Editar proceso"><PencilIcon size={14} /></button>
@@ -975,7 +975,7 @@ export default function MatrixEditor({ id }: { id?: string }) {
                                 <div className={`flex items-center justify-between p-2 cursor-pointer ${selected.zonaId===z.id? 'bg-[#e5f1e7]':''}`} onClick={() => setSelected({ procesoId: p.id, zonaId: z.id })}>
                                     <div className="flex items-center gap-2">
                                       <div
-                                        className="text-sm bg-[#2d7a40] text-white px-2 py-1 rounded cursor-pointer"
+                                        className="text-sm bg-[#1F7D3E] text-white px-2 py-1 rounded cursor-pointer font-medium"
                                         onClick={(e:any) => { e.stopPropagation(); setExpandedZonaIds(s=>({...s, [z.id]: !expanded})); setSelected({ procesoId: p.id, zonaId: z.id }) }}
                                         title={expanded ? 'Ocultar actividades' : 'Mostrar actividades'}
                                       >
