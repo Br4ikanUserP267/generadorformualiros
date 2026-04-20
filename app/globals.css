@@ -17,18 +17,18 @@
   --text-muted: #5e6b62;
 
   --risk-prob-bajo: #198754;
-  --risk-prob-medio: #f59e0b;
+  --risk-prob-medio: #EAB308;
   --risk-prob-alto: #dc3545;
   --risk-prob-muy-alto: #a50000;
 
   --risk-nivel-i: #dc3545;
-  --risk-nivel-ii: #f59e0b;
+  --risk-nivel-ii: #EAB308;
   --risk-nivel-iii: #22c55e;
   --risk-nivel-iv: #198754;
 
   --risk-aceptable: #198754;
   --risk-mejorable: #22c55e;
-  --risk-aceptable-control: #f59e0b;
+  --risk-aceptable-control: #EAB308;
   --risk-no-aceptable: #dc3545;
 
   --background: oklch(0.99 0.005 145);

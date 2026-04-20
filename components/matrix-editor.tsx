@@ -22,7 +22,7 @@ function interpProbabilidad(np: number) {
   if (!np) return { label: '—', color: '#9CA3AF' }
   if (np >= 24 && np <= 40) return { label: 'Muy Alto', color: '#a50000' }
   if (np >= 10 && np <= 23) return { label: 'Alto', color: '#dc3545' }
-  if (np >= 6 && np <= 9) return { label: 'Medio', color: '#f59e0b' }
+  if (np >= 6 && np <= 9) return { label: 'Medio', color: '#EAB308' }
   if (np >= 2 && np <= 5) return { label: 'Bajo', color: '#198754' }
   return { label: String(np), color: '#9CA3AF' }
 }
@@ -30,7 +30,7 @@ function interpProbabilidad(np: number) {
 function interpNivelRiesgo(nr: number) {
   if (!nr) return { label: '—', color: '#9CA3AF' }
   if (nr >= 4000 && nr <= 6000) return { label: 'I', color: '#dc3545' }
-  if (nr >= 150 && nr <= 500) return { label: 'II', color: '#f59e0b' }
+  if (nr >= 150 && nr <= 500) return { label: 'II', color: '#EAB308' }
   if (nr >= 40 && nr <= 120) return { label: 'III', color: '#22c55e' }
   if (nr >= 10 && nr <= 20) return { label: 'IV', color: '#198754' }
   // catch-all mapping
@@ -61,7 +61,7 @@ function aceptabilidadFromNivel(label: string) {
 
 function aceptabilidadColor(text: string) {
   if (text.includes('No Aceptable')) return '#dc3545' // Rojo
-  if (text.includes('Control Especifico')) return '#f59e0b' // Amarillo
+  if (text.includes('Control Especifico')) return '#EAB308' // Amarillo
   if (text.includes('Mejorable')) return '#22c55e' // Verde
   if (text.includes('Aceptable')) return '#198754' // Verde profundo
   return '#9CA3AF'
@@ -945,9 +945,9 @@ export default function MatrixEditor({ id }: { id?: string }) {
               <label className="text-[10px] font-bold text-[#8aa08f] uppercase tracking-widest ml-1 mb-0.5">Responsable</label>
               <Input className="h-9 rounded-xl border-[#d1e2d6] bg-[#f0f9f1] text-[#1F7D3E] font-bold focus:ring-[#1F7D3E]/20" value={matrix.responsable} onChange={(e:any)=> updateMatrix((m:any)=>{ m.responsable = e.target.value; return m })} />
             </div>
-            <div className="flex-none w-32 flex flex-col">
+            <div className="flex-none w-44 flex flex-col">
               <label className="text-[10px] font-bold text-[#8aa08f] uppercase tracking-widest ml-1 mb-0.5">Elaboración</label>
-              <Input type="date" className="h-9 rounded-xl border-[#d1e2d6] bg-[#f0f9f1] text-[#1F7D3E] text-[11px] focus:ring-[#1F7D3E]/20" value={matrix.fecha_elaboracion} onChange={(e:any)=> updateMatrix((m:any)=>{ m.fecha_elaboracion = e.target.value; return m })} />
+              <Input type="date" className="h-9 rounded-xl border-[#d1e2d6] bg-[#f0f9f1] text-[#1F7D3E] text-[12px] focus:ring-[#1F7D3E]/20" value={matrix.fecha_elaboracion} onChange={(e:any)=> updateMatrix((m:any)=>{ m.fecha_elaboracion = e.target.value; return m })} />
             </div>
         </div>
 

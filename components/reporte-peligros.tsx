@@ -46,7 +46,7 @@ const ACEPTABILIDAD_LEVELS = [
 function levelColor(label: string) {
   const norm = label.toLowerCase().trim()
   if (norm === 'i' || norm === 'muy alto') return '#dc3545'
-  if (norm === 'ii' || norm === 'medio') return '#f59e0b'
+  if (norm === 'ii' || norm === 'medio') return '#EAB308'
   if (norm === 'iii' || norm === 'alto') return '#22c55e'
   if (norm === 'iv' || norm === 'bajo') return '#198754'
   return '#64748b'
@@ -54,7 +54,7 @@ function levelColor(label: string) {
 
 function aceptabilidadColor(aceptabilidad: string) {
   if (aceptabilidad === 'No Aceptable') return '#dc3545'
-  if (aceptabilidad === 'Aceptable con Control Especifico') return '#f59e0b'
+  if (aceptabilidad === 'Aceptable con Control Especifico') return '#EAB308'
   if (aceptabilidad === 'Mejorable') return '#22c55e'
   if (aceptabilidad === 'Aceptable') return '#198754'
   return '#64748b'
@@ -178,6 +178,13 @@ export function ReportePeligros() {
         </div>
 
         <div className="flex items-center gap-6">
+          <button 
+            onClick={() => router.push('/dashboard')}
+            className="text-sm font-bold text-[#1F7D3E] hover:underline px-4 py-2 bg-white border border-[#e2e9e4] rounded-xl shadow-sm transition-all hover:bg-[#f0f9f1]"
+          >
+            Matriz de Riesgos
+          </button>
+
           <div className="hidden sm:flex flex-col items-end">
             <span className="text-sm font-bold text-[#1F7D3E] leading-tight">{user?.nombre || 'Usuario'}</span>
             <span className="text-[10px] font-bold text-[#8aa08f] uppercase tracking-wider">{user?.cargo || 'Colaborador'}</span>
@@ -187,7 +194,7 @@ export function ReportePeligros() {
             onClick={() => { logout(); router.push('/') }}
             className="text-sm font-medium text-red-600 hover:text-red-700 hover:underline"
           >
-            Cerrar sesión
+            Cerrar Sesión
           </button>
         </div>
       </header>
@@ -260,7 +267,6 @@ export function ReportePeligros() {
                   <th className="px-6 py-4 text-left font-bold text-[#5e6b62] uppercase tracking-wider">Clasificación</th>
                   <th className="px-6 py-4 text-center font-bold text-[#5e6b62] uppercase tracking-wider">Nivel</th>
                   <th className="px-6 py-4 text-left font-bold text-[#5e6b62] uppercase tracking-wider">Origen (Matriz)</th>
-                  <th className="px-6 py-4 text-left font-bold text-[#5e6b62] uppercase tracking-wider">Actividad</th>
                   <th className="px-6 py-4 text-center font-bold text-[#5e6b62] uppercase tracking-wider">Aceptabilidad</th>
                 </tr>
               </thead>
@@ -291,10 +297,9 @@ export function ReportePeligros() {
                           <span className="text-gray-400">{item.nombreMatriz}</span>
                         )}
                       </td>
-                      <td className="px-6 py-4 text-[#5e6b62]">{item.actividad}</td>
                       <td className="px-6 py-4 text-center">
                         <span 
-                          className="px-3 py-1 rounded-full text-[11px] font-bold text-white shadow-sm"
+                          className="px-3 py-1 rounded-full text-[11px] font-bold text-white shadow-sm whitespace-nowrap"
                           style={{ backgroundColor: aColor }}
                         >
                           {item.aceptabilidad || '—'}

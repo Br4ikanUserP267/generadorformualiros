@@ -335,7 +335,14 @@ export function Dashboard() {
         </div>
 
         <div className="flex items-center gap-4">
-          <div className="flex items-center gap-3 bg-[#f0f9f1] px-3 py-1.5 rounded-full border border-[#d1e2d6]">
+          <button 
+            onClick={() => router.push('/dashboard/reporte')}
+            className="text-sm font-bold text-[#1F7D3E] hover:underline px-4 py-2 bg-[#f0f9f1] border border-[#d1e2d6] rounded-xl shadow-sm transition-all hover:bg-white"
+          >
+            Reporte de Peligros
+          </button>
+
+          <div className="flex items-center gap-3 bg-white px-3 py-1.5 rounded-full border border-[#e2e9e4] shadow-sm">
             <div className="w-8 h-8 rounded-full bg-[#1F7D3E] text-white flex items-center justify-center text-sm font-bold shadow-sm">
               {(user?.nombre || 'U')[0]}
             </div>
@@ -345,20 +352,11 @@ export function Dashboard() {
             </div>
           </div>
           
-          <div className="h-6 w-[1px] bg-[#e2e9e4] hidden md:block" />
-          
-          <button 
-            onClick={() => router.push('/dashboard/reporte')}
-            className="text-sm font-semibold text-[#1F7D3E] hover:underline hidden lg:block"
-          >
-            Reporte de Peligros
-          </button>
-          
           <button 
             onClick={() => { logout(); router.push('/') }}
             className="text-sm font-medium text-red-600 hover:text-red-700 hover:underline"
           >
-            Saliendo
+            Cerrar Sesión
           </button>
         </div>
       </header>
