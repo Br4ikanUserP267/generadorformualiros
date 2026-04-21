@@ -65,10 +65,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
   try {
     if (req.method === 'GET') {
+      const isUserAdmin = user.role === 'SUPER_ADMIN' || user.role === 'ADMIN';
+      
       const rows = await prisma.matriz.findMany({
         where: {
           deletedAt: null,
-          usuarioId: user.id
+          ...(isUserAdmin ? {} : { usuarioId: user.id })
         },
         include: {
 // ... (rest of include)

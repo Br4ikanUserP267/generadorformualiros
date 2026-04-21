@@ -1,6 +1,7 @@
 import type { NextApiRequest, NextApiResponse } from 'next'
 import prisma from '@/lib/prisma'
 import { getImport, removeImport } from '@/lib/riesgos-import-store'
+import { getAuthUser } from '@/lib/auth-server'
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== 'POST') {
@@ -9,6 +10,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   }
 
   try {
+    const user = await getAuthUser(req)
+    if (!user) {
+      return res.status(401).json({ error: 'Unauthorized' })
+    }
+
     const { importId, area, responsable, fecha_elaboracion } = req.body || {}
 
     if (!importId || typeof importId !== 'string') {
@@ -18,11 +24,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const saved = getImport(importId)
     if (!saved) {
       return res.status(404).json({ error: 'Importacion no encontrada o expirada' })
-    }
-
-    const firstUser = await prisma.usuario.findFirst()
-    if (!firstUser) {
-      return res.status(500).json({ error: 'No hay usuarios en la base de datos' })
     }
 
     const savedMetadata = saved.metadata || { area: '', responsable: '', fechaElaboracion: '', fechaActualizacion: '' }
@@ -38,7 +39,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const created = await prisma.$transaction(async (tx) => {
       return tx.matriz.create({
         data: {
-          usuarioId: firstUser.id,
+          usuarioId: user.id,
           area: areaValue,
           responsable: responsableValue,
           fechaElaboracion,

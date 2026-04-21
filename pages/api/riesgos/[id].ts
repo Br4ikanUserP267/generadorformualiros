@@ -89,12 +89,13 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const method = (req.method || '').toUpperCase()
 
     // Verification check for ownership
+    const isUserAdmin = user.role === 'SUPER_ADMIN' || user.role === 'ADMIN';
     const existing = await prisma.matriz.findUnique({
       where: { id: mid },
       select: { usuarioId: true, deletedAt: true }
     })
 
-    if (!existing || existing.deletedAt || existing.usuarioId !== user.id) {
+    if (!existing || existing.deletedAt || (!isUserAdmin && existing.usuarioId !== user.id)) {
       return res.status(404).json({ error: 'Not found' })
     }
 

@@ -146,9 +146,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const dateDesde = parseDate(req.query.dateDesde)
     const dateHasta = parseDate(req.query.dateHasta)
 
+    const isUserAdmin = user.role === 'SUPER_ADMIN' || user.role === 'ADMIN';
     const andConditions: Prisma.MatrizWhereInput[] = [
       { deletedAt: null },
-      { usuarioId: user.id } // Filter by current user
+      ...(isUserAdmin ? [] : [{ usuarioId: user.id }])
     ]
 
     if (search) {

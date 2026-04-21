@@ -16,14 +16,19 @@ export async function getAuthUser(req: NextApiRequest) {
       where: { email: decoded.email }
     })
 
-    return user
+    if (!user) return null
+
+    // Inject role from token (since Risks DB doesn't have roles)
+    return {
+      ...user,
+      role: decoded.role,
+      cargo: decoded.cargo
+    }
   } catch (error) {
     return null
   }
 }
 
 export function isAdmin(user: any) {
-  // You might want to pass the role in the token too
-  // For now, let's assume we can trust the role in the token if we want
-  return false // Default to false, implement if needed
+  return user?.role === 'SUPER_ADMIN' || user?.role === 'ADMIN'
 }
