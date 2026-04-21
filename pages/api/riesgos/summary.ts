@@ -123,10 +123,17 @@ function computeTotalsFromMatrices(matrices: any[]): SummaryTotals {
   }
 }
 
+import { getAuthUser } from '@/lib/auth-server'
+
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== 'GET') {
     res.setHeader('Allow', 'GET')
     return res.status(405).json({ error: 'Method not allowed' })
+  }
+
+  const user = await getAuthUser(req)
+  if (!user) {
+    return res.status(401).json({ error: 'Unauthorized' })
   }
 
   try {
@@ -139,7 +146,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const dateDesde = parseDate(req.query.dateDesde)
     const dateHasta = parseDate(req.query.dateHasta)
 
-    const andConditions: Prisma.MatrizWhereInput[] = [{ deletedAt: null }]
+    const andConditions: Prisma.MatrizWhereInput[] = [
+      { deletedAt: null },
+      { usuarioId: user.id } // Filter by current user
+    ]
 
     if (search) {
       andConditions.push({

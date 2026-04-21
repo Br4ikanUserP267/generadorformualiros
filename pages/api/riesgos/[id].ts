@@ -73,7 +73,14 @@ export const config = {
   },
 }
 
+import { getAuthUser } from '@/lib/auth-server'
+
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
+  const user = await getAuthUser(req)
+  if (!user) {
+    return res.status(401).json({ error: 'Unauthorized' })
+  }
+
   try {
     const { id } = req.query
     const mid = String(id) // UUID string
@@ -81,7 +88,18 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     const method = (req.method || '').toUpperCase()
 
+    // Verification check for ownership
+    const existing = await prisma.matriz.findUnique({
+      where: { id: mid },
+      select: { usuarioId: true, deletedAt: true }
+    })
+
+    if (!existing || existing.deletedAt || existing.usuarioId !== user.id) {
+      return res.status(404).json({ error: 'Not found' })
+    }
+
     if (method === 'GET') {
+// ...
       const m = await prisma.matriz.findUnique({
         where: { id: mid },
         include: {

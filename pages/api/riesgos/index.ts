@@ -55,14 +55,23 @@ export const config = {
   },
 }
 
+import { getAuthUser } from '@/lib/auth-server'
+
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
+  const user = await getAuthUser(req)
+  if (!user) {
+    return res.status(401).json({ error: 'Unauthorized' })
+  }
+
   try {
     if (req.method === 'GET') {
       const rows = await prisma.matriz.findMany({
         where: {
-          deletedAt: null  // Exclude soft-deleted records
+          deletedAt: null,
+          usuarioId: user.id
         },
         include: {
+// ... (rest of include)
           archivos: true,
           procesos: {
             orderBy: { orden: 'asc' },
@@ -176,15 +185,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
       const persistedFiles = await persistFilesToDisk(body.files || [])
 
-      // Get any valid user to act as foreign key
-      const firstUser = await prisma.usuario.findFirst()
-      if (!firstUser) {
-        return res.status(500).json({ error: 'No hay usuarios en la base de datos' })
-      }
-
       const created = await prisma.matriz.create({
         data: {
-          usuarioId: firstUser.id,
+          usuarioId: user.id,
           area: body.area,
           archivos: {
             create: persistedFiles.map((f: any) => ({

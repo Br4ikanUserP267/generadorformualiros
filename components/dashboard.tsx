@@ -352,12 +352,6 @@ export function Dashboard() {
             </div>
           </div>
           
-          <button 
-            onClick={() => { logout(); router.push('/') }}
-            className="text-sm font-medium text-red-600 hover:text-red-700 hover:underline"
-          >
-            Cerrar Sesión
-          </button>
         </div>
       </header>
 
