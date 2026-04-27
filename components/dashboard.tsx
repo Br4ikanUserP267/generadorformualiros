@@ -9,6 +9,7 @@ import { MatrixPreview } from './matrix-preview'
 import { exportMatrizToExcel } from '@/lib/matriz-excel-export'
 import type { Riesgo } from '@/lib/types'
 import { apiFetch } from '@/lib/utils'
+import { InstructionsModal } from './InstructionsModal'
 
 const Icons = {
   asistencial: <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M6 2a2 2 0 100 4 2 2 0 000-4z" stroke="currentColor" strokeWidth="1.1"/><path d="M2 10c0-2.2 1.8-4 4-4s4 1.8 4 4" stroke="currentColor" strokeWidth="1.1" strokeLinecap="round"/></svg>,
@@ -116,6 +117,7 @@ export function Dashboard() {
   const [duplicateSuccessTitle, setDuplicateSuccessTitle] = useState('')
   const [previewMatrixId, setPreviewMatrixId] = useState<string|null>(null)
   const [importOpen, setImportOpen] = useState(false)
+  const [instructionsOpen, setInstructionsOpen] = useState(false)
   const [currentPage, setCurrentPage] = useState(1)
   const [totalMatrices, setTotalMatrices] = useState(0)
   const [totalPages, setTotalPages] = useState(1)
@@ -335,6 +337,14 @@ export function Dashboard() {
         </div>
 
         <div className="flex items-center gap-4">
+          <button 
+            onClick={() => setInstructionsOpen(true)}
+            className="text-sm font-bold text-[#5e6b62] hover:text-[#1F7D3E] flex items-center gap-2 px-4 py-2 bg-white border border-[#e2e9e4] rounded-xl shadow-sm transition-all hover:bg-[#f0f9f1] hover:border-[#d1e2d6]"
+          >
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+            Instrucciones
+          </button>
+
           <button 
             onClick={() => router.push('/dashboard/reporte')}
             className="text-sm font-bold text-[#1F7D3E] hover:underline px-4 py-2 bg-[#f0f9f1] border border-[#d1e2d6] rounded-xl shadow-sm transition-all hover:bg-white"
@@ -596,6 +606,11 @@ export function Dashboard() {
           onClose={() => setPreviewMatrixId(null)}
         />
       )}
+
+      <InstructionsModal 
+        open={instructionsOpen} 
+        onClose={() => setInstructionsOpen(false)} 
+      />
     </div>
   )
 }
