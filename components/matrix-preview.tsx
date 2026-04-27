@@ -40,6 +40,8 @@ export function MatrixPreview({ matrizId, onClose }: MatrixPreviewProps) {
     controlIndividuo: 150,
     nd: 60,
     ne: 60,
+    np: 60,
+    interpNp: 140,
     nc: 60,
     nr: 60,
     interpNr: 160,
@@ -55,9 +57,54 @@ export function MatrixPreview({ matrizId, onClose }: MatrixPreviewProps) {
     responsable: 150,
     fechaEjecucion: 120
   })
+  const [columnLabels, setColumnLabels] = useState<Record<string, string>>({
+    proceso: 'Proceso',
+    zona: 'Zona',
+    actividad: 'Actividad',
+    tareas: 'Tareas',
+    cargo: 'Cargo',
+    rutinario: 'Rutinario',
+    peligro: 'Peligro',
+    clasificacion: 'Clasificación',
+    efectos: 'Efectos',
+    controlFuente: 'Control Fuente',
+    controlMedio: 'Control Medio',
+    controlIndividuo: 'Control Individuo',
+    nd: 'ND',
+    ne: 'NE',
+    np: 'NP',
+    interpNp: 'Interpretación NP',
+    nc: 'NC',
+    nr: 'NR',
+    interpNr: 'Interpretación NR',
+    aceptabilidad: 'Aceptabilidad',
+    numExpuestos: 'Nº Expuestos',
+    peorConsecuencia: 'Peor Consecuencia',
+    requisitoLegal: 'Requisito Legal',
+    eliminacion: 'Eliminación',
+    sustitucion: 'Sustitución',
+    controlIngenieria: 'Controles Ingeniería',
+    controlAdmin: 'Controles Admin',
+    epp: 'EPP',
+    responsable: 'Responsable',
+    fechaEjecucion: 'Fecha Ejecución'
+  })
   const [resizingColumn, setResizingColumn] = useState<string | null>(null)
   const [resizeStartX, setResizeStartX] = useState(0)
   const [collapsedZonas, setCollapsedZonas] = useState<Record<string, boolean>>({})
+
+  const handleLabelChange = (key: string, newLabel: string) => {
+    setColumnLabels(prev => ({ ...prev, [key]: newLabel }))
+    
+    // Auto-adjust width: approximate 9px per character + padding/resizer space
+    const neededWidth = (newLabel.length * 8.5) + 50
+    if (neededWidth > columnWidths[key]) {
+      setColumnWidths(prev => ({
+        ...prev,
+        [key]: Math.min(600, Math.ceil(neededWidth))
+      }))
+    }
+  }
 
   function toggleZona(name: string) {
     setCollapsedZonas(prev => ({ ...prev, [name]: !prev[name] }))
@@ -141,45 +188,20 @@ export function MatrixPreview({ matrizId, onClose }: MatrixPreviewProps) {
   }
 
   const headerCellStyle = {
-    ...cellStyle,
-    backgroundColor: '#006666',
-    color: '#fff',
+    border: '1px solid #e2e9e4',
+    padding: '0',
+    backgroundColor: '#f8faf9',
+    color: '#5e6b62',
     fontWeight: 'bold' as const,
     textAlign: 'center' as const,
     position: 'relative' as const,
     userSelect: 'none' as const
   }
 
-  const columns = [
-    { key: 'proceso', label: 'Proceso' },
-    { key: 'zona', label: 'Zona' },
-    { key: 'actividad', label: 'Actividad' },
-    { key: 'tareas', label: 'Tareas' },
-    { key: 'cargo', label: 'Cargo' },
-    { key: 'rutinario', label: 'Rutinario' },
-    { key: 'peligro', label: 'Peligro' },
-    { key: 'clasificacion', label: 'Clasificación' },
-    { key: 'efectos', label: 'Efectos' },
-    { key: 'controlFuente', label: 'Control Fuente' },
-    { key: 'controlMedio', label: 'Control Medio' },
-    { key: 'controlIndividuo', label: 'Control Individuo' },
-    { key: 'nd', label: 'ND' },
-    { key: 'ne', label: 'NE' },
-    { key: 'nc', label: 'NC' },
-    { key: 'nr', label: 'NR' },
-    { key: 'interpNr', label: 'Interpretación' },
-    { key: 'aceptabilidad', label: 'Aceptabilidad' },
-    { key: 'numExpuestos', label: 'Nº Expuestos' },
-    { key: 'peorConsecuencia', label: 'Peor Consecuencia' },
-    { key: 'requisitoLegal', label: 'Requisito Legal' },
-    { key: 'eliminacion', label: 'Eliminación' },
-    { key: 'sustitucion', label: 'Sustitución' },
-    { key: 'controlIngenieria', label: 'Controles Ingeniería' },
-    { key: 'controlAdmin', label: 'Controles Admin' },
-    { key: 'epp', label: 'EPP' },
-    { key: 'responsable', label: 'Responsable' },
-    { key: 'fechaEjecucion', label: 'Fecha Ejecución' }
-  ]
+  const columns = Object.keys(columnLabels).map(key => ({
+    key,
+    label: columnLabels[key]
+  }))
 
   const HeaderCell = ({ column }: { column: { key: string; label: string } }) => (
     <th
@@ -188,9 +210,25 @@ export function MatrixPreview({ matrizId, onClose }: MatrixPreviewProps) {
         width: columnWidths[column.key] || 100,
         position: 'relative'
       }}
+      className="group last:border-r-0"
     >
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', height: '100%' }}>
-        <span>{column.label}</span>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', position: 'relative' }}>
+        <input 
+          value={column.label} 
+          onChange={(e) => handleLabelChange(column.key, e.target.value)}
+          className="bg-transparent border-none text-center w-full focus:bg-white/50 outline-none px-4 py-3 m-0 transition-colors"
+          style={{ 
+            fontSize: '10px', 
+            fontWeight: 'bold',
+            color: '#5e6b62', 
+            textAlign: 'center', 
+            textTransform: 'uppercase',
+            letterSpacing: '0.05em',
+            fontFamily: 'inherit',
+            cursor: 'text'
+          }}
+          title="Haz clic para renombrar esta columna"
+        />
         <div
           onMouseDown={(e) => {
             e.preventDefault()
@@ -199,16 +237,16 @@ export function MatrixPreview({ matrizId, onClose }: MatrixPreviewProps) {
             try { document.body.style.userSelect = 'none' } catch {}
             try { document.body.style.cursor = 'col-resize' } catch {}
           }}
-          title="Arrastrar para cambiar ancho"
           style={{
-            width: '10px',
+            width: '4px',
             height: '100%',
             cursor: 'col-resize',
-            background: 'linear-gradient(90deg, rgba(255,255,255,0) 0%, rgba(0,0,0,0.08) 50%, rgba(255,255,255,0) 100%)',
-            marginLeft: '6px',
-            display: 'inline-block',
-            borderLeft: '1px solid rgba(255,255,255,0.12)'
+            position: 'absolute',
+            right: 0,
+            top: 0,
+            zIndex: 10
           }}
+          className="hover:bg-[#1F7D3E]/30 transition-colors opacity-0 group-hover:opacity-100"
         />
       </div>
     </th>
@@ -233,7 +271,7 @@ export function MatrixPreview({ matrizId, onClose }: MatrixPreviewProps) {
                   const nd = pel.evaluacion?.nd || pel.evaluacion?.deficiencia || 0
                   const ne = pel.evaluacion?.ne || pel.evaluacion?.exposicion || 0
                   const nc = pel.evaluacion?.nc || pel.evaluacion?.consecuencia || 0
-                  const nr = (nd * ne) * nc
+                  const nr = pel.evaluacion?.nr || (nd * ne * nc)
 
                   rows.push({
                     proceso: p.nombre || '',
@@ -250,6 +288,8 @@ export function MatrixPreview({ matrizId, onClose }: MatrixPreviewProps) {
                     controlIndividuo: pel.controles?.individuo || '',
                     nd,
                     ne,
+                    np: pel.evaluacion?.np || (nd * ne),
+                    interpNp: pel.evaluacion?.interp_np || '',
                     nc,
                     nr,
                     interpNr: pel.evaluacion?.interp_nr || '',
@@ -344,25 +384,7 @@ export function MatrixPreview({ matrizId, onClose }: MatrixPreviewProps) {
               <thead className="sticky top-0 z-10">
                 <tr>
                   {columns.map(col => (
-                    <th 
-                      key={col.key} 
-                      className="px-4 py-3 bg-[#f8faf9] border-b border-r border-[#e2e9e4] text-[10px] font-bold text-[#5e6b62] uppercase tracking-wider text-center relative group select-none last:border-r-0"
-                      style={{ width: columnWidths[col.key] || 100 }}
-                    >
-                      <div className="flex items-center justify-center gap-2">
-                        <span>{col.label}</span>
-                        <div
-                          onMouseDown={(e) => {
-                            e.preventDefault()
-                            setResizingColumn(col.key)
-                            setResizeStartX(e.clientX)
-                            try { document.body.style.userSelect = 'none' } catch {}
-                            try { document.body.style.cursor = 'col-resize' } catch {}
-                          }}
-                          className="absolute right-0 top-0 w-1 h-full cursor-col-resize hover:bg-[#1F7D3E]/30 transition-colors"
-                        />
-                      </div>
-                    </th>
+                    <HeaderCell key={col.key} column={col} />
                   ))}
                 </tr>
               </thead>
@@ -401,8 +423,8 @@ export function MatrixPreview({ matrizId, onClose }: MatrixPreviewProps) {
                           <tr key={`row-${r}`} className="hover:bg-gray-50/50 transition-colors">
                             {columns.map((col, colIdx) => {
                               const value = row[col.key as keyof typeof row]
-                              const isNumeric = ['nd', 'ne', 'nc', 'nr', 'numExpuestos'].includes(col.key)
-                              const isEvaluationField = ['nd', 'ne', 'nc', 'nr', 'interpNr', 'aceptabilidad'].includes(col.key)
+                              const isNumeric = ['nd', 'ne', 'np', 'nc', 'nr', 'numExpuestos'].includes(col.key)
+                              const isEvaluationField = ['nd', 'ne', 'np', 'interpNp', 'nc', 'nr', 'interpNr', 'aceptabilidad'].includes(col.key)
 
                               if (mergeKeys.includes(col.key)) {
                                 const span = rowSpans[col.key][r] || 0
