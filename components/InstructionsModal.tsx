@@ -471,7 +471,6 @@ export function InstructionsModal({ open, onClose }: InstructionsModalProps) {
         <div className="px-8 py-4 bg-[#f8faf9] border-t border-[#e2e9e4] flex items-center justify-between">
           <div className="flex gap-4">
             <span className="text-[9px] text-[#8aa08f] uppercase font-bold tracking-widest bg-white px-3 py-1 rounded-full border">Referencia: GTC 45:2012</span>
-            <span className="text-[9px] text-[#1F7D3E] uppercase font-bold tracking-widest bg-[#f0f9f1] px-3 py-1 rounded-full border border-[#d1e2d6]">Hospitalización Sagrada Familia</span>
           </div>
           <button 
             onClick={onClose}

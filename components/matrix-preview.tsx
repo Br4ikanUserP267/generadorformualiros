@@ -155,6 +155,16 @@ export function MatrixPreview({ matrizId, onClose }: MatrixPreviewProps) {
     }
   }, [resizingColumn, resizeStartX])
 
+  // Refs for scroll synchronization
+  const tableContainerRef = React.useRef<HTMLDivElement>(null)
+  const topScrollRef = React.useRef<HTMLDivElement>(null)
+
+  const handleScrollSync = (source: React.RefObject<HTMLDivElement | null>, target: React.RefObject<HTMLDivElement | null>) => {
+    if (source.current && target.current) {
+      target.current.scrollLeft = source.current.scrollLeft
+    }
+  }
+
   if (loading) {
     return (
       <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
@@ -171,92 +181,18 @@ export function MatrixPreview({ matrizId, onClose }: MatrixPreviewProps) {
     )
   }
 
-  const tableStyle = {
-    width: '100%',
-    borderCollapse: 'collapse' as const,
-    tableLayout: 'fixed' as const,
-    fontSize: '12px',
-    fontFamily: 'Arial, sans-serif'
-  }
-
-  const cellStyle = {
-    border: '1px solid #000',
-    padding: '8px',
-    textAlign: 'left' as const,
-    wordWrap: 'break-word' as const,
-    whiteSpace: 'normal' as const
-  }
-
-  const headerCellStyle = {
-    border: '1px solid #e2e9e4',
-    padding: '0',
-    backgroundColor: '#f8faf9',
-    color: '#5e6b62',
-    fontWeight: 'bold' as const,
-    textAlign: 'center' as const,
-    position: 'relative' as const,
-    userSelect: 'none' as const
-  }
-
   const columns = Object.keys(columnLabels).map(key => ({
     key,
     label: columnLabels[key]
   }))
 
-  const HeaderCell = ({ column }: { column: { key: string; label: string } }) => (
-    <th
-      style={{
-        ...headerCellStyle,
-        width: columnWidths[column.key] || 100,
-        position: 'relative'
-      }}
-      className="group last:border-r-0"
-    >
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', position: 'relative' }}>
-        <input 
-          value={column.label} 
-          onChange={(e) => handleLabelChange(column.key, e.target.value)}
-          className="bg-transparent border-none text-center w-full focus:bg-white/50 outline-none px-4 py-3 m-0 transition-colors"
-          style={{ 
-            fontSize: '10px', 
-            fontWeight: 'bold',
-            color: '#5e6b62', 
-            textAlign: 'center', 
-            textTransform: 'uppercase',
-            letterSpacing: '0.05em',
-            fontFamily: 'inherit',
-            cursor: 'text'
-          }}
-          title="Haz clic para renombrar esta columna"
-        />
-        <div
-          onMouseDown={(e) => {
-            e.preventDefault()
-            setResizingColumn(column.key)
-            setResizeStartX(e.clientX)
-            try { document.body.style.userSelect = 'none' } catch {}
-            try { document.body.style.cursor = 'col-resize' } catch {}
-          }}
-          style={{
-            width: '4px',
-            height: '100%',
-            cursor: 'col-resize',
-            position: 'absolute',
-            right: 0,
-            top: 0,
-            zIndex: 10
-          }}
-          className="hover:bg-[#1F7D3E]/30 transition-colors opacity-0 group-hover:opacity-100"
-        />
-      </div>
-    </th>
-  )
-
   const infoRowStyle = {
-    ...cellStyle,
     backgroundColor: '#f5f5f5',
     fontWeight: 'bold' as const
   }
+
+  // Calculate total width for top scrollbar dummy
+  const totalTableWidth = columns.reduce((acc, col) => acc + (columnWidths[col.key] || 100), 0)
 
   // Flatten peligros for display
   const rows: any[] = []
@@ -377,14 +313,39 @@ export function MatrixPreview({ matrizId, onClose }: MatrixPreviewProps) {
       </div>
 
       {/* Main Table Content */}
-      <div className="flex-1 overflow-auto bg-[#f8faf9] p-8">
+      <div className="flex-1 overflow-auto bg-[#f8faf9] p-8 flex flex-col gap-4">
+        {/* Top Scrollbar Container */}
+        <div 
+          ref={topScrollRef}
+          className="overflow-x-auto h-4 w-full bg-white rounded-full border border-[#e2e9e4] shadow-inner"
+          onScroll={() => handleScrollSync(topScrollRef, tableContainerRef)}
+        >
+          <div style={{ width: totalTableWidth, height: '1px' }} />
+        </div>
+
         <div className="bg-white rounded-2xl border border-[#e2e9e4] shadow-xl shadow-gray-200/50 overflow-hidden">
-          <div className="overflow-x-auto min-h-[60vh]">
+          <div 
+            ref={tableContainerRef}
+            className="overflow-x-auto min-h-[60vh]"
+            onScroll={() => handleScrollSync(tableContainerRef, topScrollRef)}
+          >
             <table className="w-full border-collapse table-fixed text-[11px] font-sans">
               <thead className="sticky top-0 z-10">
                 <tr>
                   {columns.map(col => (
-                    <HeaderCell key={col.key} column={col} />
+                    <HeaderCell 
+                      key={col.key} 
+                      column={col} 
+                      width={columnWidths[col.key] || 100}
+                      onLabelChange={(newLabel) => handleLabelChange(col.key, newLabel)}
+                      onResizeStart={(e) => {
+                        e.preventDefault()
+                        setResizingColumn(col.key)
+                        setResizeStartX(e.clientX)
+                        try { document.body.style.userSelect = 'none' } catch {}
+                        try { document.body.style.cursor = 'col-resize' } catch {}
+                      }}
+                    />
                   ))}
                 </tr>
               </thead>
@@ -474,5 +435,93 @@ export function MatrixPreview({ matrizId, onClose }: MatrixPreviewProps) {
         </div>
       </div>
     </div>
+  )
+}
+
+// Separated component to prevent focus loss during parent re-renders
+const HeaderCell = ({ 
+  column, 
+  width, 
+  onLabelChange, 
+  onResizeStart 
+}: { 
+  column: { key: string; label: string }; 
+  width: number;
+  onLabelChange: (val: string) => void;
+  onResizeStart: (e: React.MouseEvent) => void;
+}) => {
+  const [localLabel, setLocalLabel] = useState(column.label)
+  
+  // Sync if parent updates externally
+  useEffect(() => {
+    setLocalLabel(column.label)
+  }, [column.label])
+
+  const commit = () => {
+    if (localLabel !== column.label) {
+      onLabelChange(localLabel)
+    }
+  }
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') {
+      commit()
+      ;(e.target as HTMLInputElement).blur()
+    }
+    if (e.key === 'Escape') {
+      setLocalLabel(column.label)
+      ;(e.target as HTMLInputElement).blur()
+    }
+  }
+
+  return (
+    <th
+      style={{
+        border: '1px solid #e2e9e4',
+        padding: '0',
+        backgroundColor: '#f8faf9',
+        color: '#5e6b62',
+        fontWeight: 'bold',
+        textAlign: 'center',
+        position: 'relative',
+        userSelect: 'none',
+        width: width
+      }}
+      className="group last:border-r-0"
+    >
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', position: 'relative' }}>
+        <input 
+          value={localLabel} 
+          onChange={(e) => setLocalLabel(e.target.value)}
+          onBlur={commit}
+          onKeyDown={handleKeyDown}
+          className="bg-transparent border-none text-center w-full focus:bg-white/50 outline-none px-4 py-3 m-0 transition-colors"
+          style={{ 
+            fontSize: '10px', 
+            fontWeight: 'bold',
+            color: '#5e6b62', 
+            textAlign: 'center', 
+            textTransform: 'uppercase',
+            letterSpacing: '0.05em',
+            fontFamily: 'inherit',
+            cursor: 'text'
+          }}
+          title="Haz clic para renombrar. Pulsa Enter para confirmar."
+        />
+        <div
+          onMouseDown={onResizeStart}
+          style={{
+            width: '4px',
+            height: '100%',
+            cursor: 'col-resize',
+            position: 'absolute',
+            right: 0,
+            top: 0,
+            zIndex: 10
+          }}
+          className="hover:bg-[#1F7D3E]/30 transition-colors opacity-0 group-hover:opacity-100"
+        />
+      </div>
+    </th>
   )
 }
