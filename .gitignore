@@ -15,8 +15,19 @@ tsconfig.tsbuildinfo
 tsconfig.tsbuildinfo
 .next
 
+
 # Uploaded files
 public/uploads/matrices/*
 !public/uploads/matrices/.gitkeep
+
+# Sensitive and Temporary Data
+scratch/
+*.xlsx
+analyze_excel_instructions.js
+extract.js
+inspect_output.txt
+__full_content.txt
+temp_header.json
+cleanup.js
 
 CLAUDE.md
