@@ -145,6 +145,7 @@ model Intervencion {
   @@map("intervenciones")
 }
 
+
 model Archivo {
   id               String    @id @default(uuid())
   matrizId         String    @map("matriz_id")
@@ -158,6 +159,14 @@ model Archivo {
   matriz           Matriz    @relation(fields: [matrizId], references: [id])
 
   @@map("archivos")
+}
+
+model Configuracion {
+  id    String @id @default(uuid())
+  key   String @unique
+  valor Json
+
+  @@map("configuraciones")
 }
 
 // Keep schema clean - Archivo model is the final model

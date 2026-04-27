@@ -15,8 +15,78 @@ export function InstructionsModal({ open, onClose }: InstructionsModalProps) {
   const tabs = [
     { id: 'instructivo', label: 'Instructivo Detallado' },
     { id: 'peligros', label: 'Clasificación de Peligros' },
-    { id: 'valoracion', label: '8 Tablas de Valoración' },
+    { id: 'valoracion', label: 'Tablas de Valoración' },
     { id: 'consecuencias', label: 'Riesgos y Consecuencias' },
+  ]
+
+  const instructivoData = [
+    {
+      id: 1,
+      title: "1. Información de Procesos, Actividades y Tareas",
+      color: "bg-[#f8b133]",
+      items: [
+        { item: "1.1", casilla: "Proceso", diligenciamiento: "Clasificar el tipo de proceso que se va a identificar. Ejemplo: Administrativo Financiero" },
+        { item: "1.2", casilla: "Zona o Lugar", diligenciamiento: "Incluir el sitio donde se realizara el proceso. Ejemplo: Oficina de Contabilidad y Compras" },
+        { item: "1.3", casilla: "Actividad", diligenciamiento: "Describir en detalle el tipo de actividad a realizar de acuerdo al proceso. Ejemplo: Dentro del proceso financiero se realizan las actividades de Tesoreria, Caja y Facturación." },
+        { item: "1.4", casilla: "Tarea", diligenciamiento: "Identificar la tarea que se determinara de la actividad. Ejemplo: Digitar, Revisar documentos, colocar sellos, etc." },
+        { item: "1.5", casilla: "Cargo", diligenciamiento: "Identifica el cargo que desempeña Ej: Medico, Jefe, Auxiliar, Adminstrativo u operativo." },
+        { item: "1.6", casilla: "Rutinaria SI o No", diligenciamiento: "Identificar si la actividad es Rutinaria SI o No" },
+      ]
+    },
+    {
+      id: 2,
+      title: "2. Identificación de Peligros",
+      subtitle: "Identificar los peligros, incluir todos aquellos relacionados con cada actividad laboral. Considerar quien, cuando y como puede resultar afectado",
+      color: "bg-[#1f7872]",
+      items: [
+        { item: "2.1", casilla: "Descripción", diligenciamiento: "Comentar los Peligros a los que esta expuesto el trabajador en cada una de las actividades. Ejemplo: Movimientos Repetitivos de miembros superiores." },
+        { item: "2.2", casilla: "Clasificación", diligenciamiento: "Determine el tipo de peligro identificado en la casilla Descripción. Debe clasificarse en Biologico, Fisico, Quimico, Psicosocial, Biomecanico, Condiciones de Seguridad o Fenomenos Naturales" },
+        { item: "2.3", casilla: "Efectos Posibles", diligenciamiento: "Considerar los efectos en la salud del individuo o seguridad de las instalaciones. Ejemplo: Tendinitis, Sindrome de Tunel del Carpo." },
+      ]
+    },
+    {
+      id: 3,
+      title: "3. Identificación de Controles Existentes",
+      subtitle: "Identificar los controles existentes. Relacionar todos los controles que la organización ha implementado para reducir el riesgo.",
+      color: "bg-[#a64d4d]",
+      items: [
+        { item: "3.1", casilla: "Fuente", diligenciamiento: "Controles existentes a nivel de la fuente que genera el factor de riesgo. Si no existe debe colocar ninguno." },
+        { item: "3.2", casilla: "Medio", diligenciamiento: "Controles existentes a nivel del medio de transmisión del factor de riesgo. Si no existen debe colocar ninguno." },
+        { item: "3.3", casilla: "Individuo", diligenciamiento: "Controles existentes a nivel de la persona o receptor del factor de riesgo. Ejemplo: Se realizan pausas activas." },
+      ]
+    },
+    {
+      id: 4,
+      title: "4. Evaluación del Riesgo",
+      subtitle: "Determinar la probabilidad de que ocurran eventos específicos y la magnitud de sus consecuencias.",
+      color: "bg-[#4d73a6]",
+      items: [
+        { item: "4.1", casilla: "Nivel de Deficiencia (ND)", diligenciamiento: "Magnitud de la relación entre el conjunto de peligros y su vinculación directa con posibles incidentes (10, 6, 2, 0)." },
+        { item: "4.2", casilla: "Nivel de Exposición (NE)", diligenciamiento: "Situación de exposición a un peligro que se presenta en un tiempo determinado (4, 3, 2, 1)." },
+        { item: "4.3", casilla: "Nivel de Probabilidad (NP)", diligenciamiento: "Producto de ND por NE. Determina la probabilidad de ocurrencia." },
+        { item: "4.4", casilla: "Interpretación NP", diligenciamiento: "Significado cualitativo del nivel de probabilidad (Muy Alto, Alto, Medio o Bajo)." },
+        { item: "4.5", casilla: "Nivel de Consecuencia (NC)", diligenciamiento: "Magnitud de los daños esperados (100, 60, 25, 10)." },
+        { item: "4.6", casilla: "Nivel de Riesgo (NR)", diligenciamiento: "Producto de NP por NC. Magnitud del riesgo evaluado." },
+        { item: "4.7", casilla: "Interpretación NR", diligenciamiento: "Significado del nivel de riesgo (I, II, III o IV)." },
+        { item: "4.8", casilla: "Aceptabilidad del Riesgo", diligenciamiento: "Criterio de aceptabilidad según la organización y normatividad." },
+      ]
+    },
+    {
+      id: 5,
+      title: "5. Criterios para Controles y Medidas de Intervención",
+      subtitle: "Establecer la prioridad de los controles y determinar las medidas de intervención necesarias.",
+      color: "bg-[#4da66a]",
+      items: [
+        { item: "5.1", casilla: "Nº Expuestos", diligenciamiento: "Número de trabajadores expuestos al peligro identificado." },
+        { item: "5.2", casilla: "Peor Consecuencia", diligenciamiento: "Se determinara el mayor efecto posible en la salud del trabajador. Ejemplo: Perdida de la capacidad laboral." },
+        { item: "5.3", casilla: "Requisito Legal", diligenciamiento: "Establecer si existe un requisito legal específico para la tarea evaluada." },
+        { item: "6.1", casilla: "Eliminación", diligenciamiento: "Modificar un diseño para eliminar el peligro. Ejemplo: Introducir dispositivos mecánicos." },
+        { item: "6.2", casilla: "Sustitución", diligenciamiento: "Reemplazar por un material o proceso menos peligroso." },
+        { item: "6.3", casilla: "Controles Ingeniería", diligenciamiento: "Medidas técnicas para controlar el peligro en la fuente o medio." },
+        { item: "6.4", casilla: "Controles Admin", diligenciamiento: "Señalización, advertencias, procedimientos de seguridad, etc." },
+        { item: "6.5", casilla: "EPP", diligenciamiento: "Equipos de Protección Personal adecuados al riesgo." },
+      ]
+    }
   ]
 
   return (
@@ -29,8 +99,7 @@ export function InstructionsModal({ open, onClose }: InstructionsModalProps) {
               <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
             </div>
             <div>
-              <h2 className="text-xl font-bold text-[#0f2b1a]">Manual Maestro de Matriz IPVR</h2>
-              <p className="text-sm text-[#5e6b62]">Guía completa de identificación, valoración y control según GTC 45</p>
+              <h2 className="text-xl font-bold text-[#0f2b1a]">Instructivo Matriz IPVR</h2>
             </div>
           </div>
           <button 
@@ -62,80 +131,64 @@ export function InstructionsModal({ open, onClose }: InstructionsModalProps) {
         <div className="flex-1 overflow-auto bg-white scroll-smooth">
           {activeTab === 'instructivo' && (
             <div className="p-8 space-y-12 animate-in fade-in slide-in-from-bottom-4 duration-300">
-              {/* Introduction Section */}
-              <section className="space-y-6">
-                <div className="bg-[#f0f9f1] p-6 rounded-2xl border border-[#d1e2d6]">
-                  <h3 className="text-lg font-bold text-[#1F7D3E] mb-4">Indicaciones Generales</h3>
-                  <ul className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm text-[#2c3630]">
-                    <li className="flex gap-3"><span className="text-[#1F7D3E] font-bold">I.</span> Clasificar procesos, actividades y tareas.</li>
-                    <li className="flex gap-3"><span className="text-[#1F7D3E] font-bold">II.</span> Identificar zona, lugar y si la tarea es rutinaria.</li>
-                    <li className="flex gap-3"><span className="text-[#1F7D3E] font-bold">III.</span> Identificar peligros por cada área expuesta.</li>
-                    <li className="flex gap-3"><span className="text-[#1F7D3E] font-bold">IV.</span> Observar controles existentes (Fuente, Medio, Individuo).</li>
-                    <li className="flex gap-3"><span className="text-[#1F7D3E] font-bold">V.</span> Registrar número de trabajadores expuestos.</li>
-                    <li className="flex gap-3"><span className="text-[#1F7D3E] font-bold">VI.</span> Establecer medidas de intervención necesarias.</li>
-                  </ul>
+              {/* Indications Top Header */}
+              <div className="border-2 border-black rounded-lg overflow-hidden">
+                <div className="bg-[#ccc] p-2 text-center border-b-2 border-black font-bold uppercase text-xs tracking-wider">
+                  Antes de comenzar a diligenciar la matriz de peligros tenga en cuenta las siguientes indicaciones:
                 </div>
-
-                <div className="space-y-6">
+                <div className="grid grid-cols-[40px_1fr] text-xs">
                   {[
-                    { 
-                      title: "1. Procesos y Actividades", 
-                      items: [
-                        { label: "1.1 Proceso", desc: "Clasificar el tipo de proceso (Estratégico, Misional, Apoyo). Ej: Administrativo Financiero." },
-                        { label: "1.2 Zona o Lugar", desc: "Sitio exacto donde se realiza. Ej: Oficina de Contabilidad y Compras." },
-                        { label: "1.3 Actividad", desc: "Detalle de la labor. Ej: Tesorería, Caja y Facturación." },
-                        { label: "1.4 Tarea", desc: "Acción específica. Ej: Digitar, revisar documentos, sellar." },
-                        { label: "1.5 Cargo", desc: "Puesto de quien ejecuta. Ej: Médico, Auxiliar, Administrativo." },
-                        { label: "1.6 Rutinaria", desc: "Definir si se realiza habitualmente (SÍ o NO)." }
-                      ]
-                    },
-                    { 
-                      title: "2. Identificación de Peligros", 
-                      items: [
-                        { label: "2.1 Descripción", desc: "Detalle del peligro. Ej: Movimientos repetitivos de miembros superiores." },
-                        { label: "2.2 Clasificación", desc: "Elegir entre Biológico, Físico, Químico, Psicosocial, Biomecánico, Seguridad o Natural." },
-                        { label: "2.3 Efectos", desc: "Daños potenciales a la salud o instalaciones. Ej: Tendinitis, Túnel del Carpo." }
-                      ]
-                    },
-                    { 
-                      title: "3. Controles Existentes", 
-                      items: [
-                        { label: "3.1 Fuente", desc: "Controles donde se origina el riesgo. Si no hay, colocar 'Ninguno'." },
-                        { label: "3.2 Medio", desc: "Controles en la transmisión del riesgo. Ej: Barreras, señalización." },
-                        { label: "3.3 Individuo", desc: "Controles en la persona. Ej: EPP, pausas activas, capacitación." }
-                      ]
-                    },
-                    { 
-                      title: "4. Evaluación y Valoración", 
-                      items: [
-                        { label: "4.1 Nivel de Deficiencia (ND)", desc: "Magnitud de la vinculación del peligro con incidentes (0, 2, 6, 10)." },
-                        { label: "4.2 Nivel de Exposición (NE)", desc: "Frecuencia de exposición (1, 2, 3, 4)." },
-                        { label: "4.3 Nivel de Probabilidad (NP)", desc: "Multiplicación de ND x NE. Indica qué tan posible es el daño." },
-                        { label: "4.4 Interpretación NP", desc: "Significado cualitativo (Muy Alto, Alto, Medio, Bajo)." },
-                        { label: "4.5 Nivel Consecuencia (NC)", desc: "Gravedad del daño más probable (10, 25, 60, 100)." },
-                        { label: "4.6 Nivel de Riesgo (NR)", desc: "Resultado de NP x NC. Define la prioridad de intervención." },
-                        { label: "4.7 Interpretación NR", desc: "Categoría de riesgo (I, II, III, IV)." },
-                        { label: "4.8 Aceptabilidad", desc: "Decisión sobre si el riesgo es tolerable o requiere control inmediato." }
-                      ]
-                    }
-                  ].map((section, idx) => (
-                    <div key={idx} className="space-y-4">
-                      <h4 className="text-sm font-black text-[#1F7D3E] uppercase tracking-widest flex items-center gap-3">
-                        <span className="h-[2px] w-8 bg-[#1F7D3E]"></span>
-                        {section.title}
-                      </h4>
-                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                        {section.items.map((item, i) => (
-                          <div key={i} className="p-4 rounded-xl border border-[#e2e9e4] hover:border-[#1F7D3E] transition-all group">
-                            <span className="text-[10px] font-bold text-[#1F7D3E] uppercase block mb-1">{item.label}</span>
-                            <p className="text-xs text-[#5e6b62] leading-relaxed group-hover:text-[#2c3630]">{item.desc}</p>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
+                    { i: "I", t: "Se debe clasificar los procesos, las actividades y las tareas." },
+                    { i: "II", t: "Crear una lista por proceso donde se identifique las actividades, tareas, zona o lugar de ubicación, y si la actividad o tarea es o no rutinaria" },
+                    { i: "III", t: "Se debe identificar los peligros a los cuales estna expuestos los trabajadores de cada área" },
+                    { i: "IV", t: "Durante el recorrido y la toma de la información se debe observar que controles existen tanto en la fuente como en el medio y el trabajador" },
+                    { i: "V", t: "Se debe de tener nota del numero de trabajadores expuestos por proceso" },
+                    { i: "VI", t: "Al obtener la información y al evaluar los controles existentes observados procedemos a establecer las medidas de intervención necesarias" }
+                  ].map((ind, idx) => (
+                    <React.Fragment key={idx}>
+                      <div className="border-r-2 border-b-2 border-black p-2 text-center font-bold bg-[#f3f3f3]">{ind.i}</div>
+                      <div className="border-b-2 border-black p-2 bg-white">{ind.t}</div>
+                    </React.Fragment>
                   ))}
                 </div>
-              </section>
+                <div className="bg-[#ccc] p-2 text-center font-bold uppercase text-xs tracking-wider">
+                  A continuación encontraras la información necesaria para diligenciar cada una de las casillas
+                </div>
+              </div>
+
+              {/* 5 Parts Sections */}
+              <div className="space-y-12">
+                {instructivoData.map((section) => (
+                  <div key={section.id} className="border-2 border-black rounded-lg overflow-hidden shadow-md">
+                    <div className={`${section.color} p-3 text-center border-b-2 border-black font-black uppercase text-sm`}>
+                      {section.title}
+                    </div>
+                    {section.subtitle && (
+                      <div className="bg-white p-3 text-center border-b-2 border-black italic text-xs">
+                        {section.subtitle}
+                      </div>
+                    )}
+                    <table className="w-full border-collapse">
+                      <thead>
+                        <tr className="bg-[#f3f3f3] text-[10px] uppercase font-black tracking-widest border-b-2 border-black">
+                          <th className="w-[60px] p-2 border-r-2 border-black">Item</th>
+                          <th className="w-[200px] p-2 border-r-2 border-black">Casilla</th>
+                          <th className="p-2 text-left">Diligenciamiento</th>
+                        </tr>
+                      </thead>
+                      <tbody className="text-xs">
+                        {section.items.map((item, i) => (
+                          <tr key={i} className="border-b-2 border-black last:border-b-0 hover:bg-gray-50 transition-colors">
+                            <td className="p-3 border-r-2 border-black text-center font-bold bg-[#f3f3f3]">{item.item}</td>
+                            <td className="p-3 border-r-2 border-black text-center font-bold">{item.casilla}</td>
+                            <td className="p-3 leading-relaxed">{item.diligenciamiento}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                ))}
+              </div>
             </div>
           )}
 
@@ -240,146 +293,298 @@ export function InstructionsModal({ open, onClose }: InstructionsModalProps) {
           )}
 
           {activeTab === 'valoracion' && (
-            <div className="p-8 space-y-12 animate-in fade-in slide-in-from-bottom-4 duration-300">
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            <div className="p-8 space-y-12 animate-in fade-in slide-in-from-bottom-4 duration-300 overflow-x-auto">
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
                 {/* Table 1 */}
-                <div className="space-y-3">
-                  <h4 className="text-xs font-black text-[#1F7D3E] uppercase tracking-tighter">Tabla 1: Nivel de Deficiencia (ND)</h4>
-                  <div className="overflow-hidden border border-[#e2e9e4] rounded-xl">
-                    <table className="w-full text-[10px]">
-                      <tr className="bg-[#f0f9f1] font-bold text-[#1F7D3E]">
-                        <td className="p-2 border">ND</td>
-                        <td className="p-2 border">Significado</td>
-                      </tr>
-                      <tr><td className="p-2 border font-bold text-red-600 text-center">10</td><td className="p-2 border">Muy Alto (MA): Peligros muy significativos, eficacia de medidas nula o inexistente.</td></tr>
-                      <tr><td className="p-2 border font-bold text-orange-500 text-center">6</td><td className="p-2 border">Alto (A): Peligros con consecuencias significativas, eficacia baja.</td></tr>
-                      <tr><td className="p-2 border font-bold text-yellow-600 text-center">2</td><td className="p-2 border">Medio (M): Consecuencias poco significativas, eficacia moderada.</td></tr>
-                      <tr><td className="p-2 border font-bold text-green-600 text-center">0</td><td className="p-2 border">Bajo (B): Sin anomalía destacable, riesgo controlado.</td></tr>
-                    </table>
-                  </div>
+                <div className="space-y-4">
+                  <table className="w-full border-2 border-black text-[11px] text-center">
+                    <tr className="bg-[#d9d9d9] font-bold border-b-2 border-black">
+                      <td colSpan={3} className="p-2 uppercase italic">Tabla No. 1 Determinación del nivel de deficiencia (ND)</td>
+                    </tr>
+                    <tr className="bg-[#d9d9d9] font-bold border-b-2 border-black">
+                      <td className="p-2 border-r-2 border-black w-1/4">Nivel de Deficiencia</td>
+                      <td className="p-2 border-r-2 border-black w-16">Valor de ND</td>
+                      <td className="p-2">Significado</td>
+                    </tr>
+                    <tr className="border-b-2 border-black">
+                      <td className="p-2 border-r-2 border-black font-bold">Muy Alto (MA)</td>
+                      <td className="p-2 border-r-2 border-black font-bold">10</td>
+                      <td className="p-2 text-left">Se han detectado peligros que determinan como muy posible la generación de incidentes...</td>
+                    </tr>
+                    <tr className="border-b-2 border-black">
+                      <td className="p-2 border-r-2 border-black font-bold">Alto (A)</td>
+                      <td className="p-2 border-r-2 border-black font-bold">6</td>
+                      <td className="p-2 text-left">Se han detectado algunos peligros que pueden dar lugar a consecuencias significativas...</td>
+                    </tr>
+                    <tr className="border-b-2 border-black">
+                      <td className="p-2 border-r-2 border-black font-bold">Medio (M)</td>
+                      <td className="p-2 border-r-2 border-black font-bold">2</td>
+                      <td className="p-2 text-left">Se han detectado peligros que pueden dar lugar a consecuencias poco significativas...</td>
+                    </tr>
+                    <tr>
+                      <td className="p-2 border-r-2 border-black font-bold">Bajo (B)</td>
+                      <td className="p-2 border-r-2 border-black font-bold">No se asigna valor</td>
+                      <td className="p-2 text-left">No se ha detectado anomalía destacable alguna...</td>
+                    </tr>
+                  </table>
                 </div>
 
                 {/* Table 2 */}
-                <div className="space-y-3">
-                  <h4 className="text-xs font-black text-[#1F7D3E] uppercase tracking-tighter">Tabla 2: Nivel de Exposición (NE)</h4>
-                  <div className="overflow-hidden border border-[#e2e9e4] rounded-xl">
-                    <table className="w-full text-[10px]">
-                      <tr className="bg-[#f0f9f1] font-bold text-[#1F7D3E]">
-                        <td className="p-2 border">NE</td>
-                        <td className="p-2 border">Significado</td>
-                      </tr>
-                      <tr><td className="p-2 border font-bold text-red-600 text-center">4</td><td className="p-2 border">Continua (EC): Sin interrupción o tiempos prolongados.</td></tr>
-                      <tr><td className="p-2 border font-bold text-orange-500 text-center">3</td><td className="p-2 border">Frecuente (EF): Varias veces durante la jornada por tiempos cortos.</td></tr>
-                      <tr><td className="p-2 border font-bold text-yellow-600 text-center">2</td><td className="p-2 border">Ocasional (EO): Alguna vez durante la jornada por tiempo corto.</td></tr>
-                      <tr><td className="p-2 border font-bold text-green-600 text-center">1</td><td className="p-2 border">Esporádica (EE): De manera eventual.</td></tr>
-                    </table>
-                  </div>
+                <div className="space-y-4">
+                  <table className="w-full border-2 border-black text-[11px] text-center">
+                    <tr className="bg-[#d9d9d9] font-bold border-b-2 border-black">
+                      <td colSpan={3} className="p-2 uppercase italic">Tabla No. 2 Determinación del nivel de exposición (NE)</td>
+                    </tr>
+                    <tr className="bg-[#d9d9d9] font-bold border-b-2 border-black">
+                      <td className="p-2 border-r-2 border-black w-1/4">Nivel de Exposición</td>
+                      <td className="p-2 border-r-2 border-black w-16">Valor de NE</td>
+                      <td className="p-2">Significado</td>
+                    </tr>
+                    <tr className="border-b-2 border-black">
+                      <td className="p-2 border-r-2 border-black font-bold">Continua (EC)</td>
+                      <td className="p-2 border-r-2 border-black font-bold">4</td>
+                      <td className="p-2 text-left">La situación de exposición se presenta sin interrupción o varias veces con tiempo prolongado...</td>
+                    </tr>
+                    <tr className="border-b-2 border-black">
+                      <td className="p-2 border-r-2 border-black font-bold">Frecuente (EF)</td>
+                      <td className="p-2 border-r-2 border-black font-bold">3</td>
+                      <td className="p-2 text-left">La situación de exposición se presenta varias veces durante la jornada laboral por tiempos cortos.</td>
+                    </tr>
+                    <tr className="border-b-2 border-black">
+                      <td className="p-2 border-r-2 border-black font-bold">Ocasional (EO)</td>
+                      <td className="p-2 border-r-2 border-black font-bold">2</td>
+                      <td className="p-2 text-left">La situación de exposición se presenta alguna vez durante la jornada laboral y por un periodo de tiempo corto.</td>
+                    </tr>
+                    <tr>
+                      <td className="p-2 border-r-2 border-black font-bold">Esporádica (EE)</td>
+                      <td className="p-2 border-r-2 border-black font-bold">1</td>
+                      <td className="p-2 text-left">La situación de exposición se presenta de manera eventual.</td>
+                    </tr>
+                  </table>
                 </div>
               </div>
 
-              {/* Table 3 & 4 */}
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                <div className="space-y-3">
-                  <h4 className="text-xs font-black text-[#1F7D3E] uppercase tracking-tighter">Tabla 3: Nivel de Probabilidad (NP = ND x NE)</h4>
-                  <div className="overflow-hidden border border-[#e2e9e4] rounded-xl">
-                    <table className="w-full text-[10px] text-center">
-                      <tr className="bg-[#f0f9f1] font-bold text-[#1F7D3E]">
-                        <td className="p-2 border" rowSpan={2}>ND</td>
-                        <td className="p-2 border" colSpan={4}>NE</td>
-                      </tr>
-                      <tr className="bg-[#f0f9f1] font-bold text-[#1F7D3E]">
-                        <td className="p-2 border">4</td><td className="p-2 border">3</td><td className="p-2 border">2</td><td className="p-2 border">1</td>
-                      </tr>
-                      <tr><td className="p-2 border font-bold bg-[#f8faf9]">10</td><td className="p-2 border bg-red-100 text-red-700 font-bold">40</td><td className="p-2 border bg-red-50 text-red-600">30</td><td className="p-2 border bg-orange-50 text-orange-600">20</td><td className="p-2 border bg-orange-50 text-orange-600">10</td></tr>
-                      <tr><td className="p-2 border font-bold bg-[#f8faf9]">6</td><td className="p-2 border bg-red-50 text-red-600">24</td><td className="p-2 border bg-orange-50 text-orange-600">18</td><td className="p-2 border bg-orange-50 text-orange-600">12</td><td className="p-2 border bg-yellow-50 text-yellow-600">6</td></tr>
-                      <tr><td className="p-2 border font-bold bg-[#f8faf9]">2</td><td className="p-2 border bg-yellow-50 text-yellow-600">8</td><td className="p-2 border bg-yellow-50 text-yellow-600">6</td><td className="p-2 border bg-green-50 text-green-600">4</td><td className="p-2 border bg-green-50 text-green-600">2</td></tr>
-                    </table>
-                  </div>
+              {/* Table 3 (The Matrix from screenshot) */}
+              <div className="space-y-4">
+                <table className="w-full border-2 border-black text-[11px] text-center border-collapse">
+                  <tr className="bg-[#d9d9d9] font-bold border-b-2 border-black">
+                    <td colSpan={6} className="p-2 uppercase italic">Tabla No. 3 Determinación del nivel de probabilidad</td>
+                  </tr>
+                  <tr>
+                    <td rowSpan={2} colSpan={2} className="bg-[#dce6d1] border-r-2 border-b-2 border-black font-bold p-4">Nivel de Probabilidad</td>
+                    <td colSpan={4} className="bg-[#d9d9d9] border-b-2 border-black font-bold p-2">Nivel de Exposición (NE)</td>
+                  </tr>
+                  <tr className="border-b-2 border-black font-bold">
+                    <td className="p-2 border-r-2 border-black w-1/5">4</td>
+                    <td className="p-2 border-r-2 border-black w-1/5">3</td>
+                    <td className="p-2 border-r-2 border-black w-1/5">2</td>
+                    <td className="p-2 w-1/5">1</td>
+                  </tr>
+                  <tr className="border-b-2 border-black">
+                    <td rowSpan={3} className="bg-[#d9d9d9] border-r-2 border-black font-bold p-4 w-24">Nivel de Deficiencia (ND)</td>
+                    <td className="p-2 border-r-2 border-black font-bold bg-white">10</td>
+                    <td className="p-2 border-r-2 border-black bg-[#941113] text-white font-bold">MA-40</td>
+                    <td className="p-2 border-r-2 border-black bg-[#941113] text-white font-bold">MA-30</td>
+                    <td className="p-2 border-r-2 border-black bg-[#941113] text-white font-bold">A-20</td>
+                    <td className="p-2 bg-[#941113] text-white font-bold">A-10</td>
+                  </tr>
+                  <tr className="border-b-2 border-black">
+                    <td className="p-2 border-r-2 border-black font-bold bg-white">6</td>
+                    <td className="p-2 border-r-2 border-black bg-[#941113] text-white font-bold">MA-24</td>
+                    <td className="p-2 border-r-2 border-black bg-[#941113] text-white font-bold">A-18</td>
+                    <td className="p-2 border-r-2 border-black bg-[#941113] text-white font-bold">A-12</td>
+                    <td className="p-2 bg-[#ffff00] font-bold">M-6</td>
+                  </tr>
+                  <tr>
+                    <td className="p-2 border-r-2 border-black font-bold bg-white">2</td>
+                    <td className="p-2 border-r-2 border-black bg-[#ffff00] font-bold">M-8</td>
+                    <td className="p-2 border-r-2 border-black bg-[#ffff00] font-bold">M-6</td>
+                    <td className="p-2 border-r-2 border-black bg-[#718f3f] text-white font-bold">B-4</td>
+                    <td className="p-2 bg-[#718f3f] text-white font-bold">B-2</td>
+                  </tr>
+                </table>
+              </div>
+
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
+                {/* Table 4 */}
+                <div className="space-y-4">
+                  <table className="w-full border-2 border-black text-[11px] text-center">
+                    <tr className="bg-[#d9d9d9] font-bold border-b-2 border-black">
+                      <td colSpan={3} className="p-2 uppercase italic">Tabla No. 4 Significado de los diferentes niveles de probabilidad</td>
+                    </tr>
+                    <tr className="font-bold border-b-2 border-black">
+                      <td className="p-2 border-r-2 border-black bg-[#dce6d1]">Nivel de probabilidad</td>
+                      <td className="p-2 border-r-2 border-black bg-[#d9d9d9]">Valor de NP</td>
+                      <td className="p-2 bg-[#dce6d1]">Significado</td>
+                    </tr>
+                    <tr className="border-b-2 border-black">
+                      <td className="p-2 border-r-2 border-black font-bold bg-[#941113] text-white">Muy Alto (MA)</td>
+                      <td className="p-2 border-r-2 border-black font-bold">Entre 40 y 24</td>
+                      <td className="p-2 text-center">Situación deficiente con exposición continua o muy deficiente con exposición frecuente. normalmente la materialización del riesgo ocurre con frecuencia</td>
+                    </tr>
+                    <tr className="border-b-2 border-black">
+                      <td className="p-2 border-r-2 border-black font-bold bg-[#941113] text-white">Alto (A)</td>
+                      <td className="p-2 border-r-2 border-black font-bold">Entre 20 y 10</td>
+                      <td className="p-2 text-center">Situación deficiente con exposición frecuente u ocasional, o bien situación muy deficiente con exposición ocasional o esporádica.  La materialización del riesgo es posible que suceda varias veces en la vida laboral</td>
+                    </tr>
+                    <tr className="border-b-2 border-black">
+                      <td className="p-2 border-r-2 border-black font-bold bg-[#ffff00]">Medio (M)</td>
+                      <td className="p-2 border-r-2 border-black font-bold">Entre 8 y 6</td>
+                      <td className="p-2 text-center">Situación deficiente con exposición esporádica o bien situación mejorada con exposición continuada o frecuente. Es posible que suceda el daño alguna vez.</td>
+                    </tr>
+                    <tr>
+                      <td className="p-2 border-r-2 border-black font-bold bg-[#718f3f] text-white">Bajo (B)</td>
+                      <td className="p-2 border-r-2 border-black font-bold">Entre 4 y 2</td>
+                      <td className="p-2 text-center">Situación mejorable con exposición ocasional o esporadica, o situacion sin anomalia destacable con cualquier nivel de exposición.  No es esperable que se materialice el riesgo, aunque puede ser concebible</td>
+                    </tr>
+                  </table>
                 </div>
 
-                <div className="space-y-3">
-                  <h4 className="text-xs font-black text-[#1F7D3E] uppercase tracking-tighter">Tabla 4: Significado de NP</h4>
-                  <div className="overflow-hidden border border-[#e2e9e4] rounded-xl">
-                    <table className="w-full text-[10px]">
-                      <tr className="bg-[#f0f9f1] font-bold text-[#1F7D3E]">
-                        <td className="p-2 border">Nivel</td><td className="p-2 border">NP</td><td className="p-2 border">Significado</td>
-                      </tr>
-                      <tr className="bg-red-50"><td className="p-2 border font-bold text-red-700">Muy Alto (MA)</td><td className="p-2 border text-center">40-24</td><td className="p-2 border">Materialización del riesgo ocurre con frecuencia.</td></tr>
-                      <tr className="bg-orange-50"><td className="p-2 border font-bold text-orange-700">Alto (A)</td><td className="p-2 border text-center">20-10</td><td className="p-2 border">Es posible que suceda varias veces en la vida laboral.</td></tr>
-                      <tr className="bg-yellow-50"><td className="p-2 border font-bold text-yellow-700">Medio (M)</td><td className="p-2 border text-center">8-6</td><td className="p-2 border">Es posible que suceda el daño alguna vez.</td></tr>
-                      <tr className="bg-green-50"><td className="p-2 border font-bold text-green-700">Bajo (B)</td><td className="p-2 border text-center">4-2</td><td className="p-2 border">No es esperable, aunque puede ser concebible.</td></tr>
-                    </table>
-                  </div>
+                {/* Table 5 */}
+                <div className="space-y-4">
+                  <table className="w-full border-2 border-black text-[11px] text-center">
+                    <tr className="bg-[#d9d9d9] font-bold border-b-2 border-black">
+                      <td colSpan={3} className="p-2 uppercase italic">Tabla No. 5 Determinación del nivel de consecuencia</td>
+                    </tr>
+                    <tr className="bg-[#d9d9d9] font-bold border-b-2 border-black">
+                      <td className="p-2 border-r-2 border-black">Nivel de Consecuencia</td>
+                      <td className="p-2 border-r-2 border-black">NC</td>
+                      <td className="p-2">Significado (Daños personales)</td>
+                    </tr>
+                    <tr className="border-b-2 border-black">
+                      <td className="p-2 border-r-2 border-black font-bold">Mortal o Catastrófico (M)</td>
+                      <td className="p-2 border-r-2 border-black font-bold">100</td>
+                      <td className="p-2 text-left">Muerte (s)</td>
+                    </tr>
+                    <tr className="border-b-2 border-black">
+                      <td className="p-2 border-r-2 border-black font-bold">Muy Grave (MG)</td>
+                      <td className="p-2 border-r-2 border-black font-bold">60</td>
+                      <td className="p-2 text-left">Lesiones o enfermedades graves irreparables (Incapacidad permanente parcial o invalidez)</td>
+                    </tr>
+                    <tr className="border-b-2 border-black">
+                      <td className="p-2 border-r-2 border-black font-bold">Grave (G)</td>
+                      <td className="p-2 border-r-2 border-black font-bold">25</td>
+                      <td className="p-2 text-left">Lesiones o enfermedades con incapacidad laboral temporal (ILT)</td>
+                    </tr>
+                    <tr>
+                      <td className="p-2 border-r-2 border-black font-bold">Leve (L)</td>
+                      <td className="p-2 border-r-2 border-black font-bold">10</td>
+                      <td className="p-2 text-left">Lesiones o enfermedades que no requieren incapacidad</td>
+                    </tr>
+                  </table>
                 </div>
               </div>
 
-              {/* Table 5 & 6 */}
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                <div className="space-y-3">
-                  <h4 className="text-xs font-black text-[#1F7D3E] uppercase tracking-tighter">Tabla 5: Nivel de Consecuencia (NC)</h4>
-                  <div className="overflow-hidden border border-[#e2e9e4] rounded-xl">
-                    <table className="w-full text-[10px]">
-                      <tr className="bg-[#f0f9f1] font-bold text-[#1F7D3E]">
-                        <td className="p-2 border">Valor</td><td className="p-2 border">Significado (Daños Personales)</td>
-                      </tr>
-                      <tr><td className="p-2 border font-bold text-red-600 text-center">100</td><td className="p-2 border">Mortal o Catastrófico (M): Muerte(s).</td></tr>
-                      <tr><td className="p-2 border font-bold text-orange-600 text-center">60</td><td className="p-2 border">Muy Grave (MG): Incapacidad permanente parcial o invalidez.</td></tr>
-                      <tr><td className="p-2 border font-bold text-yellow-600 text-center">25</td><td className="p-2 border">Grave (G): Incapacidad laboral temporal (ILT).</td></tr>
-                      <tr><td className="p-2 border font-bold text-green-600 text-center">10</td><td className="p-2 border">Leve (L): Lesiones que no requieren incapacidad.</td></tr>
-                    </table>
-                  </div>
-                </div>
-
-                <div className="space-y-3">
-                  <h4 className="text-xs font-black text-[#1F7D3E] uppercase tracking-tighter">Tabla 6: Nivel de Riesgo (NR = NP x NC)</h4>
-                  <div className="overflow-hidden border border-[#e2e9e4] rounded-xl">
-                    <table className="w-full text-[10px] text-center">
-                      <tr className="bg-[#f0f9f1] font-bold text-[#1F7D3E]">
-                        <td className="p-2 border" rowSpan={2}>NC</td>
-                        <td className="p-2 border" colSpan={4}>Nivel de Probabilidad (NP)</td>
-                      </tr>
-                      <tr className="bg-[#f0f9f1] font-bold text-[#1F7D3E]">
-                        <td className="p-2 border">40-24</td><td className="p-2 border">20-10</td><td className="p-2 border">8-6</td><td className="p-2 border">4-2</td>
-                      </tr>
-                      <tr><td className="p-2 border font-bold">100</td><td className="p-2 border bg-red-100">I 4000-2400</td><td className="p-2 border bg-red-100">I 2000-1000</td><td className="p-2 border bg-red-100">I 800-600</td><td className="p-2 border bg-orange-100">II 400-200</td></tr>
-                      <tr><td className="p-2 border font-bold">60</td><td className="p-2 border bg-red-100">I 2400-1440</td><td className="p-2 border bg-red-100">I 1200-600</td><td className="p-2 border bg-orange-100">II 480-360</td><td className="p-2 border bg-orange-100 text-[8px]">II 240 / III 120</td></tr>
-                      <tr><td className="p-2 border font-bold">25</td><td className="p-2 border bg-red-100">I 1000-600</td><td className="p-2 border bg-orange-100">II 500-250</td><td className="p-2 border bg-orange-100">II 200-150</td><td className="p-2 border bg-yellow-100">III 100-50</td></tr>
-                      <tr><td className="p-2 border font-bold">10</td><td className="p-2 border bg-orange-100">II 400-240</td><td className="p-2 border bg-yellow-100">III 200-100</td><td className="p-2 border bg-yellow-100">III 80-60</td><td className="p-2 border bg-green-100">IV 40-20</td></tr>
-                    </table>
-                  </div>
-                </div>
+              {/* Table 6 (NR Matrix) */}
+              <div className="space-y-4">
+                <table className="w-full border-2 border-black text-[11px] text-center border-collapse">
+                  <tr className="bg-[#d9d9d9] font-bold border-b-2 border-black">
+                    <td colSpan={6} className="p-2 uppercase italic">Tabla No. 6 Determinación del nivel de riesgo</td>
+                  </tr>
+                  <tr>
+                    <td rowSpan={2} colSpan={2} className="bg-[#d9d9d9] border-r-2 border-b-2 border-black font-bold p-4">Nivel de Riesgo NR = NP x NC</td>
+                    <td colSpan={4} className="bg-[#dce6d1] border-b-2 border-black font-bold p-2">Nivel de Probabilidad (NP)</td>
+                  </tr>
+                  <tr className="border-b-2 border-black font-bold bg-[#d9d9d9]">
+                    <td className="p-2 border-r-2 border-black">40-24</td>
+                    <td className="p-2 border-r-2 border-black">20-10</td>
+                    <td className="p-2 border-r-2 border-black">8-6</td>
+                    <td className="p-2">4-2</td>
+                  </tr>
+                  <tr className="border-b-2 border-black">
+                    <td rowSpan={4} className="bg-[#d9d9d9] border-r-2 border-black font-bold p-4 w-24">Nivel de Consecuencia (NC)</td>
+                    <td className="p-2 border-r-2 border-black font-bold bg-white">100</td>
+                    <td className="p-2 border-r-2 border-black bg-[#941113] text-white font-bold italic">I 4000-2400</td>
+                    <td className="p-2 border-r-2 border-black bg-[#941113] text-white font-bold italic">I 2000-1000</td>
+                    <td className="p-2 border-r-2 border-black bg-[#941113] text-white font-bold italic">I 800-600</td>
+                    <td className="p-2 bg-[#ffff00] font-bold italic border-b-2 border-black">II 400-200</td>
+                  </tr>
+                  <tr className="border-b-2 border-black">
+                    <td className="p-2 border-r-2 border-black font-bold bg-white">60</td>
+                    <td className="p-2 border-r-2 border-black bg-[#941113] text-white font-bold italic">I 2400-1440</td>
+                    <td className="p-2 border-r-2 border-black bg-[#941113] text-white font-bold italic">I 1200-600</td>
+                    <td className="p-2 border-r-2 border-black bg-[#ffff00] font-bold italic">II 480-360</td>
+                    <td className="p-2 bg-[#ffff00] font-bold italic">II 240 / III 120</td>
+                  </tr>
+                  <tr className="border-b-2 border-black">
+                    <td className="p-2 border-r-2 border-black font-bold bg-white">25</td>
+                    <td className="p-2 border-r-2 border-black bg-[#941113] text-white font-bold italic">I 1000-600</td>
+                    <td className="p-2 border-r-2 border-black bg-[#ffff00] font-bold italic">II 500-250</td>
+                    <td className="p-2 border-r-2 border-black bg-[#ffff00] font-bold italic">II 200-150</td>
+                    <td className="p-2 bg-[#718f3f] text-white font-bold italic">III 100-50</td>
+                  </tr>
+                  <tr>
+                    <td className="p-2 border-r-2 border-black font-bold bg-white">10</td>
+                    <td className="p-2 border-r-2 border-black bg-[#ffff00] font-bold italic">II 400-240</td>
+                    <td className="p-2 border-r-2 border-black bg-[#718f3f] text-white font-bold italic">III 200-100</td>
+                    <td className="p-2 border-r-2 border-black bg-[#718f3f] text-white font-bold italic">III 80-60</td>
+                    <td className="p-2 bg-[#718f3f] text-white font-bold italic">IV 40-20</td>
+                  </tr>
+                </table>
               </div>
 
-              {/* Table 7 & 8 */}
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                <div className="space-y-3">
-                  <h4 className="text-xs font-black text-[#1F7D3E] uppercase tracking-tighter">Tabla 7: Significado del NR</h4>
-                  <div className="overflow-hidden border border-[#e2e9e4] rounded-xl">
-                    <table className="w-full text-[10px]">
-                      <tr className="bg-[#f0f9f1] font-bold text-[#1F7D3E]">
-                        <td className="p-2 border">NR</td><td className="p-2 border">Significado</td>
-                      </tr>
-                      <tr className="bg-red-50"><td className="p-2 border font-bold text-red-700">I</td><td className="p-2 border">Situación crítica. Suspender actividades. Intervención urgente.</td></tr>
-                      <tr className="bg-orange-50"><td className="p-2 border font-bold text-orange-700">II</td><td className="p-2 border">Corregir y adoptar medidas de inmediato. Suspender si NR ≥ 360.</td></tr>
-                      <tr className="bg-yellow-50"><td className="p-2 border font-bold text-yellow-700">III</td><td className="p-2 border">Mejorar si es posible. Justificar rentabilidad.</td></tr>
-                      <tr className="bg-green-50"><td className="p-2 border font-bold text-green-700">IV</td><td className="p-2 border">Mantener medidas. Comprobaciones periódicas.</td></tr>
-                    </table>
-                  </div>
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
+                {/* Table 7 */}
+                <div className="space-y-4">
+                  <table className="w-full border-2 border-black text-[11px] text-center">
+                    <tr className="bg-[#d9d9d9] font-bold border-b-2 border-black">
+                      <td colSpan={3} className="p-2 uppercase italic">Tabla No. 7 Significado del nivel de riesgo</td>
+                    </tr>
+                    <tr className="bg-[#d9d9d9] font-bold border-b-2 border-black">
+                      <td className="p-2 border-r-2 border-black w-24">Nivel de Riesgo</td>
+                      <td className="p-2 border-r-2 border-black w-24">Valor de NR</td>
+                      <td className="p-2">Significado</td>
+                    </tr>
+                    <tr className="border-b-2 border-black">
+                      <td className="p-2 border-r-2 border-black font-bold bg-[#941113] text-white">I</td>
+                      <td className="p-2 border-r-2 border-black font-bold">4000-600</td>
+                      <td className="p-2 text-left">Situación crítica. Suspender actividades hasta que el riesgo esté bajo control. Intervención urgente.</td>
+                    </tr>
+                    <tr className="border-b-2 border-black">
+                      <td className="p-2 border-r-2 border-black font-bold bg-[#ffff00]">II</td>
+                      <td className="p-2 border-r-2 border-black font-bold">500-150</td>
+                      <td className="p-2 text-left">Corregir y adoptar medidas de control de inmediato...</td>
+                    </tr>
+                    <tr className="border-b-2 border-black">
+                      <td className="p-2 border-r-2 border-black font-bold bg-[#718f3f] text-white">III</td>
+                      <td className="p-2 border-r-2 border-black font-bold">120-40</td>
+                      <td className="p-2 text-left">Mejorar, si es posible. Sería conveniente justificar la intervención y su rentabilidad.</td>
+                    </tr>
+                    <tr>
+                      <td className="p-2 border-r-2 border-black font-bold bg-[#718f3f] text-white">IV</td>
+                      <td className="p-2 border-r-2 border-black font-bold">20</td>
+                      <td className="p-2 text-left">Mantener las medidas de control existentes...</td>
+                    </tr>
+                  </table>
                 </div>
 
-                <div className="space-y-3">
-                  <h4 className="text-xs font-black text-[#1F7D3E] uppercase tracking-tighter">Tabla 8: Aceptabilidad del Riesgo</h4>
-                  <div className="overflow-hidden border border-[#e2e9e4] rounded-xl">
-                    <table className="w-full text-[10px]">
-                      <tr className="bg-[#f0f9f1] font-bold text-[#1F7D3E]">
-                        <td className="p-2 border">Nivel NR</td><td className="p-2 border">Aceptabilidad</td>
-                      </tr>
-                      <tr><td className="p-2 border font-bold text-red-700">I</td><td className="p-2 border">No Aceptable</td></tr>
-                      <tr><td className="p-2 border font-bold text-orange-700">II</td><td className="p-2 border">No Aceptable o Aceptable con Control Específico</td></tr>
-                      <tr><td className="p-2 border font-bold text-yellow-700">III</td><td className="p-2 border">Mejorable (Aceptable)</td></tr>
-                      <tr><td className="p-2 border font-bold text-green-700">IV</td><td className="p-2 border">Aceptable</td></tr>
-                    </table>
-                  </div>
+                {/* Table 8 */}
+                <div className="space-y-4">
+                  <table className="w-full border-2 border-black text-[11px] text-center">
+                    <tr className="bg-[#d9d9d9] font-bold border-b-2 border-black">
+                      <td colSpan={2} className="p-2 uppercase italic">Tabla No. 8 Aceptabilidad del riesgo</td>
+                    </tr>
+                    <tr className="bg-[#d9d9d9] font-bold border-b-2 border-black">
+                      <td className="p-2 border-r-2 border-black">Nivel de Riesgo</td>
+                      <td className="p-2">Aceptabilidad</td>
+                    </tr>
+                    <tr className="border-b-2 border-black">
+                      <td className="p-2 border-r-2 border-black font-bold bg-[#941113] text-white">I</td>
+                      <td className="p-2 font-bold">No Aceptable</td>
+                    </tr>
+                    <tr className="border-b-2 border-black">
+                      <td className="p-2 border-r-2 border-black font-bold bg-[#ffff00]">II</td>
+                      <td className="p-2 font-bold">No Aceptable o Aceptable con control específico</td>
+                    </tr>
+                    <tr className="border-b-2 border-black">
+                      <td className="p-2 border-r-2 border-black font-bold bg-[#718f3f] text-white">III</td>
+                      <td className="p-2 font-bold">Aceptable</td>
+                    </tr>
+                    <tr>
+                      <td className="p-2 border-r-2 border-black font-bold bg-[#718f3f] text-white">IV</td>
+                      <td className="p-2 font-bold">Aceptable</td>
+                    </tr>
+                  </table>
                 </div>
               </div>
             </div>

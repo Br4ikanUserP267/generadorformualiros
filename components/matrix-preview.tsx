@@ -93,8 +93,9 @@ export function MatrixPreview({ matrizId, onClose }: MatrixPreviewProps) {
   const [resizeStartX, setResizeStartX] = useState(0)
   const [collapsedZonas, setCollapsedZonas] = useState<Record<string, boolean>>({})
 
-  const handleLabelChange = (key: string, newLabel: string) => {
-    setColumnLabels(prev => ({ ...prev, [key]: newLabel }))
+  const handleLabelChange = async (key: string, newLabel: string) => {
+    const updatedLabels = { ...columnLabels, [key]: newLabel }
+    setColumnLabels(updatedLabels)
     
     // Auto-adjust width: approximate 9px per character + padding/resizer space
     const neededWidth = (newLabel.length * 8.5) + 50
@@ -103,6 +104,17 @@ export function MatrixPreview({ matrizId, onClose }: MatrixPreviewProps) {
         ...prev,
         [key]: Math.min(600, Math.ceil(neededWidth))
       }))
+    }
+
+    // Persist to DB
+    try {
+      await apiFetch('/api/configuracion?key=column_labels', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ valor: updatedLabels })
+      })
+    } catch (e) {
+      console.error('Error saving labels to DB:', e)
     }
   }
 
@@ -124,7 +136,23 @@ export function MatrixPreview({ matrizId, onClose }: MatrixPreviewProps) {
         setLoading(false)
       }
     }
+
+    const loadConfig = async () => {
+      try {
+        const res = await apiFetch('/api/configuracion?key=column_labels')
+        if (res.ok) {
+          const config = await res.json()
+          if (config && config.valor) {
+            setColumnLabels(prev => ({ ...prev, ...config.valor }))
+          }
+        }
+      } catch (e) {
+        console.error('Error loading config:', e)
+      }
+    }
+
     loadMatriz()
+    loadConfig()
   }, [matrizId])
 
   useEffect(() => {
