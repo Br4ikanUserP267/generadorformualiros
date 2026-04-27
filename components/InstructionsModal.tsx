@@ -73,18 +73,26 @@ export function InstructionsModal({ open, onClose }: InstructionsModalProps) {
     },
     {
       id: 5,
-      title: "5. Criterios para Controles y Medidas de Intervención",
-      subtitle: "Establecer la prioridad de los controles y determinar las medidas de intervención necesarias.",
+      title: "5. Criterios para establecer Controles",
+      subtitle: "Si existe una identificación de los peligros y valoración de los riesgos en forma detallada es mucho mas facil para la organización su intervención y control",
       color: "bg-[#4da66a]",
       items: [
-        { item: "5.1", casilla: "Nº Expuestos", diligenciamiento: "Número de trabajadores expuestos al peligro identificado." },
-        { item: "5.2", casilla: "Peor Consecuencia", diligenciamiento: "Se determinara el mayor efecto posible en la salud del trabajador. Ejemplo: Perdida de la capacidad laboral." },
-        { item: "5.3", casilla: "Requisito Legal", diligenciamiento: "Establecer si existe un requisito legal específico para la tarea evaluada." },
-        { item: "6.1", casilla: "Eliminación", diligenciamiento: "Modificar un diseño para eliminar el peligro. Ejemplo: Introducir dispositivos mecánicos." },
-        { item: "6.2", casilla: "Sustitución", diligenciamiento: "Reemplazar por un material o proceso menos peligroso." },
-        { item: "6.3", casilla: "Controles Ingeniería", diligenciamiento: "Medidas técnicas para controlar el peligro en la fuente o medio." },
-        { item: "6.4", casilla: "Controles Admin", diligenciamiento: "Señalización, advertencias, procedimientos de seguridad, etc." },
-        { item: "6.5", casilla: "EPP", diligenciamiento: "Equipos de Protección Personal adecuados al riesgo." },
+        { item: "5.1", casilla: "Nº Expuestos", diligenciamiento: "Numero de Trabajadores involucrados" },
+        { item: "5.2", casilla: "Peor Consecuencia", diligenciamiento: "Se determinara el mayor efecto posible en la salud del trabajador. Ejemplo: Perdida de la capacidad laboral, lumbalgia con incapacidad permanente parcial." },
+        { item: "5.3", casilla: "Requisito Legal", diligenciamiento: "La organización establece si existe o no un requisito legal especifico a la tarea que se esta evaluando para tener parametros en priorización en la implementación de medidas de intervención." },
+      ]
+    },
+    {
+      id: 6,
+      title: "6. Medidas de Intervención",
+      subtitle: "Una vez completada la valoración de los riesgos, la organización deberia estar en capacidad de determinar los controles que se aplicaran",
+      color: "bg-[#718f3f]",
+      items: [
+        { item: "6.1", casilla: "Eliminación", diligenciamiento: "Modificar un diseño para eliminar el peligro, por ejemplo: Introducir dispositivos mecanicos de alzamiento para eliminar el peligro de manipulación manual." },
+        { item: "6.2", casilla: "Sustitución", diligenciamiento: "Reemplazar por un material menos peligroso o reducir energia del sistema, por Ejemplo: Reducir la fuerza, el amperaje, la presión, la temperatura, etc." },
+        { item: "6.3", casilla: "Controles Ingeniería", diligenciamiento: "Instalar Sistemas de Ventilación, Protección para las Maquinas, Enclavamiento, Cerramientos Acusticos, etc." },
+        { item: "6.4", casilla: "Controles Administrativos", diligenciamiento: "Señalización, Advertencias, Instalación de Alarmas, Procedimientos de Seguridad, Inspección de Equipos, Controles de Acceso de Capacitación de personal" },
+        { item: "6.5", casilla: "Equipos / Elementos de Protección Personal", diligenciamiento: "Dar recomendaciones referentes al control de EPP o equipos que sean necesarios, por Ejemplo: Gafas de Seguridad, Protección Auditiva, Mascaras Faciales, Sistema de Detección de Caidas, Respiradores y Guantes, Etc." },
       ]
     }
   ]
@@ -291,13 +299,12 @@ export function InstructionsModal({ open, onClose }: InstructionsModalProps) {
               </div>
             </div>
           )}
-
           {activeTab === 'valoracion' && (
             <div className="p-8 space-y-12 animate-in fade-in slide-in-from-bottom-4 duration-300 overflow-x-auto">
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
                 {/* Table 1 */}
                 <div className="space-y-4">
-                  <table className="w-full border-2 border-black text-[11px] text-center">
+                  <table className="w-full border-2 border-black text-[10px] text-center">
                     <tr className="bg-[#d9d9d9] font-bold border-b-2 border-black">
                       <td colSpan={3} className="p-2 uppercase italic">Tabla No. 1 Determinación del nivel de deficiencia (ND)</td>
                     </tr>
@@ -309,29 +316,29 @@ export function InstructionsModal({ open, onClose }: InstructionsModalProps) {
                     <tr className="border-b-2 border-black">
                       <td className="p-2 border-r-2 border-black font-bold">Muy Alto (MA)</td>
                       <td className="p-2 border-r-2 border-black font-bold">10</td>
-                      <td className="p-2 text-left">Se han detectado peligros que determinan como muy posible la generación de incidentes...</td>
+                      <td className="p-2 text-left">Se ha (n) detectado peligro (s) que determina(n) como posible la generación de incidentes o consecuencias muy significativas, o la eficacia del conjunto de medidas preventivas existentes respecto al riesgo es nula o no existe, o ambas.</td>
                     </tr>
                     <tr className="border-b-2 border-black">
                       <td className="p-2 border-r-2 border-black font-bold">Alto (A)</td>
                       <td className="p-2 border-r-2 border-black font-bold">6</td>
-                      <td className="p-2 text-left">Se han detectado algunos peligros que pueden dar lugar a consecuencias significativas...</td>
+                      <td className="p-2 text-left">Se ha (n) detectada algún (os) peligro (s) que pueden dar lugar a consecuencias significativa (s), o la eficacia del conjunto de medidas preventivas existentes es baja, o ambas.</td>
                     </tr>
                     <tr className="border-b-2 border-black">
                       <td className="p-2 border-r-2 border-black font-bold">Medio (M)</td>
                       <td className="p-2 border-r-2 border-black font-bold">2</td>
-                      <td className="p-2 text-left">Se han detectado peligros que pueden dar lugar a consecuencias poco significativas...</td>
+                      <td className="p-2 text-left">Se han detectado peligros que pueden dar lugar a consecuencias poco significativas o de menor importancia, o la eficacia del conjunto de medidas preventivas existentes es moderada, o ambas.</td>
                     </tr>
                     <tr>
                       <td className="p-2 border-r-2 border-black font-bold">Bajo (B)</td>
                       <td className="p-2 border-r-2 border-black font-bold">No se asigna valor</td>
-                      <td className="p-2 text-left">No se ha detectado anomalía destacable alguna...</td>
+                      <td className="p-2 text-left">No se ha detectado consecuencia alguna, o la eficacia del conjunto de medidas preventivas existentes es alta, o ambas. El riesgo está controlado.</td>
                     </tr>
                   </table>
                 </div>
 
                 {/* Table 2 */}
                 <div className="space-y-4">
-                  <table className="w-full border-2 border-black text-[11px] text-center">
+                  <table className="w-full border-2 border-black text-[10px] text-center">
                     <tr className="bg-[#d9d9d9] font-bold border-b-2 border-black">
                       <td colSpan={3} className="p-2 uppercase italic">Tabla No. 2 Determinación del nivel de exposición (NE)</td>
                     </tr>
@@ -343,30 +350,30 @@ export function InstructionsModal({ open, onClose }: InstructionsModalProps) {
                     <tr className="border-b-2 border-black">
                       <td className="p-2 border-r-2 border-black font-bold">Continua (EC)</td>
                       <td className="p-2 border-r-2 border-black font-bold">4</td>
-                      <td className="p-2 text-left">La situación de exposición se presenta sin interrupción o varias veces con tiempo prolongado...</td>
+                      <td className="p-2 text-left">La situación de exposición se presenta sin interrupción o varias veces con tiempo prolongado durante la jornada laboral</td>
                     </tr>
                     <tr className="border-b-2 border-black">
                       <td className="p-2 border-r-2 border-black font-bold">Frecuente (EF)</td>
                       <td className="p-2 border-r-2 border-black font-bold">3</td>
-                      <td className="p-2 text-left">La situación de exposición se presenta varias veces durante la jornada laboral por tiempos cortos.</td>
+                      <td className="p-2 text-left">La situación de exposición se presenta varias veces durante la jornada laboral por tiempos cortos</td>
                     </tr>
                     <tr className="border-b-2 border-black">
                       <td className="p-2 border-r-2 border-black font-bold">Ocasional (EO)</td>
                       <td className="p-2 border-r-2 border-black font-bold">2</td>
-                      <td className="p-2 text-left">La situación de exposición se presenta alguna vez durante la jornada laboral y por un periodo de tiempo corto.</td>
+                      <td className="p-2 text-left">La situación de exposición se presenta alguna vez durante la jornada laboral y por un período de tiempo corto</td>
                     </tr>
                     <tr>
                       <td className="p-2 border-r-2 border-black font-bold">Esporádica (EE)</td>
                       <td className="p-2 border-r-2 border-black font-bold">1</td>
-                      <td className="p-2 text-left">La situación de exposición se presenta de manera eventual.</td>
+                      <td className="p-2 text-left">La situación de exposición se presenta de manera eventual</td>
                     </tr>
                   </table>
                 </div>
               </div>
 
-              {/* Table 3 (The Matrix from screenshot) */}
+              {/* Table 3 */}
               <div className="space-y-4">
-                <table className="w-full border-2 border-black text-[11px] text-center border-collapse">
+                <table className="w-full border-2 border-black text-[10px] text-center border-collapse">
                   <tr className="bg-[#d9d9d9] font-bold border-b-2 border-black">
                     <td colSpan={6} className="p-2 uppercase italic">Tabla No. 3 Determinación del nivel de probabilidad</td>
                   </tr>
@@ -408,7 +415,7 @@ export function InstructionsModal({ open, onClose }: InstructionsModalProps) {
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
                 {/* Table 4 */}
                 <div className="space-y-4">
-                  <table className="w-full border-2 border-black text-[11px] text-center">
+                  <table className="w-full border-2 border-black text-[10px] text-center">
                     <tr className="bg-[#d9d9d9] font-bold border-b-2 border-black">
                       <td colSpan={3} className="p-2 uppercase italic">Tabla No. 4 Significado de los diferentes niveles de probabilidad</td>
                     </tr>
@@ -442,13 +449,13 @@ export function InstructionsModal({ open, onClose }: InstructionsModalProps) {
 
                 {/* Table 5 */}
                 <div className="space-y-4">
-                  <table className="w-full border-2 border-black text-[11px] text-center">
+                  <table className="w-full border-2 border-black text-[10px] text-center">
                     <tr className="bg-[#d9d9d9] font-bold border-b-2 border-black">
                       <td colSpan={3} className="p-2 uppercase italic">Tabla No. 5 Determinación del nivel de consecuencia</td>
                     </tr>
                     <tr className="bg-[#d9d9d9] font-bold border-b-2 border-black">
                       <td className="p-2 border-r-2 border-black">Nivel de Consecuencia</td>
-                      <td className="p-2 border-r-2 border-black">NC</td>
+                      <td className="p-2 border-r-2 border-black">Valor de NC</td>
                       <td className="p-2">Significado (Daños personales)</td>
                     </tr>
                     <tr className="border-b-2 border-black">
@@ -459,7 +466,7 @@ export function InstructionsModal({ open, onClose }: InstructionsModalProps) {
                     <tr className="border-b-2 border-black">
                       <td className="p-2 border-r-2 border-black font-bold">Muy Grave (MG)</td>
                       <td className="p-2 border-r-2 border-black font-bold">60</td>
-                      <td className="p-2 text-left">Lesiones o enfermedades graves irreparables (Incapacidad permanente parcial o invalidez)</td>
+                      <td className="p-2 text-left">Lesiones o enfermedades graves irreparables (incapacidad permanente parcial o invalidez)</td>
                     </tr>
                     <tr className="border-b-2 border-black">
                       <td className="p-2 border-r-2 border-black font-bold">Grave (G)</td>
@@ -475,9 +482,9 @@ export function InstructionsModal({ open, onClose }: InstructionsModalProps) {
                 </div>
               </div>
 
-              {/* Table 6 (NR Matrix) */}
+              {/* Table 6 */}
               <div className="space-y-4">
-                <table className="w-full border-2 border-black text-[11px] text-center border-collapse">
+                <table className="w-full border-2 border-black text-[10px] text-center border-collapse">
                   <tr className="bg-[#d9d9d9] font-bold border-b-2 border-black">
                     <td colSpan={6} className="p-2 uppercase italic">Tabla No. 6 Determinación del nivel de riesgo</td>
                   </tr>
@@ -495,22 +502,22 @@ export function InstructionsModal({ open, onClose }: InstructionsModalProps) {
                     <td rowSpan={4} className="bg-[#d9d9d9] border-r-2 border-black font-bold p-4 w-24">Nivel de Consecuencia (NC)</td>
                     <td className="p-2 border-r-2 border-black font-bold bg-white">100</td>
                     <td className="p-2 border-r-2 border-black bg-[#941113] text-white font-bold italic">I 4000-2400</td>
-                    <td className="p-2 border-r-2 border-black bg-[#941113] text-white font-bold italic">I 2000-1000</td>
+                    <td className="p-2 border-r-2 border-black bg-[#941113] text-white font-bold italic">I 2000-1200</td>
                     <td className="p-2 border-r-2 border-black bg-[#941113] text-white font-bold italic">I 800-600</td>
                     <td className="p-2 bg-[#ffff00] font-bold italic border-b-2 border-black">II 400-200</td>
                   </tr>
                   <tr className="border-b-2 border-black">
                     <td className="p-2 border-r-2 border-black font-bold bg-white">60</td>
-                    <td className="p-2 border-r-2 border-black bg-[#941113] text-white font-bold italic">I 2400-1440</td>
-                    <td className="p-2 border-r-2 border-black bg-[#941113] text-white font-bold italic">I 1200-600</td>
-                    <td className="p-2 border-r-2 border-black bg-[#ffff00] font-bold italic">II 480-360</td>
+                    <td className="p-2 border-r-2 border-black font-bold bg-[#941113] text-white italic">I 2400-1440</td>
+                    <td className="p-2 border-r-2 border-black font-bold bg-[#941113] text-white italic">I 1200-600</td>
+                    <td className="p-2 border-r-2 border-black font-bold bg-[#ffff00] italic">II 480 - 360</td>
                     <td className="p-2 bg-[#ffff00] font-bold italic">II 240 / III 120</td>
                   </tr>
                   <tr className="border-b-2 border-black">
                     <td className="p-2 border-r-2 border-black font-bold bg-white">25</td>
                     <td className="p-2 border-r-2 border-black bg-[#941113] text-white font-bold italic">I 1000-600</td>
-                    <td className="p-2 border-r-2 border-black bg-[#ffff00] font-bold italic">II 500-250</td>
-                    <td className="p-2 border-r-2 border-black bg-[#ffff00] font-bold italic">II 200-150</td>
+                    <td className="p-2 border-r-2 border-black bg-[#ffff00] font-bold italic">II 500 -250</td>
+                    <td className="p-2 border-r-2 border-black bg-[#ffff00] font-bold italic">II 200 -150</td>
                     <td className="p-2 bg-[#718f3f] text-white font-bold italic">III 100-50</td>
                   </tr>
                   <tr>
@@ -526,7 +533,7 @@ export function InstructionsModal({ open, onClose }: InstructionsModalProps) {
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
                 {/* Table 7 */}
                 <div className="space-y-4">
-                  <table className="w-full border-2 border-black text-[11px] text-center">
+                  <table className="w-full border-2 border-black text-[10px] text-center">
                     <tr className="bg-[#d9d9d9] font-bold border-b-2 border-black">
                       <td colSpan={3} className="p-2 uppercase italic">Tabla No. 7 Significado del nivel de riesgo</td>
                     </tr>
@@ -538,29 +545,29 @@ export function InstructionsModal({ open, onClose }: InstructionsModalProps) {
                     <tr className="border-b-2 border-black">
                       <td className="p-2 border-r-2 border-black font-bold bg-[#941113] text-white">I</td>
                       <td className="p-2 border-r-2 border-black font-bold">4000-600</td>
-                      <td className="p-2 text-left">Situación crítica. Suspender actividades hasta que el riesgo esté bajo control. Intervención urgente.</td>
+                      <td className="p-2 text-left">Situación crítica. Suspender actividades hasta que el riesgo esté bajo control. Intervención urgente</td>
                     </tr>
                     <tr className="border-b-2 border-black">
                       <td className="p-2 border-r-2 border-black font-bold bg-[#ffff00]">II</td>
                       <td className="p-2 border-r-2 border-black font-bold">500-150</td>
-                      <td className="p-2 text-left">Corregir y adoptar medidas de control de inmediato...</td>
+                      <td className="p-2 text-left">Corregir y adoptar medidas de control de inmediato. Sin embargo, suspenda actividades si el nivel de riesgo está por encima o igual de 360</td>
                     </tr>
                     <tr className="border-b-2 border-black">
                       <td className="p-2 border-r-2 border-black font-bold bg-[#718f3f] text-white">III</td>
                       <td className="p-2 border-r-2 border-black font-bold">120-40</td>
-                      <td className="p-2 text-left">Mejorar, si es posible. Sería conveniente justificar la intervención y su rentabilidad.</td>
+                      <td className="p-2 text-left">Mejorar si es posible. Sería conveniente justificar la intervención y su rentabilidad.</td>
                     </tr>
                     <tr>
                       <td className="p-2 border-r-2 border-black font-bold bg-[#718f3f] text-white">IV</td>
                       <td className="p-2 border-r-2 border-black font-bold">20</td>
-                      <td className="p-2 text-left">Mantener las medidas de control existentes...</td>
+                      <td className="p-2 text-left">Mantener las medidas de control existentes, pero se deberían considerar soluciones o mejoras y se deben hacer comprobaciones periódicas para asegurar que el riesgo aún es aceptable.</td>
                     </tr>
                   </table>
                 </div>
 
                 {/* Table 8 */}
                 <div className="space-y-4">
-                  <table className="w-full border-2 border-black text-[11px] text-center">
+                  <table className="w-full border-2 border-black text-[10px] text-center">
                     <tr className="bg-[#d9d9d9] font-bold border-b-2 border-black">
                       <td colSpan={2} className="p-2 uppercase italic">Tabla No. 8 Aceptabilidad del riesgo</td>
                     </tr>
@@ -570,15 +577,15 @@ export function InstructionsModal({ open, onClose }: InstructionsModalProps) {
                     </tr>
                     <tr className="border-b-2 border-black">
                       <td className="p-2 border-r-2 border-black font-bold bg-[#941113] text-white">I</td>
-                      <td className="p-2 font-bold">No Aceptable</td>
+                      <td className="p-2 font-bold">No aceptable</td>
                     </tr>
                     <tr className="border-b-2 border-black">
                       <td className="p-2 border-r-2 border-black font-bold bg-[#ffff00]">II</td>
-                      <td className="p-2 font-bold">No Aceptable o Aceptable con control específico</td>
+                      <td className="p-2 font-bold">No aceptable o Aceptable con Control Específico</td>
                     </tr>
                     <tr className="border-b-2 border-black">
                       <td className="p-2 border-r-2 border-black font-bold bg-[#718f3f] text-white">III</td>
-                      <td className="p-2 font-bold">Aceptable</td>
+                      <td className="p-2 font-bold">Mejorable</td>
                     </tr>
                     <tr>
                       <td className="p-2 border-r-2 border-black font-bold bg-[#718f3f] text-white">IV</td>
