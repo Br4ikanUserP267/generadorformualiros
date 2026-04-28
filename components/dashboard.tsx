@@ -313,20 +313,6 @@ export function Dashboard() {
       {/* Topbar */}
       <header className="sticky top-0 z-30 bg-white/80 backdrop-blur-md border-b border-[#e2e9e4] px-6 py-4 flex items-center justify-between">
         <div className="flex items-center gap-4">
-          <div className="relative group">
-            <button className="flex items-center justify-center w-9 h-9 rounded-lg border border-[#e2e9e4] bg-white hover:bg-[#f0f9f1] hover:border-[#1F7D3E] transition-colors text-[#1F7D3E]">
-              <span className="text-xl">☰</span>
-            </button>
-            <div className="absolute left-0 top-full mt-2 w-64 bg-white border border-[#e2e9e4] rounded-xl shadow-xl py-2 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-40">
-              <button className="w-full text-left px-4 py-2 text-sm hover:bg-[#f0f9f1] text-[#1F7D3E] font-medium" onClick={() => router.push('/dashboard')}>
-                Matriz de Riesgos
-              </button>
-              <button className="w-full text-left px-4 py-2 text-sm text-[#5e6b62] cursor-not-allowed opacity-50">
-                Registro de Accidentalidad
-              </button>
-            </div>
-          </div>
-          
           <div className="flex items-center gap-3">
             <img src="/matriz-riesgos/csm_logo_long.png" alt="Logo" className="h-10 object-contain" />
             <div className="w-[1px] h-8 bg-[#e2e9e4]" />

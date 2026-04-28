@@ -58,41 +58,41 @@ export function InstructionsModal({ open, onClose }: InstructionsModalProps) {
     {
       id: 4,
       title: "4. Evaluación del Riesgo",
-      subtitle: "Determinar la probabilidad de que ocurran eventos específicos y la magnitud de sus consecuencias.",
+      subtitle: "Evaluar el riesgo, calificando el riesgo asociado a cada peligro, incluyendo los controles existentes que estan implementados.",
       color: "bg-[#4d73a6]",
       items: [
-        { item: "4.1", casilla: "Nivel de Deficiencia (ND)", diligenciamiento: "Magnitud de la relación entre el conjunto de peligros y su vinculación directa con posibles incidentes (10, 6, 2, 0)." },
-        { item: "4.2", casilla: "Nivel de Exposición (NE)", diligenciamiento: "Situación de exposición a un peligro que se presenta en un tiempo determinado (4, 3, 2, 1)." },
-        { item: "4.3", casilla: "Nivel de Probabilidad (NP)", diligenciamiento: "Producto de ND por NE. Determina la probabilidad de ocurrencia." },
-        { item: "4.4", casilla: "Interpretación NP", diligenciamiento: "Significado cualitativo del nivel de probabilidad (Muy Alto, Alto, Medio o Bajo)." },
-        { item: "4.5", casilla: "Nivel de Consecuencia (NC)", diligenciamiento: "Magnitud de los daños esperados (100, 60, 25, 10)." },
-        { item: "4.6", casilla: "Nivel de Riesgo (NR)", diligenciamiento: "Producto de NP por NC. Magnitud del riesgo evaluado." },
-        { item: "4.7", casilla: "Interpretación NR", diligenciamiento: "Significado del nivel de riesgo (I, II, III o IV)." },
-        { item: "4.8", casilla: "Aceptabilidad del Riesgo", diligenciamiento: "Criterio de aceptabilidad según la organización y normatividad." },
+        { item: "4.1", casilla: "Nivel de Deficiencia (ND)", diligenciamiento: "Colocar 0 si es bajo, 2 si es medio, 6 si es alto y 10 si es muy alto (Ver en Tablas de Valoración la Tabla 1: Determinación del Nivel de Deficiencia)." },
+        { item: "4.2", casilla: "Nivel de Exposición (NE)", diligenciamiento: "Colocar 4 si es continua, 3 si es frecuente, 2 si es ocasional y 1 si es esporádico (Ver en Tablas de Valoración la Tabla 2: Determinación del Nivel de Exposición)." },
+        { item: "4.3", casilla: "Nivel de Probabilidad (NP)", diligenciamiento: "Este valor lo calcula automáticamente la matriz. El resultado se obtiene al multiplicar el valor asignado de Deficiencia por el valor de Exposición. (Ver en Tablas de Valoración la Tabla 3: Determinación del Nivel de Probabilidad)." },
+        { item: "4.4", casilla: "Interpretación NP", diligenciamiento: "Este valor lo calcula automáticamente la matriz. De acuerdo al valor de nivel de probabilidad se interpretará de acuerdo a la tabla. Significado de los diferentes niveles de probabilidad en (Muy Alto, Alto, Medio o Bajo). (Ver en Tablas de Valoración la Tabla 4: Significado de Diferentes Niveles de Probabilidad)." },
+        { item: "4.5", casilla: "Nivel de Consecuencia (NC)", diligenciamiento: "Coloque 10 si es Leve, 25 si es Grave, 60 si es Muy Grave y 100 si es Catastrófico o Mortal. Para evaluar el Nivel de Consecuencia, tenga en cuenta la consecuencia directa más grave que se pueda presentar en la actividad valorada (Ver en Tablas de Valoración la Tabla 5: Determinación del Nivel de Consecuencia)." },
+        { item: "4.6", casilla: "Nivel de Riesgo (NR) e Interpretación", diligenciamiento: "Este valor lo calcula automáticamente la matriz. Los resultados se obtendrán de multiplicar los resultados del Nivel de Probabilidad por el Nivel de Consecuencia. (Ver en Tablas de Valoración la Tabla 6: Determinación del Nivel de Riesgo)." },
+        { item: "4.7", casilla: "Interpretación del Riesgo", diligenciamiento: "Este valor lo calcula automáticamente la matriz. Para obtener el resultado de interpretación se interpretará de acuerdo a los criterios de la Tabla 7: Significado del Nivel de Riesgo)." },
+        { item: "4.8", casilla: "Aceptabilidad del Riesgo", diligenciamiento: "Este valor lo calcula automáticamente la matriz. El resultado se dará de acuerdo al significado de interpretación del riesgo. (Ver en Tablas de Valoración la Tabla 8: Aceptabilidad del Riesgo)." },
       ]
     },
     {
       id: 5,
       title: "5. Criterios para establecer Controles",
-      subtitle: "Si existe una identificación de los peligros y valoración de los riesgos en forma detallada es mucho mas facil para la organización su intervención y control",
+      subtitle: "Si existe una identificación de los peligros y valoración de los riesgos en forma detallada es mucho más fácil para la organización su intervención y control",
       color: "bg-[#4da66a]",
       items: [
-        { item: "5.1", casilla: "Nº Expuestos", diligenciamiento: "Numero de Trabajadores involucrados" },
-        { item: "5.2", casilla: "Peor Consecuencia", diligenciamiento: "Se determinara el mayor efecto posible en la salud del trabajador. Ejemplo: Perdida de la capacidad laboral, lumbalgia con incapacidad permanente parcial." },
-        { item: "5.3", casilla: "Requisito Legal", diligenciamiento: "La organización establece si existe o no un requisito legal especifico a la tarea que se esta evaluando para tener parametros en priorización en la implementación de medidas de intervención." },
+        { item: "5.1", casilla: "Nº Expuestos", diligenciamiento: "Número de Trabajadores involucrados" },
+        { item: "5.2", casilla: "Peor Consecuencia", diligenciamiento: "Se determinará el mayor efecto posible en la salud del trabajador. Ejemplo: Pérdida de la capacidad laboral, lumbalgia con incapacidad permanente parcial." },
+        { item: "5.3", casilla: "Requisito Legal", diligenciamiento: "La organización establece si existe o no un requisito legal específico a la tarea que se está evaluando para tener parámetros en priorización en la implementación de medidas de intervención." },
       ]
     },
     {
       id: 6,
       title: "6. Medidas de Intervención",
-      subtitle: "Una vez completada la valoración de los riesgos, la organización deberia estar en capacidad de determinar los controles que se aplicaran",
+      subtitle: "Una vez completada la valoración de los riesgos, la organización debería estar en capacidad de determinar los controles que se aplicarán",
       color: "bg-[#718f3f]",
       items: [
-        { item: "6.1", casilla: "Eliminación", diligenciamiento: "Modificar un diseño para eliminar el peligro, por ejemplo: Introducir dispositivos mecanicos de alzamiento para eliminar el peligro de manipulación manual." },
+        { item: "6.1", casilla: "Eliminación", diligenciamiento: "Modificar un diseño para eliminar el peligro, por ejemplo: Introducir dispositivos mecánicos de alzamiento para eliminar el peligro de manipulación manual." },
         { item: "6.2", casilla: "Sustitución", diligenciamiento: "Reemplazar por un material menos peligroso o reducir energia del sistema, por Ejemplo: Reducir la fuerza, el amperaje, la presión, la temperatura, etc." },
-        { item: "6.3", casilla: "Controles Ingeniería", diligenciamiento: "Instalar Sistemas de Ventilación, Protección para las Maquinas, Enclavamiento, Cerramientos Acusticos, etc." },
+        { item: "6.3", casilla: "Controles de Ingeniería", diligenciamiento: "Instalar Sistemas de Ventilación, Protección para las Máquinas, Enclavamiento, Cerramientos Acústicos, etc." },
         { item: "6.4", casilla: "Controles Administrativos", diligenciamiento: "Señalización, Advertencias, Instalación de Alarmas, Procedimientos de Seguridad, Inspección de Equipos, Controles de Acceso de Capacitación de personal" },
-        { item: "6.5", casilla: "Equipos / Elementos de Protección Personal", diligenciamiento: "Dar recomendaciones referentes al control de EPP o equipos que sean necesarios, por Ejemplo: Gafas de Seguridad, Protección Auditiva, Mascaras Faciales, Sistema de Detección de Caidas, Respiradores y Guantes, Etc." },
+        { item: "6.5", casilla: "Equipos y Elementos de Protección Personal", diligenciamiento: "Dar recomendaciones referentes al control de EPP o equipos que sean necesarios, por Ejemplo: Gafas de Seguridad, Protección Auditiva, Mascaras Faciales, Sistema de Detección de Caídas, Respiradores y Guantes, Etc." },
       ]
     }
   ]
@@ -224,8 +224,9 @@ export function InstructionsModal({ open, onClose }: InstructionsModalProps) {
                         <div className="font-bold">• Rickettsias</div>
                         <div className="font-bold">• Parásitos</div>
                         <div className="font-bold">• Picaduras</div>
-                        <div className="font-bold">• Mordeduras</div>
-                        <div className="font-bold">• Fluidos / Excrementos</div>
+                        <div className="font-bold">• Fluidos O Excrementos</div>
+                        <div className="font-bold">• Mordeduras de Animales Ponzoñosos</div>
+                        <div className="font-bold">• Mordeduras de Animales No Ponzoñosos</div>
                       </td>
                       <td className="p-5 space-y-3">
                         <div className="space-y-1">
@@ -242,48 +243,53 @@ export function InstructionsModal({ open, onClose }: InstructionsModalProps) {
                         </div>
                         <div className="space-y-1">
                           <span className="font-black text-[#1F7D3E]">Temperaturas:</span>
-                          <div>Calor o frío extremo.</div>
+                          <div>Calor o frío.</div>
                         </div>
                         <div className="space-y-1">
                           <span className="font-black text-[#1F7D3E]">Presión:</span>
-                          <div>Atmosférica normal / ajustada.</div>
+                          <div>Atmosférica normal y ajustada.</div>
                         </div>
                         <div className="space-y-1">
                           <span className="font-black text-[#1F7D3E]">Radiaciones:</span>
-                          <div>Ionizantes (X, Gama) y No Ionizantes (Laser, UV, IR).</div>
+                          <div>Ionizantes (Rayos X, Rayos Gamma) y No Ionizantes (Laser, Ultravioleta, Infrarroja, Radiofrecuencia, Microondas).</div>
                         </div>
                       </td>
                       <td className="p-5 space-y-2">
-                        <div className="font-bold">• Polvos (Org / Inorg)</div>
+                        <div className="font-bold">• Polvos (Organicos o Inorganicos)</div>
                         <div className="font-bold">• Fibras</div>
-                        <div className="font-bold">• Líquidos (Nieblas, rocíos)</div>
+                        <div className="font-bold">• Líquidos (Nieblas y rocíos)</div>
                         <div className="font-bold">• Gases y vapores</div>
-                        <div className="font-bold">• Humos metálicos</div>
+                        <div className="font-bold">• Humos metálicos y no metálicos</div>
                         <div className="font-bold">• Material particulado</div>
                       </td>
                       <td className="p-5 space-y-2">
-                        <div className="font-bold">• Gestión organizacional</div>
-                        <div className="font-bold">• Características organización</div>
-                        <div className="font-bold">• Grupo social de trabajo</div>
-                        <div className="font-bold">• Condiciones de la tarea</div>
-                        <div className="font-bold">• Interfaz persona-tarea</div>
-                        <div className="font-bold">• Jornada de trabajo</div>
+                        <div className="font-bold">• Gestión organizacional (Estilo de Mando, Pago de Contratación, Participación, Inducción y Capacitación, Bienestar Social, Evaluación del Desempeño, Manejo de Cambios)</div>
+                        <div className="font-bold">• Características de la organización del trabajo (Comunicación, Tecnología, Organización del Trabajo, Demandas Cualitativas y Cuantitativas de la Labor)</div>
+                        <div className="font-bold">• Características del grupo social del trabajo (Relaciones, Cohesión, Calidad de Interacción, Trabajo en Equipo)</div>
+                        <div className="font-bold">• Condiciones de la Tarea (Carga Mental, Contenido de la Tarea, Demandas Emocionales, Sistemas de Control, Definición de Roles, Monotonía, etc.)</div>
+                        <div className="font-bold">• Interfase Persona - Tarea (Conocimientos, Habilidad en relación con la Demanda de la Tarea, Iniciativa, Autonomía y Reconocimiento, Identificación de la Persona con la Tarea y la Organización)</div>
+                        <div className="font-bold">• Jornada de Trabajo (Pausas, Trabajo Nocturno, Rotación, Horas Extras, Descansos)</div>
                       </td>
                       <td className="p-5 space-y-2">
-                        <div className="font-bold">• Postura (prolongada, forzada)</div>
-                        <div className="font-bold">• Esfuerzo</div>
-                        <div className="font-bold">• Movimiento repetitivo</div>
-                        <div className="font-bold">• Manipulación de cargas</div>
+                        <div className="font-bold">• Postura (Prolongada, Mantenida, Forzada, Antigravitacional,Agachado,Acurrucado)</div>
+                        <div className="font-bold">• Sobre Esfuerzo</div>
+                        <div className="font-bold">• Movimiento Repetitivo</div>
+                        <div className="font-bold">• Manipulación Manual de Cargas</div>
+                        <div className="font-bold">• Fuerza, Repeticion</div>
+                        <div className="font-bold">• Posicion Sedente o Bipeda</div>
                       </td>
                       <td className="p-5 space-y-3">
-                        <div><span className="font-bold">Mecánico:</span> Herramientas, máquinas, piezas.</div>
-                        <div><span className="font-bold">Eléctrico:</span> Alta/Baja tensión, estática.</div>
-                        <div><span className="font-bold">Locativo:</span> Almacenamiento, superficies, orden.</div>
+                        <div><span className="font-bold">Mecánico:</span> Elementos o Partes De Maquina, Herramientas, Equipos, Piezas A Trabajar, Materiales Proyectados Solidos O Fluidos.</div>
+                        <div><span className="font-bold">Eléctrico:</span> Alta y Baja Tensión, Estática.</div>
+                        <div><span className="font-bold">Locativo:</span> Sistemas Y Medios De Almacenamiento, Superficies De Trabajo (Irregulares, Deslizantes, Con Diferencia Del Nivel), Condiciones De Orden Y Aseo, Caidas De Objeto.</div>
                         <div><span className="font-bold">Tecnológico:</span> Explosión, fuga, derrame, incendio.</div>
                         <div><span className="font-bold">Accidentes:</span> Tránsito.</div>
-                        <div><span className="font-bold">Públicos:</span> Robos, asaltos, orden público.</div>
+                        <div><span className="font-bold">Públicos:</span> Robos, atracos, atentados, orden público.</div>
                         <div className="font-bold">• Trabajo en alturas</div>
                         <div className="font-bold">• Espacios confinados</div>
+                        <div className="font-bold">• Atrapamientos, Atropellamiento, Choque o Volcamiento</div>
+                        <div className="font-bold">• Ahogamiento</div>
+                        <div className="font-bold">• Materiales Cortantes</div>
                       </td>
                       <td className="p-5 space-y-2 text-blue-800">
                         <div className="font-bold">• Sismo</div>
@@ -291,7 +297,7 @@ export function InstructionsModal({ open, onClose }: InstructionsModalProps) {
                         <div className="font-bold">• Vendaval</div>
                         <div className="font-bold">• Inundación</div>
                         <div className="font-bold">• Derrumbe</div>
-                        <div className="font-bold">• Precipitaciones</div>
+                        <div className="font-bold">• Precipitaciones (Lluvias, Granizadas, Heladas)</div>
                       </td>
                     </tr>
                   </tbody>
