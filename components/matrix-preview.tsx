@@ -13,12 +13,49 @@ interface ColumnWidths {
   [key: string]: number
 }
 
-// Helper function to get color based on risk level
-function getRiskColor(nr: number): { bg: string; text: string } {
-  if (nr >= 4000) return { bg: '#fce8e8', text: '#a50000' } // Muy alto
-  if (nr >= 501) return { bg: '#fdecea', text: '#dc3545' } // Alto
-  if (nr >= 121) return { bg: '#fff3e0', text: '#fd7e14' } // Medio
-  return { bg: '#e8f5e9', text: '#198754' } // Bajo
+// risk interpretation helpers matching matrix-editor
+function interpProbabilidad(np: number) {
+  if (!np) return { label: '—', color: '#9CA3AF' }
+  if (np >= 24 && np <= 40) return { label: 'Muy Alto', color: '#a50000' }
+  if (np >= 10 && np <= 23) return { label: 'Alto', color: '#dc3545' }
+  if (np >= 6 && np <= 9) return { label: 'Medio', color: '#EAB308' }
+  if (np >= 2 && np <= 5) return { label: 'Bajo', color: '#198754' }
+  return { label: String(np), color: '#9CA3AF' }
+}
+
+function interpNivelRiesgo(nr: number) {
+  if (!nr) return { label: '—', color: '#9CA3AF' }
+  if (nr >= 4000 && nr <= 6000) return { label: 'I', color: '#dc3545' }
+  if (nr >= 150 && nr <= 500) return { label: 'II', color: '#EAB308' }
+  if (nr >= 40 && nr <= 120) return { label: 'III', color: '#22c55e' }
+  if (nr >= 10 && nr <= 20) return { label: 'IV', color: '#198754' }
+  if (nr >= 501) return { label: 'I', color: '#dc3545' }
+  if (nr >= 121 && nr <= 500) return { label: 'II', color: '#f59e0b' }
+  return { label: String(nr), color: '#9CA3AF' }
+}
+
+function aceptabilidadColor(text: string) {
+  if (text.includes('No Aceptable')) return '#dc3545'
+  if (text.includes('Control Especifico')) return '#EAB308'
+  if (text.includes('Mejorable')) return '#22c55e'
+  if (text.includes('Aceptable')) return '#198754'
+  return '#9CA3AF'
+}
+
+function getEvalFieldStyle(colKey: string, row: any) {
+  if (['np', 'interpNp'].includes(colKey)) {
+    const color = interpProbabilidad(row.np || 0).color
+    return color !== '#9CA3AF' ? { backgroundColor: color, color: '#fff', fontWeight: '700' } : {}
+  }
+  if (['nr', 'interpNr'].includes(colKey)) {
+    const color = interpNivelRiesgo(row.nr || 0).color
+    return color !== '#9CA3AF' ? { backgroundColor: color, color: '#fff', fontWeight: '700' } : {}
+  }
+  if (colKey === 'aceptabilidad') {
+    const color = aceptabilidadColor(row.aceptabilidad || '')
+    return color !== '#9CA3AF' ? { backgroundColor: color, color: '#fff', fontWeight: '700' } : {}
+  }
+  return {}
 }
 
 export function MatrixPreview({ matrizId, onClose }: MatrixPreviewProps) {
@@ -352,11 +389,11 @@ export function MatrixPreview({ matrizId, onClose }: MatrixPreviewProps) {
       </div>
 
       {/* Main Table Content */}
-      <div className="flex-1 min-h-0 overflow-auto bg-[#f8faf9] px-8 pb-8 flex flex-col">
-        <div className="bg-white rounded-2xl border border-[#e2e9e4] shadow-xl shadow-gray-200/50 overflow-hidden mt-4">
+      <div className="flex-1 min-h-0 bg-[#f8faf9] px-8 pb-8 flex flex-col">
+        <div className="bg-white rounded-2xl border border-[#e2e9e4] shadow-xl shadow-gray-200/50 flex-1 overflow-hidden mt-4 flex flex-col">
           <div 
             ref={tableContainerRef}
-            className="overflow-x-auto min-h-[60vh]"
+            className="flex-1 overflow-auto"
             onScroll={() => handleScrollSync(tableContainerRef, topScrollRef)}
           >
             <table className="w-full border-collapse table-fixed text-[11px] font-sans">
@@ -420,13 +457,13 @@ export function MatrixPreview({ matrizId, onClose }: MatrixPreviewProps) {
                               if (mergeKeys.includes(col.key)) {
                                 const span = rowSpans[col.key][r] || 0
                                 if (span === 0) return null
-                                const evalStyle = (isEvaluationField && row.nr) ? { backgroundColor: getRiskColor(row.nr).bg, color: getRiskColor(row.nr).text } : {}
+                                const evalStyle = isEvaluationField ? getEvalFieldStyle(col.key, row) : {}
                                 
                                 return (
                                   <td 
                                     key={col.key} 
                                     rowSpan={span} 
-                                    className={`px-4 py-3 border-r border-[#e2e9e4] last:border-r-0 align-top text-[#2c3630] leading-relaxed ${isEvaluationField ? 'whitespace-nowrap font-bold' : 'break-words font-medium'} ${col.key === 'zona' ? 'cursor-pointer hover:bg-gray-100 transition-colors' : ''} ${isNumeric ? 'text-center' : 'text-left'}`}
+                                    className={`px-4 py-3 border-r border-[#e2e9e4] last:border-r-0 align-top text-[#2c3630] leading-relaxed ${isEvaluationField ? 'whitespace-nowrap' : 'break-words font-medium'} ${col.key === 'zona' ? 'cursor-pointer hover:bg-gray-100 transition-colors' : ''} ${isNumeric ? 'text-center' : 'text-left'}`}
                                     style={evalStyle}
                                     onClick={col.key === 'zona' ? () => toggleZona(zonaName) : undefined}
                                   >
@@ -436,11 +473,11 @@ export function MatrixPreview({ matrizId, onClose }: MatrixPreviewProps) {
                                 )
                               }
 
-                              const bgStyle = (isEvaluationField && row.nr) ? { backgroundColor: getRiskColor(row.nr).bg, color: getRiskColor(row.nr).text, fontWeight: '700' } : {}
+                              const bgStyle = isEvaluationField ? getEvalFieldStyle(col.key, row) : {}
                               return (
                                 <td 
                                   key={col.key} 
-                                  className={`px-4 py-3 border-r border-[#e2e9e4] last:border-r-0 align-top text-[#2c3630] leading-relaxed ${isEvaluationField ? 'whitespace-nowrap font-bold' : 'break-words font-medium'} ${isNumeric ? 'text-center' : 'text-left'}`}
+                                  className={`px-4 py-3 border-r border-[#e2e9e4] last:border-r-0 align-top text-[#2c3630] leading-relaxed ${isEvaluationField ? 'whitespace-nowrap' : 'break-words font-medium'} ${isNumeric ? 'text-center' : 'text-left'}`}
                                   style={bgStyle}
                                 >
                                   {col.key === 'requisitoLegal' || col.key === 'cumple' ? (
