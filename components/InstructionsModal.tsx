@@ -25,22 +25,22 @@ export function InstructionsModal({ open, onClose }: InstructionsModalProps) {
       title: "1. Información de Procesos, Actividades y Tareas",
       color: "bg-[#f8b133]",
       items: [
-        { item: "1.1", casilla: "Proceso", diligenciamiento: "Clasificar el tipo de proceso que se va a identificar. Ejemplo: Administrativo Financiero" },
-        { item: "1.2", casilla: "Zona o Lugar", diligenciamiento: "Incluir el sitio donde se realizara el proceso. Ejemplo: Oficina de Contabilidad y Compras" },
+        { item: "1.1", casilla: "Proceso", diligenciamiento: "Clasificar el tipo de proceso que se va a identificar. Ejemplo: Administrativo Financiero." },
+        { item: "1.2", casilla: "Zona o Lugar", diligenciamiento: "Incluir el sitio donde se realizara el proceso. Ejemplo: Oficina de Contabilidad y Compras." },
         { item: "1.3", casilla: "Actividad", diligenciamiento: "Describir en detalle el tipo de actividad a realizar de acuerdo al proceso. Ejemplo: Dentro del proceso financiero se realizan las actividades de Tesoreria, Caja y Facturación." },
         { item: "1.4", casilla: "Tarea", diligenciamiento: "Identificar la tarea que se determinara de la actividad. Ejemplo: Digitar, Revisar documentos, colocar sellos, etc." },
         { item: "1.5", casilla: "Cargo", diligenciamiento: "Identifica el cargo que desempeña Ej: Medico, Jefe, Auxiliar, Adminstrativo u operativo." },
-        { item: "1.6", casilla: "Rutinaria SI o No", diligenciamiento: "Identificar si la actividad es Rutinaria SI o No" },
+        { item: "1.6", casilla: "Rutinaria SI o No", diligenciamiento: "Identificar si la actividad es Rutinaria SI o No." },
       ]
     },
     {
       id: 2,
       title: "2. Identificación de Peligros",
-      subtitle: "Identificar los peligros, incluir todos aquellos relacionados con cada actividad laboral. Considerar quien, cuando y como puede resultar afectado",
+      subtitle: "Identificar los peligros, incluir todos aquellos relacionados con cada actividad laboral. Considerar quien, cuando y como puede resultar afectado.",
       color: "bg-[#1f7872]",
       items: [
         { item: "2.1", casilla: "Descripción", diligenciamiento: "Comentar los Peligros a los que esta expuesto el trabajador en cada una de las actividades. Ejemplo: Movimientos Repetitivos de miembros superiores." },
-        { item: "2.2", casilla: "Clasificación", diligenciamiento: "Determine el tipo de peligro identificado en la casilla Descripción. Debe clasificarse en Biologico, Fisico, Quimico, Psicosocial, Biomecanico, Condiciones de Seguridad o Fenomenos Naturales" },
+        { item: "2.2", casilla: "Clasificación", diligenciamiento: "Determine el tipo de peligro identificado en la casilla Descripción. Debe clasificarse en Biologico, Fisico, Quimico, Psicosocial, Biomecanico, Condiciones de Seguridad o Fenomenos Naturales." },
         { item: "2.3", casilla: "Efectos Posibles", diligenciamiento: "Considerar los efectos en la salud del individuo o seguridad de las instalaciones. Ejemplo: Tendinitis, Sindrome de Tunel del Carpo." },
       ]
     },
@@ -74,10 +74,10 @@ export function InstructionsModal({ open, onClose }: InstructionsModalProps) {
     {
       id: 5,
       title: "5. Criterios para establecer Controles",
-      subtitle: "Si existe una identificación de los peligros y valoración de los riesgos en forma detallada es mucho más fácil para la organización su intervención y control",
+      subtitle: "Si existe una identificación de los peligros y valoración de los riesgos en forma detallada es mucho más fácil para la organización su intervención y control.",
       color: "bg-[#4da66a]",
       items: [
-        { item: "5.1", casilla: "Nº Expuestos", diligenciamiento: "Número de Trabajadores involucrados" },
+        { item: "5.1", casilla: "Nº Expuestos", diligenciamiento: "Número de Trabajadores involucrados." },
         { item: "5.2", casilla: "Peor Consecuencia", diligenciamiento: "Se determinará el mayor efecto posible en la salud del trabajador. Ejemplo: Pérdida de la capacidad laboral, lumbalgia con incapacidad permanente parcial." },
         { item: "5.3", casilla: "Requisito Legal", diligenciamiento: "La organización establece si existe o no un requisito legal específico a la tarea que se está evaluando para tener parámetros en priorización en la implementación de medidas de intervención." },
       ]
@@ -91,7 +91,7 @@ export function InstructionsModal({ open, onClose }: InstructionsModalProps) {
         { item: "6.1", casilla: "Eliminación", diligenciamiento: "Modificar un diseño para eliminar el peligro, por ejemplo: Introducir dispositivos mecánicos de alzamiento para eliminar el peligro de manipulación manual." },
         { item: "6.2", casilla: "Sustitución", diligenciamiento: "Reemplazar por un material menos peligroso o reducir energia del sistema, por Ejemplo: Reducir la fuerza, el amperaje, la presión, la temperatura, etc." },
         { item: "6.3", casilla: "Controles de Ingeniería", diligenciamiento: "Instalar Sistemas de Ventilación, Protección para las Máquinas, Enclavamiento, Cerramientos Acústicos, etc." },
-        { item: "6.4", casilla: "Controles Administrativos", diligenciamiento: "Señalización, Advertencias, Instalación de Alarmas, Procedimientos de Seguridad, Inspección de Equipos, Controles de Acceso de Capacitación de personal" },
+        { item: "6.4", casilla: "Controles Administrativos", diligenciamiento: "Señalización, Advertencias, Instalación de Alarmas, Procedimientos de Seguridad, Inspección de Equipos, Controles de Acceso de Capacitación de personal." },
         { item: "6.5", casilla: "Equipos y Elementos de Protección Personal", diligenciamiento: "Dar recomendaciones referentes al control de EPP o equipos que sean necesarios, por Ejemplo: Gafas de Seguridad, Protección Auditiva, Mascaras Faciales, Sistema de Detección de Caídas, Respiradores y Guantes, Etc." },
       ]
     }
@@ -147,11 +147,11 @@ export function InstructionsModal({ open, onClose }: InstructionsModalProps) {
                 <div className="grid grid-cols-[40px_1fr] text-xs">
                   {[
                     { i: "I", t: "Se debe clasificar los procesos, las actividades y las tareas." },
-                    { i: "II", t: "Crear una lista por proceso donde se identifique las actividades, tareas, zona o lugar de ubicación, y si la actividad o tarea es o no rutinaria" },
-                    { i: "III", t: "Se debe identificar los peligros a los cuales estna expuestos los trabajadores de cada área" },
-                    { i: "IV", t: "Durante el recorrido y la toma de la información se debe observar que controles existen tanto en la fuente como en el medio y el trabajador" },
-                    { i: "V", t: "Se debe de tener nota del numero de trabajadores expuestos por proceso" },
-                    { i: "VI", t: "Al obtener la información y al evaluar los controles existentes observados procedemos a establecer las medidas de intervención necesarias" }
+                    { i: "II", t: "Crear una lista por proceso donde se identifique las actividades, tareas, zona o lugar de ubicación, y si la actividad o tarea es o no rutinaria." },
+                    { i: "III", t: "Se debe identificar los peligros a los cuales estna expuestos los trabajadores de cada área." },
+                    { i: "IV", t: "Durante el recorrido y la toma de la información se debe observar que controles existen tanto en la fuente como en el medio y el trabajador." },
+                    { i: "V", t: "Se debe de tener nota del numero de trabajadores expuestos por proceso." },
+                    { i: "VI", t: "Al obtener la información y al evaluar los controles existentes observados procedemos a establecer las medidas de intervención necesarias." }
                   ].map((ind, idx) => (
                     <React.Fragment key={idx}>
                       <div className="border-r-2 border-b-2 border-black p-2 text-center font-bold bg-[#f3f3f3]">{ind.i}</div>
@@ -160,7 +160,7 @@ export function InstructionsModal({ open, onClose }: InstructionsModalProps) {
                   ))}
                 </div>
                 <div className="bg-[#ccc] p-2 text-center font-bold uppercase text-xs tracking-wider">
-                  A continuación encontraras la información necesaria para diligenciar cada una de las casillas
+                  A continuación encontraras la información necesaria para diligenciar cada una de las casillas.
                 </div>
               </div>
 
@@ -209,24 +209,24 @@ export function InstructionsModal({ open, onClose }: InstructionsModalProps) {
                       <th className="px-6 py-4 border-r border-white/10 text-left">Biológico</th>
                       <th className="px-6 py-4 border-r border-white/10 text-left">Físico</th>
                       <th className="px-6 py-4 border-r border-white/10 text-left">Químico</th>
-                      <th className="px-6 py-4 border-r border-white/10 text-left">Psicosocial</th>
+                      <th className="px-6 py-4 border-r border-white/10 text-left min-w-[300px]">Psicosocial</th>
                       <th className="px-6 py-4 border-r border-white/10 text-left">Biomecánico</th>
-                      <th className="px-6 py-4 border-r border-white/10 text-left">Condiciones de Seguridad</th>
+                      <th className="px-6 py-4 border-r border-white/10 text-left min-w-[300px]">Condiciones de Seguridad</th>
                       <th className="px-6 py-4 text-left">Fenómenos Naturales</th>
                     </tr>
                   </thead>
                   <tbody className="text-[11px] text-[#2c3630] divide-y divide-[#e2e9e4]">
                     <tr className="align-top divide-x divide-[#e2e9e4] hover:bg-[#f8faf9] transition-colors">
                       <td className="p-5 space-y-2">
-                        <div className="font-bold">• Virus</div>
-                        <div className="font-bold">• Bacterias</div>
-                        <div className="font-bold">• Hongos</div>
-                        <div className="font-bold">• Rickettsias</div>
-                        <div className="font-bold">• Parásitos</div>
-                        <div className="font-bold">• Picaduras</div>
-                        <div className="font-bold">• Fluidos O Excrementos</div>
-                        <div className="font-bold">• Mordeduras de Animales Ponzoñosos</div>
-                        <div className="font-bold">• Mordeduras de Animales No Ponzoñosos</div>
+                        <div className="font-bold">• Virus.</div>
+                        <div className="font-bold">• Bacterias.</div>
+                        <div className="font-bold">• Hongos.</div>
+                        <div className="font-bold">• Rickettsias.</div>
+                        <div className="font-bold">• Parásitos.</div>
+                        <div className="font-bold">• Picaduras.</div>
+                        <div className="font-bold">• Fluidos O Excrementos.</div>
+                        <div className="font-bold">• Mordeduras de Animales Ponzoñosos.</div>
+                        <div className="font-bold">• Mordeduras de Animales No Ponzoñosos.</div>
                       </td>
                       <td className="p-5 space-y-3">
                         <div className="space-y-1">
@@ -255,28 +255,28 @@ export function InstructionsModal({ open, onClose }: InstructionsModalProps) {
                         </div>
                       </td>
                       <td className="p-5 space-y-2">
-                        <div className="font-bold">• Polvos (Organicos o Inorganicos)</div>
-                        <div className="font-bold">• Fibras</div>
-                        <div className="font-bold">• Líquidos (Nieblas y rocíos)</div>
-                        <div className="font-bold">• Gases y vapores</div>
-                        <div className="font-bold">• Humos metálicos y no metálicos</div>
-                        <div className="font-bold">• Material particulado</div>
+                        <div className="font-bold">• Polvos (Organicos o Inorganicos).</div>
+                        <div className="font-bold">• Fibras.</div>
+                        <div className="font-bold">• Líquidos (Nieblas y rocíos).</div>
+                        <div className="font-bold">• Gases y vapores.</div>
+                        <div className="font-bold">• Humos metálicos y no metálicos.</div>
+                        <div className="font-bold">• Material particulado.</div>
                       </td>
                       <td className="p-5 space-y-2">
-                        <div className="font-bold">• Gestión organizacional (Estilo de Mando, Pago de Contratación, Participación, Inducción y Capacitación, Bienestar Social, Evaluación del Desempeño, Manejo de Cambios)</div>
-                        <div className="font-bold">• Características de la organización del trabajo (Comunicación, Tecnología, Organización del Trabajo, Demandas Cualitativas y Cuantitativas de la Labor)</div>
-                        <div className="font-bold">• Características del grupo social del trabajo (Relaciones, Cohesión, Calidad de Interacción, Trabajo en Equipo)</div>
-                        <div className="font-bold">• Condiciones de la Tarea (Carga Mental, Contenido de la Tarea, Demandas Emocionales, Sistemas de Control, Definición de Roles, Monotonía, etc.)</div>
-                        <div className="font-bold">• Interfase Persona - Tarea (Conocimientos, Habilidad en relación con la Demanda de la Tarea, Iniciativa, Autonomía y Reconocimiento, Identificación de la Persona con la Tarea y la Organización)</div>
-                        <div className="font-bold">• Jornada de Trabajo (Pausas, Trabajo Nocturno, Rotación, Horas Extras, Descansos)</div>
+                        <div className="font-bold">• Gestión organizacional (Estilo de Mando, Pago de Contratación, Participación, Inducción y Capacitación, Bienestar Social, Evaluación del Desempeño, Manejo de Cambios).</div>
+                        <div className="font-bold">• Características de la organización del trabajo (Comunicación, Tecnología, Organización del Trabajo, Demandas Cualitativas y Cuantitativas de la Labor).</div>
+                        <div className="font-bold">• Características del grupo social del trabajo (Relaciones, Cohesión, Calidad de Interacción, Trabajo en Equipo).</div>
+                        <div className="font-bold">• Condiciones de la Tarea (Carga Mental, Contenido de la Tarea, Demandas Emocionales, Sistemas de Control, Definición de Roles, Monotonía, etc.).</div>
+                        <div className="font-bold">• Interfase Persona - Tarea (Conocimientos, Habilidad en relación con la Demanda de la Tarea, Iniciativa, Autonomía y Reconocimiento, Identificación de la Persona con la Tarea y la Organización).</div>
+                        <div className="font-bold">• Jornada de Trabajo (Pausas, Trabajo Nocturno, Rotación, Horas Extras, Descansos).</div>
                       </td>
                       <td className="p-5 space-y-2">
-                        <div className="font-bold">• Postura (Prolongada, Mantenida, Forzada, Antigravitacional,Agachado,Acurrucado)</div>
-                        <div className="font-bold">• Sobre Esfuerzo</div>
-                        <div className="font-bold">• Movimiento Repetitivo</div>
-                        <div className="font-bold">• Manipulación Manual de Cargas</div>
-                        <div className="font-bold">• Fuerza, Repeticion</div>
-                        <div className="font-bold">• Posicion Sedente o Bipeda</div>
+                        <div className="font-bold">• Postura (Prolongada, Mantenida, Forzada, Antigravitacional,Agachado,Acurrucado).</div>
+                        <div className="font-bold">• Sobre Esfuerzo.</div>
+                        <div className="font-bold">• Movimiento Repetitivo.</div>
+                        <div className="font-bold">• Manipulación Manual de Cargas.</div>
+                        <div className="font-bold">• Fuerza, Repeticion.</div>
+                        <div className="font-bold">• Posicion Sedente o Bipeda.</div>
                       </td>
                       <td className="p-5 space-y-3">
                         <div><span className="font-bold">Mecánico:</span> Elementos o Partes De Maquina, Herramientas, Equipos, Piezas A Trabajar, Materiales Proyectados Solidos O Fluidos.</div>
@@ -285,19 +285,19 @@ export function InstructionsModal({ open, onClose }: InstructionsModalProps) {
                         <div><span className="font-bold">Tecnológico:</span> Explosión, fuga, derrame, incendio.</div>
                         <div><span className="font-bold">Accidentes:</span> Tránsito.</div>
                         <div><span className="font-bold">Públicos:</span> Robos, atracos, atentados, orden público.</div>
-                        <div className="font-bold">• Trabajo en alturas</div>
-                        <div className="font-bold">• Espacios confinados</div>
-                        <div className="font-bold">• Atrapamientos, Atropellamiento, Choque o Volcamiento</div>
-                        <div className="font-bold">• Ahogamiento</div>
-                        <div className="font-bold">• Materiales Cortantes</div>
+                        <div className="font-bold">• Trabajo en alturas.</div>
+                        <div className="font-bold">• Espacios confinados.</div>
+                        <div className="font-bold">• Atrapamientos, Atropellamiento, Choque o Volcamiento.</div>
+                        <div className="font-bold">• Ahogamiento.</div>
+                        <div className="font-bold">• Materiales Cortantes.</div>
                       </td>
                       <td className="p-5 space-y-2 text-blue-800">
-                        <div className="font-bold">• Sismo</div>
-                        <div className="font-bold">• Terremoto</div>
-                        <div className="font-bold">• Vendaval</div>
-                        <div className="font-bold">• Inundación</div>
-                        <div className="font-bold">• Derrumbe</div>
-                        <div className="font-bold">• Precipitaciones (Lluvias, Granizadas, Heladas)</div>
+                        <div className="font-bold">• Sismo.</div>
+                        <div className="font-bold">• Terremoto.</div>
+                        <div className="font-bold">• Vendaval.</div>
+                        <div className="font-bold">• Inundación.</div>
+                        <div className="font-bold">• Derrumbe.</div>
+                        <div className="font-bold">• Precipitaciones (Lluvias, Granizadas, Heladas).</div>
                       </td>
                     </tr>
                   </tbody>
@@ -322,22 +322,22 @@ export function InstructionsModal({ open, onClose }: InstructionsModalProps) {
                     <tr className="border-b-2 border-black">
                       <td className="p-2 border-r-2 border-black font-bold">Muy Alto (MA)</td>
                       <td className="p-2 border-r-2 border-black font-bold">10</td>
-                      <td className="p-2 text-left">Se ha (n) detectado peligro (s) que determina(n) como posible la generación de incidentes o consecuencias muy significativas, o la eficacia del conjunto de medidas preventivas existentes respecto al riesgo es nula o no existe, o ambas.</td>
+                      <td className="p-2 text-center">Se ha (n) detectado peligro (s) que determina(n) como posible la generación de incidentes o consecuencias muy significativas, o la eficacia del conjunto de medidas preventivas existentes respecto al riesgo es nula o no existe, o ambas.</td>
                     </tr>
                     <tr className="border-b-2 border-black">
                       <td className="p-2 border-r-2 border-black font-bold">Alto (A)</td>
                       <td className="p-2 border-r-2 border-black font-bold">6</td>
-                      <td className="p-2 text-left">Se ha (n) detectada algún (os) peligro (s) que pueden dar lugar a consecuencias significativa (s), o la eficacia del conjunto de medidas preventivas existentes es baja, o ambas.</td>
+                      <td className="p-2 text-center">Se ha (n) detectada algún (os) peligro (s) que pueden dar lugar a consecuencias significativa (s), o la eficacia del conjunto de medidas preventivas existentes es baja, o ambas.</td>
                     </tr>
                     <tr className="border-b-2 border-black">
                       <td className="p-2 border-r-2 border-black font-bold">Medio (M)</td>
                       <td className="p-2 border-r-2 border-black font-bold">2</td>
-                      <td className="p-2 text-left">Se han detectado peligros que pueden dar lugar a consecuencias poco significativas o de menor importancia, o la eficacia del conjunto de medidas preventivas existentes es moderada, o ambas.</td>
+                      <td className="p-2 text-center">Se han detectado peligros que pueden dar lugar a consecuencias poco significativas o de menor importancia, o la eficacia del conjunto de medidas preventivas existentes es moderada, o ambas.</td>
                     </tr>
                     <tr>
                       <td className="p-2 border-r-2 border-black font-bold">Bajo (B)</td>
                       <td className="p-2 border-r-2 border-black font-bold">No se asigna valor</td>
-                      <td className="p-2 text-left">No se ha detectado consecuencia alguna, o la eficacia del conjunto de medidas preventivas existentes es alta, o ambas. El riesgo está controlado.</td>
+                      <td className="p-2 text-center">No se ha detectado consecuencia alguna, o la eficacia del conjunto de medidas preventivas existentes es alta, o ambas. El riesgo está controlado.</td>
                     </tr>
                   </table>
                 </div>
@@ -356,22 +356,22 @@ export function InstructionsModal({ open, onClose }: InstructionsModalProps) {
                     <tr className="border-b-2 border-black">
                       <td className="p-2 border-r-2 border-black font-bold">Continua (EC)</td>
                       <td className="p-2 border-r-2 border-black font-bold">4</td>
-                      <td className="p-2 text-left">La situación de exposición se presenta sin interrupción o varias veces con tiempo prolongado durante la jornada laboral</td>
+                      <td className="p-2 text-center">La situación de exposición se presenta sin interrupción o varias veces con tiempo prolongado durante la jornada laboral</td>
                     </tr>
                     <tr className="border-b-2 border-black">
                       <td className="p-2 border-r-2 border-black font-bold">Frecuente (EF)</td>
                       <td className="p-2 border-r-2 border-black font-bold">3</td>
-                      <td className="p-2 text-left">La situación de exposición se presenta varias veces durante la jornada laboral por tiempos cortos</td>
+                      <td className="p-2 text-center">La situación de exposición se presenta varias veces durante la jornada laboral por tiempos cortos</td>
                     </tr>
                     <tr className="border-b-2 border-black">
                       <td className="p-2 border-r-2 border-black font-bold">Ocasional (EO)</td>
                       <td className="p-2 border-r-2 border-black font-bold">2</td>
-                      <td className="p-2 text-left">La situación de exposición se presenta alguna vez durante la jornada laboral y por un período de tiempo corto</td>
+                      <td className="p-2 text-center">La situación de exposición se presenta alguna vez durante la jornada laboral y por un período de tiempo corto</td>
                     </tr>
                     <tr>
                       <td className="p-2 border-r-2 border-black font-bold">Esporádica (EE)</td>
                       <td className="p-2 border-r-2 border-black font-bold">1</td>
-                      <td className="p-2 text-left">La situación de exposición se presenta de manera eventual</td>
+                      <td className="p-2 text-center">La situación de exposición se presenta de manera eventual</td>
                     </tr>
                   </table>
                 </div>
@@ -433,12 +433,12 @@ export function InstructionsModal({ open, onClose }: InstructionsModalProps) {
                     <tr className="border-b-2 border-black">
                       <td className="p-2 border-r-2 border-black font-bold bg-[#941113] text-white">Muy Alto (MA)</td>
                       <td className="p-2 border-r-2 border-black font-bold">Entre 40 y 24</td>
-                      <td className="p-2 text-center">Situación deficiente con exposición continua o muy deficiente con exposición frecuente. normalmente la materialización del riesgo ocurre con frecuencia</td>
+                      <td className="p-2 text-center">Situación deficiente con exposición continua o muy deficiente con exposición frecuente. Normalmente la materialización del riesgo ocurre con frecuencia.</td>
                     </tr>
                     <tr className="border-b-2 border-black">
                       <td className="p-2 border-r-2 border-black font-bold bg-[#941113] text-white">Alto (A)</td>
                       <td className="p-2 border-r-2 border-black font-bold">Entre 20 y 10</td>
-                      <td className="p-2 text-center">Situación deficiente con exposición frecuente u ocasional, o bien situación muy deficiente con exposición ocasional o esporádica.  La materialización del riesgo es posible que suceda varias veces en la vida laboral</td>
+                      <td className="p-2 text-center">Situación deficiente con exposición frecuente u ocasional, o bien situación muy deficiente con exposición ocasional o esporádica. La materialización del riesgo es posible que suceda varias veces en la vida laboral.</td>
                     </tr>
                     <tr className="border-b-2 border-black">
                       <td className="p-2 border-r-2 border-black font-bold bg-[#ffff00]">Medio (M)</td>
@@ -448,7 +448,7 @@ export function InstructionsModal({ open, onClose }: InstructionsModalProps) {
                     <tr>
                       <td className="p-2 border-r-2 border-black font-bold bg-[#718f3f] text-white">Bajo (B)</td>
                       <td className="p-2 border-r-2 border-black font-bold">Entre 4 y 2</td>
-                      <td className="p-2 text-center">Situación mejorable con exposición ocasional o esporadica, o situacion sin anomalia destacable con cualquier nivel de exposición.  No es esperable que se materialice el riesgo, aunque puede ser concebible</td>
+                      <td className="p-2 text-center">Situación mejorable con exposición ocasional o esporádica, o situacion sin anomalía destacable con cualquier nivel de exposición. No es esperable que se materialice el riesgo, aunque puede ser concebible.</td>
                     </tr>
                   </table>
                 </div>
@@ -467,22 +467,22 @@ export function InstructionsModal({ open, onClose }: InstructionsModalProps) {
                     <tr className="border-b-2 border-black">
                       <td className="p-2 border-r-2 border-black font-bold">Mortal o Catastrófico (M)</td>
                       <td className="p-2 border-r-2 border-black font-bold">100</td>
-                      <td className="p-2 text-left">Muerte (s)</td>
+                      <td className="p-2 text-center">Muerte (s).</td>
                     </tr>
                     <tr className="border-b-2 border-black">
                       <td className="p-2 border-r-2 border-black font-bold">Muy Grave (MG)</td>
                       <td className="p-2 border-r-2 border-black font-bold">60</td>
-                      <td className="p-2 text-left">Lesiones o enfermedades graves irreparables (incapacidad permanente parcial o invalidez)</td>
+                      <td className="p-2 text-center">Lesiones o enfermedades graves irreparables (incapacidad permanente parcial o invalidez).</td>
                     </tr>
                     <tr className="border-b-2 border-black">
                       <td className="p-2 border-r-2 border-black font-bold">Grave (G)</td>
                       <td className="p-2 border-r-2 border-black font-bold">25</td>
-                      <td className="p-2 text-left">Lesiones o enfermedades con incapacidad laboral temporal (ILT)</td>
+                      <td className="p-2 text-center">Lesiones o enfermedades con incapacidad laboral temporal (ILT).</td>
                     </tr>
                     <tr>
                       <td className="p-2 border-r-2 border-black font-bold">Leve (L)</td>
                       <td className="p-2 border-r-2 border-black font-bold">10</td>
-                      <td className="p-2 text-left">Lesiones o enfermedades que no requieren incapacidad</td>
+                      <td className="p-2 text-center">Lesiones o enfermedades que no requieren incapacidad.</td>
                     </tr>
                   </table>
                 </div>
@@ -517,7 +517,15 @@ export function InstructionsModal({ open, onClose }: InstructionsModalProps) {
                     <td className="p-2 border-r-2 border-black font-bold bg-[#941113] text-white italic">I 2400-1440</td>
                     <td className="p-2 border-r-2 border-black font-bold bg-[#941113] text-white italic">I 1200-600</td>
                     <td className="p-2 border-r-2 border-black font-bold bg-[#ffff00] italic">II 480 - 360</td>
-                    <td className="p-2 bg-[#ffff00] font-bold italic">II 240 / III 120</td>
+                    <td className="p-0 font-bold italic align-middle">
+                      <div 
+                        className="relative w-full h-full min-h-[60px]"
+                        style={{ background: 'linear-gradient(to bottom right, #ffff00 0%, #ffff00 calc(50% - 1px), #000 calc(50% - 1px), #000 calc(50% + 1px), #718f3f calc(50% + 1px), #718f3f 100%)' }}
+                      >
+                        <div className="absolute top-1 left-2 text-[#2c3630]">II 240</div>
+                        <div className="absolute bottom-1 right-2 text-white">III 120</div>
+                      </div>
+                    </td>
                   </tr>
                   <tr className="border-b-2 border-black">
                     <td className="p-2 border-r-2 border-black font-bold bg-white">25</td>
@@ -529,9 +537,25 @@ export function InstructionsModal({ open, onClose }: InstructionsModalProps) {
                   <tr>
                     <td className="p-2 border-r-2 border-black font-bold bg-white">10</td>
                     <td className="p-2 border-r-2 border-black bg-[#ffff00] font-bold italic">II 400-240</td>
-                    <td className="p-2 border-r-2 border-black bg-[#718f3f] text-white font-bold italic">III 200-100</td>
+                    <td className="p-0 border-r-2 border-black font-bold italic align-middle">
+                      <div 
+                        className="relative w-full h-full min-h-[60px]"
+                        style={{ background: 'linear-gradient(to bottom right, #ffff00 0%, #ffff00 calc(50% - 1px), #000 calc(50% - 1px), #000 calc(50% + 1px), #718f3f calc(50% + 1px), #718f3f 100%)' }}
+                      >
+                        <div className="absolute top-1 left-2 text-[#2c3630]">II 200</div>
+                        <div className="absolute bottom-1 right-2 text-white">III 100</div>
+                      </div>
+                    </td>
                     <td className="p-2 border-r-2 border-black bg-[#718f3f] text-white font-bold italic">III 80-60</td>
-                    <td className="p-2 bg-[#718f3f] text-white font-bold italic">IV 40-20</td>
+                    <td className="p-0 font-bold italic align-middle">
+                      <div 
+                        className="relative w-full h-full min-h-[60px]"
+                        style={{ background: 'linear-gradient(to bottom right, #718f3f 0%, #718f3f calc(50% - 1px), #000 calc(50% - 1px), #000 calc(50% + 1px), #dce6d1 calc(50% + 1px), #dce6d1 100%)' }}
+                      >
+                        <div className="absolute top-1 left-2 text-white">III 40</div>
+                        <div className="absolute bottom-1 right-2 text-[#2c3630]">IV 20</div>
+                      </div>
+                    </td>
                   </tr>
                 </table>
               </div>
@@ -551,22 +575,22 @@ export function InstructionsModal({ open, onClose }: InstructionsModalProps) {
                     <tr className="border-b-2 border-black">
                       <td className="p-2 border-r-2 border-black font-bold bg-[#941113] text-white">I</td>
                       <td className="p-2 border-r-2 border-black font-bold">4000-600</td>
-                      <td className="p-2 text-left">Situación crítica. Suspender actividades hasta que el riesgo esté bajo control. Intervención urgente</td>
+                      <td className="p-2 text-center">Situación crítica. Suspender actividades hasta que el riesgo esté bajo control. Intervención urgente</td>
                     </tr>
                     <tr className="border-b-2 border-black">
                       <td className="p-2 border-r-2 border-black font-bold bg-[#ffff00]">II</td>
                       <td className="p-2 border-r-2 border-black font-bold">500-150</td>
-                      <td className="p-2 text-left">Corregir y adoptar medidas de control de inmediato. Sin embargo, suspenda actividades si el nivel de riesgo está por encima o igual de 360</td>
+                      <td className="p-2 text-center">Corregir y adoptar medidas de control de inmediato. Sin embargo, suspenda actividades si el nivel de riesgo está por encima o igual de 360</td>
                     </tr>
                     <tr className="border-b-2 border-black">
                       <td className="p-2 border-r-2 border-black font-bold bg-[#718f3f] text-white">III</td>
                       <td className="p-2 border-r-2 border-black font-bold">120-40</td>
-                      <td className="p-2 text-left">Mejorar si es posible. Sería conveniente justificar la intervención y su rentabilidad.</td>
+                      <td className="p-2 text-center">Mejorar si es posible. Sería conveniente justificar la intervención y su rentabilidad.</td>
                     </tr>
                     <tr>
                       <td className="p-2 border-r-2 border-black font-bold bg-[#718f3f] text-white">IV</td>
                       <td className="p-2 border-r-2 border-black font-bold">20</td>
-                      <td className="p-2 text-left">Mantener las medidas de control existentes, pero se deberían considerar soluciones o mejoras y se deben hacer comprobaciones periódicas para asegurar que el riesgo aún es aceptable.</td>
+                      <td className="p-2 text-center">Mantener las medidas de control existentes, pero se deberían considerar soluciones o mejoras y se deben hacer comprobaciones periódicas para asegurar que el riesgo aún es aceptable.</td>
                     </tr>
                   </table>
                 </div>
@@ -606,77 +630,463 @@ export function InstructionsModal({ open, onClose }: InstructionsModalProps) {
           {activeTab === 'consecuencias' && (
             <div className="p-8 animate-in fade-in slide-in-from-bottom-4 duration-300">
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {[
+\n                {[
                   {
-                    title: "BIOLÓGICO",
-                    risks: [
-                      { p: "Mordedura perros/gatos", c: "Heridas, rabia." },
-                      { p: "Mordedura ratones", c: "Leptospirosis." },
-                      { p: "Serpientes", c: "Envenenamiento, muerte." },
-                      { p: "Abejas/Avispas", c: "Reacción alérgica, celulitis." },
-                      { p: "Microorganismos", c: "Infecciones según el germen." },
-                      { p: "Fluidos (Sangre)", c: "Hepatitis, VIH." }
+                    title: "BIOLOGICO",
+                    categories: [
+                      {
+                        category: "Mordedura de animales",
+                        risks: [
+                          { p: "Mordedura de animales (perros)", c: "Heridas, transmisión de rabia" },
+                          { p: "Mordedura de animales (gatos)", c: "Heridas, transmisión de  rabia" },
+                          { p: "Mordedura de animales (ratones)", c: "Heridas, Leptospirosis" },
+                          { p: "Mordedura de animales (murciélagos)", c: "Heridas, transmisión de rabia" },
+                          { p: "Mordedura de animales (Serpientes)", c: "Heridas, reacción anafilacticas (reacción alergica) , muerte por veneno" },
+                        ]
+                      },
+                      {
+                        category: "Picadura de animales",
+                        risks: [
+                          { p: "Picadura de animales (abejas, avispas)", c: "Reacciones alergicas, celulitis " },
+                          { p: "Picadura de animales (arañas)", c: "Envenenamiento Sistemico" },
+                          { p: "Picadura de animales (alacranes, escorpiones)", c: "Reacciones alergicas, celulitis , envenenamiento" },
+                        ]
+                      },
+                      {
+                        category: "Exposición microorganismos",
+                        risks: [
+                          { p: "Laboratorios de microbiología", c: "Riesgo de  enfermedad  según el germen." },
+                          { p: "Exposición a enfermos", c: "Riesgo  de contaminacion, infecciones en general" },
+                        ]
+                      },
+                      {
+                        category: "Exposición o contacto con fluidos corporales",
+                        risks: [
+                          { p: "Exposición o contacto con fluidos corporales (Sangre)", c: "Hepatitis, VIH" },
+                          { p: "Exposición o contacto con fluidos corporales (Heces Fecales)", c: "Hepatitis B, infecciones  bacterianas , virales " },
+                          { p: "Exposición o contacto con fluidos corporales (otros)", c: "Virosis, infecciones bacterianas" },
+                        ]
+                      },
+                      {
+                        category: "Exposición o contacto con elementos punzantes o cortantes contaminados",
+                        risks: [
+                          { p: "Exposición o contacto con elementos punzantes contaminados", c: "Hepatitis, VIH" },
+                          { p: "Exposición o contacto con elementos cortantes contaminados", c: "Hepatitis, Tetano, VIH" },
+                        ]
+                      },
                     ]
                   },
                   {
-                    title: "FÍSICO",
-                    risks: [
-                      { p: "Ruido de impacto", c: "Trauma acústico, estrés." },
-                      { p: "Ruido intermitente", c: "Cefaleas, hipoacusia." },
-                      { p: "Iluminación (exceso/def)", c: "Fatiga visual, cefalea." },
-                      { p: "Vibración (cuerpo entero)", c: "Dificultad equilibrio, mareo." },
-                      { p: "Radiación X/Gama", c: "Cáncer, leucemia, muerte." },
-                      { p: "Laser/UV", c: "Quemaduras retina, cataratas." }
+                    title: "BIOMECANICOS",
+                    categories: [
+                      {
+                        category: "Posturas prolongada mantenida",
+                        risks: [
+                          { p: "Posturas prolongada mantenida sentado", c: "Lesiones cronicas de espalda, circulacion perineal, hemorroides, vena varice en piernas" },
+                          { p: "Posturas prolongada mantenida de pie", c: "Insuficiencia venosa periferica, varices" },
+                          { p: "Posturas prolongada mantenida de arrodillado", c: "Trastornos circulatorios en miembros inferiores, lesiones en rodillas, tendinitis, sinovitis de rodilla" },
+                          { p: "Posturas prolongada mantenida de cuclilla", c: "Trastornos circulatorios en miembros inferiores" },
+                          { p: "Posturas prolongada mantenida acostado", c: "Trastornos de espalda, trastornos circulatorios" },
+                        ]
+                      },
+                      {
+                        category: "Posturas forzada",
+                        risks: [
+                          { p: "Posturas forzadas hiperextensión", c: "Tendinitis de manguito rotador, Sindrome cervical por tension, lesiones de muñecas y codos" },
+                          { p: "Posturas forzadas hiperflexión", c: "Tendinitis de manguito rotador, Sindrome cervical por tension, lesiones de muñecas" },
+                          { p: "Posturas forzadas hiperrotación", c: "Tendinitis de manguito rotador, Sindrome cervical por tension, epicondilitis, sinovitis de muñeca" },
+                        ]
+                      },
+                      {
+                        category: "Posturas antigravitacional",
+                        risks: [
+                          { p: "Posturas antigravitacionales miembros superiores", c: "Bursitis y tendinitis a nivel de musculos y/o cadera, trastornos circulatorios" },
+                          { p: "Posturas antigravitacionales miembros inferiores", c: "Bursitis y tendinitis a nivel de musculos y/o cadera, trastornos circulatorios" },
+                          { p: "Posturas antigravitacionales otras partes del cuerpo", c: "Bursitis y tendinitis a nivel de musculos y/o cadera, trastornos circulatorios" },
+                        ]
+                      },
+                      {
+                        category: "Esfuerzo",
+                        risks: [
+                          { p: "Esfuerzo al manipular peso por encima de lo permitido", c: "Miembros superiores (Tendinits, bursitis)\nTronco (Lesiones cronicas nivel lumbar, hernia discal)" },
+                        ]
+                      },
+                      {
+                        category: "Movimiento repetitivo",
+                        risks: [
+                          { p: "Movimiento repetitivo miembros superiores", c: "Sindrome tunel del carpo, epicondilitis, tenosinovitis" },
+                          { p: "Movimiento repetitivo miembros inferiores", c: "Tendinitis y sinovitis de rodilla" },
+                          { p: "Movimiento repetitivo tronco", c: "Hernias discales, Lumbalgias musculares" },
+                          { p: "Movimiento repetitivo otras partes del cuerpo", c: "" },
+                        ]
+                      },
+                      {
+                        category: "Manipulación manual de cargas",
+                        risks: [
+                          { p: "Manipulación manual de cargas aplica en forma constante levantar", c: "Hernias discales, Lumbalgias musculares" },
+                          { p: "Manipulación manual de cargas aplica en forma constante descargar", c: "Hernias discales, Lumbalgias musculares" },
+                          { p: "Manipulación manual de cargas aplica en forma constante halar", c: "Lesiones articulares a nivel del hombro ejemplo bankart" },
+                          { p: "Manipulación manual de cargas aplica en forma constante empujar", c: "Lesiones articulares a nivel del hombro ejemplo bankart" },
+                          { p: "Manipulación manual de cargas aplica en forma constante transportar", c: "Lesiones en manguito rotador, hernias cervicales y lumbar" },
+                        ]
+                      },
                     ]
                   },
                   {
-                    title: "QUÍMICO",
-                    risks: [
-                      { p: "Polvos orgánicos", c: "Bisinosis, asma ocupacional." },
-                      { p: "Polvos inorgánicos", c: "Silicosis, asbestosis." },
-                      { p: "Líquidos/Nieblas", c: "Quemaduras, intoxicación." },
-                      { p: "Gases/Vapores", c: "Intoxicación crónica respiratoria." },
-                      { p: "Humos metálicos", c: "Fibrosis pulmonar." }
+                    title: "FISICO",
+                    categories: [
+                      {
+                        category: "Ruido",
+                        risks: [
+                          { p: "Ruido de impacto", c: "Trauma acustico, transtornos en el sueño, " },
+                          { p: "Ruido intermitente", c: "Cefaleas, hipoacusia neurosensorial, stress" },
+                          { p: "Ruido continuo", c: "Cefaleas, hipoacusia neurosensorial, stress" },
+                        ]
+                      },
+                      {
+                        category: "Iluminación",
+                        risks: [
+                          { p: "Iluminación por exceso", c: "Fatiga visual , cefalea, cansancio en los ojos: cambios oculomotores (esoforia, exoforia), dolor ocular, prurito, lagrimeo, reducción de la capacidad de acomodación ocular y convergencia adecuada." },
+                          { p: "Iluminación por deficiencia", c: "Fatiga visual , cefalea, cansancio en los ojos, dolor ocular, prurito, lagrimeo, reducción de la capacidad de acomodación ocular y convergencia adecuada." },
+                        ]
+                      },
+                      {
+                        category: "Vibración",
+                        risks: [
+                          { p: "Vibración de cuerpo entero", c: "Trastornos en el sistema nervioso, mareos y vomitos, variacion del ritmo cerebral, dificultad del equilibrio." },
+                          { p: "Vibración segmentaria", c: "Calambres que pueden acompañarse de trastornos prolongados de la sensibilidad, dedos muertos llamado sindrome raynaud." },
+                        ]
+                      },
+                      {
+                        category: "Temperaturas extremas",
+                        risks: [
+                          { p: "Temperaturas extremas por calor", c: "Stres termico por calor, deshidratacion, calambres, sincope por calor, golpe por calor." },
+                          { p: "Temperaturas extremas por frio", c: "Necrosis por  frio, hipotermia, anormalidades vasculares, " },
+                        ]
+                      },
+                      {
+                        category: "Presión atmosférica",
+                        risks: [
+                          { p: "Presión atmosférica normal", c: "Hiperventilación compesatoria (mareo, nauseas y perdida de conocimiento)." },
+                          { p: "Presión atmosférica ajustada", c: "Toxcicidad por exceso de oxigeno" },
+                        ]
+                      },
+                      {
+                        category: "Radiaciones Ionizantes",
+                        risks: [
+                          { p: "Radiación ionizante por rayos X", c: "Cáncer y leucemia. " },
+                          { p: "Radiación ionizante por rayo gama", c: "Quemaduras de la piel, caída del cabello, náuseas, enfermedades teratogenicas, la muerte" },
+                          { p: "Radiación ionizante por rayos beta", c: "Cáncer y leucemia. " },
+                          { p: "Radiación ionizante por rayos alfa", c: "Cáncer y leucemia. " },
+                        ]
+                      },
+                      {
+                        category: "Radiaciones No Ionizantes",
+                        risks: [
+                          { p: "Radiación no ionizante por rayos laser", c: "Quemaduras de retina, fotorretinitis, fotoqueratitis, fotoconjuntivitis e inducir la aparición de cataratas." },
+                          { p: "Radiación no ionizante por rayos ultravioletas", c: "Cáncer de piel, irritación, arrugas, manchas, afecciones a nivel ocular, lupus a nivel sistemico" },
+                          { p: "Radiación no ionizante por rayos infrarrojo", c: "Quemaduras de retina, fotorretinitis , fotoqueratitis, fotoconjuntivitis e inducir la aparición de cataratas." },
+                          { p: "Radiación no ionizante por radiofrecuencia", c: "Alteracion en el aparato reproductor, síntomas neuropsíquicos independientes como son la confusión, pereza, pérdida de la memoria, ansiedad, depresión." },
+                          { p: "Radiación no ionizante por microondas", c: "Tumores cerebrales, enfermedad de Alzheimer y pérdida de la memoria, alteraciones de sueño, confusión, pereza, pérdida de la memoria, ansiedad, depresión." },
+                        ]
+                      },
                     ]
                   },
                   {
-                    title: "BIOMECÁNICO",
-                    risks: [
-                      { p: "Postura sentada/pie", c: "Lesiones espalda, varices." },
-                      { p: "Postura arrodillado", c: "Lesiones rodilla, tendinitis." },
-                      { p: "Postura forzada", c: "Manguito rotador, epicondilitis." },
-                      { p: "Esfuerzo excesivo", c: "Hernias discales, lumbalgias." },
-                      { p: "Mov. Repetitivo", c: "Túnel carpiano, tenosinovitis." }
+                    title: "PUBLICO",
+                    categories: [
+                      {
+                        category: "Accidentes de Transito",
+                        risks: [
+                          { p: "Accidentes de Transito (Interno)", c: "Traumas de tejidos blandos, fracturas, trauma craneoencefalico, muerte" },
+                          { p: "Accidentes de Transito (Externo)", c: "Traumas de tejidos blandos, fracturas, trauma craneoencefalico, muerte" },
+                        ]
+                      },
+                      {
+                        category: "Violencia",
+                        risks: [
+                          { p: "Violencia por robos", c: "Heridas por arma blanca o de fuego, estrés postraumatico, muerte" },
+                          { p: "Violencia por asaltos, atentados, de orden publico, etc)", c: "Heridas por arma blanca o de fuego, intoxicación gas, traumas severos de tejidos, estrés postraumatico, muerte" },
+                          { p: "Violencia por atentados", c: "Traumas de tejidos blandos, fracturas, trauma craneoencefalico, estrés postraumatico, muerte" },
+                          { p: "Violencia por orden publico", c: "Heridas por arma blanca o de fuego, intoxicación gas, traumas severos de tejidos, estrés postraumatico, muerte" },
+                          { p: "Violencia por secuestro - zonas vulnerables", c: "Estrés postraumatico, enfermedades multiples, muerte" },
+                        ]
+                      },
                     ]
                   },
                   {
-                    title: "SEGURIDAD",
-                    risks: [
-                      { p: "Mecánico (Máquinas)", c: "Amputaciones, cortes, golpes." },
-                      { p: "Eléctrico (Alta/Baja)", c: "Electrocución, paro cardiaco." },
-                      { p: "Locativo (Caída objetos)", c: "Trauma craneal, aplastamiento." },
-                      { p: "Tecnológico (Incendio)", c: "Quemaduras 3°, asfixia." },
-                      { p: "Alturas", c: "Politraumatismo, muerte." }
+                    title: "NATURAL",
+                    categories: [
+                    ]
+                  },
+                  {
+                    title: "QUIMICO",
+                    categories: [
+                      {
+                        category: "Polvos Orgánicos o inorgánicos",
+                        risks: [
+                          { p: "Polvos orgánicos", c: "Enfermedades pulmonar obstructiva cronica de origen laboral (Bisinosis, Neomunitis por hipersensibilidad y asma ocupacional)" },
+                          { p: "Polvos inorgánicos", c: "Asbestosis, Silicosis, Neumoconiosis" },
+                        ]
+                      },
+                      {
+                        category: "Fibras",
+                        risks: [
+                          { p: "Fibras", c: "Neumoconiosis o enfermedades cronicas respiratorias de tipo restrictivo" },
+                        ]
+                      },
+                      {
+                        category: "Líquidos",
+                        risks: [
+                          { p: "Líquidos", c: "Contacto dermico: Quemaduras, irritaciones, reacciones alergicas del cuerpo.\nIngesta: Quemadura tracto digestivo, intoxicación, muerte" },
+                          { p: "Nieblas", c: "Contacto dermico: Quemaduras, irritaciones, reacciones alergicas del cuerpo.\nIngesta: Quemadura tracto digestivo, intoxicación, muerte" },
+                          { p: "Rocíos", c: "Contacto dermico: Quemaduras, irritaciones, reacciones alergicas del cuerpo.\nIngesta: Quemadura tracto digestivo, intoxicación, muerte" },
+                        ]
+                      },
+                      {
+                        category: "Gases y Vapores",
+                        risks: [
+                          { p: "Gases", c: "Contacto dermico: Quemaduras, irritaciones, reacciones alergicas del cuerpo.\nInhalación: intoxicación aguda o cronica, enfermedades tipo respiratorio." },
+                          { p: "Vapores", c: "Contacto dermico: Quemaduras, irritaciones, reacciones alergicas del cuerpo.\nInhalación: intoxicación aguda o cronica, enfermedades tipo respiratorio" },
+                        ]
+                      },
+                      {
+                        category: "Humos metálicos, no metálicos",
+                        risks: [
+                          { p: "Humos metálicos", c: "Alteraciones respiratorias, fibrosis pulmonar" },
+                          { p: "Humos no metálicos", c: "Alteraciones respiratorias, fibrosis pulmonar" },
+                        ]
+                      },
+                      {
+                        category: "Material particulado",
+                        risks: [
+                          { p: "Material Particulado", c: "Menor 10 µm Alteraciones respiratorias, fibrosis pulmonar" },
+                        ]
+                      },
+                    ]
+                  },
+                  {
+                    title: "LOCATIVO",
+                    categories: [
+                      {
+                        category: "Sistemas y medios de almacenamiento",
+                        risks: [
+                          { p: "Sistemas y medios de almacenamiento (inadecuado o deficiente)", c: "Traumas de tejidos blandos, aplastamiento, amputaciones, muerte." },
+                        ]
+                      },
+                      {
+                        category: "Superficies de trabajo",
+                        risks: [
+                          { p: "Superficies de trabajo (irregulares, deslizantes, con deficiencia del nivel)", c: "Contusiones, traumas de tejidos blandos" },
+                        ]
+                      },
+                      {
+                        category: "Condiciones de orden y aseo",
+                        risks: [
+                          { p: "Condiciones de orden y aseo", c: "Contusiones, traumas de tejidos blandos" },
+                        ]
+                      },
+                      {
+                        category: "Caída de objetos",
+                        risks: [
+                          { p: "Caída de objetos", c: "Traumas de tejidos blandos, contusiones, aplastamiento, trauma craneoencefalico, muerte" },
+                        ]
+                      },
+                      {
+                        category: "Trabajo en alturas",
+                        risks: [
+                          { p: "Trabajo en alturas", c: "Politraumatismo, Fracturas, muerte" },
+                        ]
+                      },
+                      {
+                        category: "Trabajo en espacios confinados",
+                        risks: [
+                          { p: "Trabajo en espacios confinados", c: "Asfixia, afecciones pulmonares, muerte" },
+                        ]
+                      },
+                    ]
+                  },
+                  {
+                    title: "DEPORTIVO/CULTURAL",
+                    categories: [
+                      {
+                        category: "Eventos deportivos",
+                        risks: [
+                          { p: "Eventos deportivos", c: "Contusiones, fracturas" },
+                        ]
+                      },
+                      {
+                        category: "Eventos recreativos y culturales",
+                        risks: [
+                          { p: "Eventos recreativos y culturales", c: "Contusiones, fracturas" },
+                        ]
+                      },
+                    ]
+                  },
+                  {
+                    title: "MECANICO",
+                    categories: [
+                      {
+                        category: "Elementos o partes de maquinas",
+                        risks: [
+                          { p: "Elementos o partes de maquinas contacto con calientes", c: "Quemaduras de 1,2 y3°" },
+                          { p: "Elementos o partes de maquinas contacto en movimiento", c: "Amputaciones, fracturas, traumas tejidos blandos" },
+                        ]
+                      },
+                      {
+                        category: "Herramientas",
+                        risks: [
+                          { p: "Herramientas manuales no mecanizadas (defectuosas - manipulación)", c: "Contusión, edema, Trauma tejidos blandos" },
+                          { p: "Herramientas manuales mecanizadas (defectuosas, manipulación)", c: "Contusión, edema, Trauma tejidos blandos, Amputación, fracturas" },
+                        ]
+                      },
+                      {
+                        category: "Equipos",
+                        risks: [
+                          { p: "Equipos (defectuosos - manipulación)", c: "Contusión, edema, Trauma tejidos blandos, Amputación, fracturas, muerte" },
+                        ]
+                      },
+                      {
+                        category: "Piezas a trabajar",
+                        risks: [
+                          { p: "Piezas a trabajar (calientes, robustas, ásperas)", c: "Quemaduras de 1,2 y3°, traumas tejidos blandos" },
+                        ]
+                      },
+                      {
+                        category: "Materiales proyectados solidos o fluidos",
+                        risks: [
+                          { p: "Materiales proyectados solidos o fluidos", c: "Lesiones oculares, traumas tejidos blandos, lesiones en vias respiratorias generadas por cuerpos extraños" },
+                        ]
+                      },
                     ]
                   },
                   {
                     title: "PSICOSOCIAL",
-                    risks: [
-                      { p: "Gestión Organizacional", c: "Demandas cualitativas, estrés." },
-                      { p: "Interfaz persona-tarea", c: "Falta de reconocimiento, fatiga." },
-                      { p: "Jornada de trabajo", c: "Rotación nocturna, agotamiento." }
+                    categories: [
+                      {
+                        category: "Gestion Organizacional",
+                        risks: [
+                          { p: "(estilo de mando, pago, contratación, participación, inducción y capacitación, bienestar social, evaluación del desempeño, manejo de cambios)", c: "" },
+                        ]
+                      },
+                      {
+                        category: "Características de la organización",
+                        risks: [
+                          { p: "(comunicación, tecnología, organización del trabajo, demandas cualitativas y cuantitativas de la labor)", c: "" },
+                        ]
+                      },
+                      {
+                        category: "Características del grupo social de trabajo",
+                        risks: [
+                          { p: "(relaciones, cohesión, calidad de interacciones, trabajo en equipo)", c: "" },
+                        ]
+                      },
+                      {
+                        category: "Condiciones de la tarea",
+                        risks: [
+                          { p: "(Carga mental, contenidos de la tarea, demandas emocionales, sistemas de control, definición de roles, monotonía, etc)", c: "" },
+                        ]
+                      },
+                      {
+                        category: "Interface persona - tarea)",
+                        risks: [
+                          { p: "(conocimientos, habilidades en relación con la demanda de la tarea, iniciativa, autonomía y reconocimiento, identificación de la persona con la tarea y la organización)", c: "" },
+                        ]
+                      },
+                      {
+                        category: "Jornada de trabajo",
+                        risks: [
+                          { p: "(pausas, trabajo nocturno, rotación, horas extras, descansos)", c: "" },
+                        ]
+                      },
                     ]
-                  }
-                ].map((cat, i) => (
-                  <div key={i} className="rounded-2xl border border-[#e2e9e4] overflow-hidden flex flex-col">
-                    <div className="bg-[#1F7D3E] px-4 py-2 text-[10px] font-black text-white uppercase tracking-widest">{cat.title}</div>
-                    <div className="p-4 space-y-3 flex-1 bg-[#f8faf9]">
-                      {cat.risks.map((r, j) => (
-                        <div key={j} className="space-y-1">
-                          <p className="text-[10px] font-bold text-[#1F7D3E] leading-tight">{r.p}</p>
-                          <p className="text-[10px] text-[#5e6b62] pl-2 border-l border-[#d1e2d6]">{r.c}</p>
-                        </div>
-                      ))}
+                  },
+                  {
+                    title: "ELECTRICO",
+                    categories: [
+                      {
+                        category: "Alta Tensión (>1,5 Kv)",
+                        risks: [
+                          { p: "Exposición a Alta Tensión (>1,5 Kv)", c: "Contacto directo: Quemaduras 2 ó 3° , paros cardiacos, conmoción, muerte" },
+                        ]
+                      },
+                      {
+                        category: "Baja Tensión (<1,5 Kv)",
+                        risks: [
+                          { p: "Exposición a Baja Tensión (<1,5 Kv)", c: "Contacto directo: Quemaduras 1 ó 2°, paro cardiaco, conmoción" },
+                        ]
+                      },
+                      {
+                        category: "Estática",
+                        risks: [
+                          { p: "Exposición a Estática", c: "En reacción puede desencadenar una descarga" },
+                        ]
+                      },
+                    ]
+                  },
+                  {
+                    title: "TECNOLOGICO",
+                    categories: [
+                      {
+                        category: "Explosión",
+                        risks: [
+                          { p: "Explosión (sustancias químicas)", c: "Quemaduras, reacciones alergicas, muerte" },
+                        ]
+                      },
+                      {
+                        category: "Fuga",
+                        risks: [
+                          { p: "Fuga (sustancias químicas)", c: "Quemaduras vias aereas, intoxicacion por inhalacion, muerte." },
+                        ]
+                      },
+                      {
+                        category: "Derrame",
+                        risks: [
+                          { p: "Derrame (sustancias químicas, productos)", c: "Quemaduras vias aereas o por contacto, intoxicacion por inhalacion, muerte." },
+                        ]
+                      },
+                      {
+                        category: "Incendio",
+                        risks: [
+                          { p: "Incendio calor física", c: "Quemaduras 1, 2 y 3°, asfixia por inhalacion de humos, muerte" },
+                          { p: "Incendio reacción química", c: "Quemaduras 1, 2 y 3°, asfixia por inhalacion de humos, muerte" },
+                        ]
+                      },
+                    ]
+                  },
+                ].map((group, idx) => (
+                  <div key={idx} className="bg-white border-2 border-black rounded-lg overflow-hidden flex flex-col">
+                    <div className="bg-[#1F7D3E] text-white p-3 font-black text-center tracking-wider text-sm border-b-2 border-black">
+                      {group.title}
+                    </div>
+                    <div className="p-4 flex-1 overflow-auto max-h-[600px]">
+                      <div className="space-y-6">
+                        {group.categories.map((cat, cIdx) => (
+                          <div key={cIdx} className="space-y-2">
+                            {cat.category && (
+                              <div className="font-bold text-[#1F7D3E] border-b border-[#1F7D3E]/30 pb-1 text-sm">
+                                {cat.category}
+                              </div>
+                            )}
+                            <table className="w-full text-[10px] text-left">
+                              <thead>
+                                <tr className="border-b-2 border-black/20">
+                                  <th className="pb-1 font-bold w-1/2">Peligro</th>
+                                  <th className="pb-1 font-bold w-1/2">Consecuencias</th>
+                                </tr>
+                              </thead>
+                              <tbody className="divide-y divide-black/10">
+                                {cat.risks.map((r, rIdx) => (
+                                  <tr key={rIdx}>
+                                    <td className="py-1.5 pr-2 text-[#2c3630] align-top font-medium">{r.p}</td>
+                                    <td className="py-1.5 pl-2 text-[#2c3630] align-top">{r.c || <span className="italic text-gray-400">N/A</span>}</td>
+                                  </tr>
+                                ))}
+                              </tbody>
+                            </table>
+                          </div>
+                        ))}
+                      </div>
                     </div>
                   </div>
                 ))}
