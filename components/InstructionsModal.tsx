@@ -170,7 +170,7 @@ export function InstructionsModal({ open, onClose }: InstructionsModalProps) {
 
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
-      <div className="bg-white w-full max-w-8xl h-[90vh] rounded-2xl shadow-2xl overflow-hidden flex flex-col animate-in zoom-in-95 duration-200 border border-[#e2e9e4]">
+      <div className="bg-white w-full max-w-7.5xl h-[90vh] rounded-2xl shadow-2xl overflow-hidden flex flex-col animate-in zoom-in-95 duration-200 border border-[#e2e9e4]">
         {/* Header */}
         <div className="px-8 py-5 border-b border-[#e2e9e4] flex items-center justify-between bg-white sticky top-0 z-10">
           <div className="flex items-center gap-4">
@@ -731,7 +731,7 @@ export function InstructionsModal({ open, onClose }: InstructionsModalProps) {
                         {group.categories.map((cat: any, cIdx: number) => (
                           <div key={cIdx} className="flex flex-col flex-1">
                             {cat.category && (
-                              <div className={`font-bold ${colors.text} border-b-2 border-black p-2 text-center text-xs bg-black/5`}>
+                              <div className={`font-bold ${colors.text} ${colors.header} border-b-2 border-black p-2 text-center text-xs`}>
                                 {cat.category}
                               </div>
                             )}
