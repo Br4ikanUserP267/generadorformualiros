@@ -377,16 +377,7 @@ export function MatrixPreview({ matrizId, onClose }: MatrixPreviewProps) {
         </div>
       </div>
 
-      {/* Top Horizontal Scrollbar (Fixed to top of table area) */}
-      <div className="px-8 pt-4 pb-2 bg-[#f8faf9] border-b border-[#e2e9e4]">
-        <div 
-          ref={topScrollRef}
-          className="overflow-x-auto h-4 w-full bg-white rounded-full border border-[#e2e9e4] shadow-inner"
-          onScroll={() => handleScrollSync(topScrollRef, tableContainerRef)}
-        >
-          <div style={{ width: totalTableWidth, height: '1px' }} />
-        </div>
-      </div>
+
 
       {/* Main Table Content */}
       <div className="flex-1 min-h-0 bg-[#f8faf9] px-8 pb-8 flex flex-col">
@@ -394,7 +385,6 @@ export function MatrixPreview({ matrizId, onClose }: MatrixPreviewProps) {
           <div 
             ref={tableContainerRef}
             className="flex-1 overflow-auto"
-            onScroll={() => handleScrollSync(tableContainerRef, topScrollRef)}
           >
             <table className="w-full border-collapse table-fixed text-[11px] font-sans">
               <thead className="sticky top-0 z-10">
