@@ -340,9 +340,8 @@ export function MatrixPreview({ matrizId, onClose }: MatrixPreviewProps) {
         </div>
       </div>
 
-      {/* Main Table Content */}
-      <div className="flex-1 overflow-auto bg-[#f8faf9] p-8 flex flex-col gap-4">
-        {/* Top Scrollbar Container */}
+      {/* Top Horizontal Scrollbar (Fixed to top of table area) */}
+      <div className="px-8 pt-4 pb-2 bg-[#f8faf9] border-b border-[#e2e9e4]">
         <div 
           ref={topScrollRef}
           className="overflow-x-auto h-4 w-full bg-white rounded-full border border-[#e2e9e4] shadow-inner"
@@ -350,8 +349,11 @@ export function MatrixPreview({ matrizId, onClose }: MatrixPreviewProps) {
         >
           <div style={{ width: totalTableWidth, height: '1px' }} />
         </div>
+      </div>
 
-        <div className="bg-white rounded-2xl border border-[#e2e9e4] shadow-xl shadow-gray-200/50 overflow-hidden">
+      {/* Main Table Content */}
+      <div className="flex-1 min-h-0 overflow-auto bg-[#f8faf9] px-8 pb-8 flex flex-col">
+        <div className="bg-white rounded-2xl border border-[#e2e9e4] shadow-xl shadow-gray-200/50 overflow-hidden mt-4">
           <div 
             ref={tableContainerRef}
             className="overflow-x-auto min-h-[60vh]"
