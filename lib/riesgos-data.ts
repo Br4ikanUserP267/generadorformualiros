@@ -373,7 +373,21 @@ export const INITIAL_RIESGOS_DATA = [
   },
   {
     "title": "NATURAL",
-    "categories": []
+    "categories": [
+      {
+        "category": "",
+        "risks": [
+          { "p": "Sismo", "c": "Traumas tejidos blandos, contusiones, fracturas, aplastamientos, muerte" },
+          { "p": "Terremoto", "c": "Traumas tejidos blandos, contusiones, fracturas, aplastamientos, muerte" },
+          { "p": "Maremotos", "c": "Traumas tejidos blandos, contusiones, fracturas, aplastamientos, muerte" },
+          { "p": "Vendaval", "c": "Traumas tejidos blandos, contusiones, fracturas, aplastamientos, muerte" },
+          { "p": "Inundación - Arroyos", "c": "Traumas tejidos blandos, contusiones, fracturas, ahogamiento, muerte" },
+          { "p": "Derrumbe", "c": "Traumas tejidos blandos, contusiones, fracturas, sepultamiento, muerte" },
+          { "p": "Precipitaciones (lluvias, granizadas, heladas)", "c": "Ahogamiento, hipotermia, politrauma, muerte" },
+          { "p": "Erupción Volcánica", "c": "Politrauma, quemaduras, intoxicaciones por inhalacion de humos, estrés postraumatico, muerte" }
+        ]
+      }
+    ]
   },
   {
     "title": "QUIMICO",

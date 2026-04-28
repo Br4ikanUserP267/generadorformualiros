@@ -58,7 +58,22 @@ export function InstructionsModal({ open, onClose }: InstructionsModalProps) {
         if (res.ok) {
           const config = await res.json()
           if (config && config.valor) {
-            setRiesgosData(config.valor)
+            let loadedData = config.valor;
+            // Hotfix: Ensure NATURAL data is populated if it was missing in the DB
+            const naturalIdx = loadedData.findIndex((g: any) => g.title === "NATURAL");
+            if (naturalIdx !== -1 && (!loadedData[naturalIdx].categories || loadedData[naturalIdx].categories.length === 0)) {
+               const initialNatural = INITIAL_RIESGOS_DATA.find((g: any) => g.title === "NATURAL");
+               if (initialNatural) {
+                 loadedData[naturalIdx].categories = initialNatural.categories;
+                 // Database will be updated on next user edit, or we can just use the merged state
+                 fetch('/api/configuracion?key=riesgos_data', {
+                   method: 'POST',
+                   headers: { 'Content-Type': 'application/json' },
+                   body: JSON.stringify({ valor: loadedData })
+                 }).catch(console.error);
+               }
+            }
+            setRiesgosData(loadedData)
           }
         }
       } catch (e) {
@@ -170,7 +185,7 @@ export function InstructionsModal({ open, onClose }: InstructionsModalProps) {
 
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
-      <div className="bg-white w-full max-w-7.5xl h-[90vh] rounded-2xl shadow-2xl overflow-hidden flex flex-col animate-in zoom-in-95 duration-200 border border-[#e2e9e4]">
+      <div className="bg-white w-full max-w-[1400px] h-[90vh] rounded-2xl shadow-2xl overflow-hidden flex flex-col animate-in zoom-in-95 duration-200 border border-[#e2e9e4]">
         {/* Header */}
         <div className="px-8 py-5 border-b border-[#e2e9e4] flex items-center justify-between bg-white sticky top-0 z-10">
           <div className="flex items-center gap-4">
