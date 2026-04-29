@@ -73,13 +73,12 @@ function computeCountsFromSummary(summary: any) {
         const peligros = actividad?.peligros || []
         totalPeligros += peligros.length
         for (const peligro of peligros) {
-          const nr = Number(peligro?.evaluacion?.nivelRiesgo || 0)
-          if (!nr || nr === 0) counts[3] += 1
-          else if (nr >= 4000) counts[0] += 1
-          else if (nr >= 501) counts[0] += 1
-          else if (nr >= 121) counts[1] += 1
-          else if (nr >= 40) counts[2] += 1
-          else counts[3] += 1
+          const np = Number(peligro?.evaluacion?.nivelProbabilidad || 0)
+          if (!np || np === 0) counts[3] += 1
+          else if (np >= 24) counts[0] += 1 // Muy Alto
+          else if (np >= 10) counts[1] += 1 // Alto
+          else if (np >= 6) counts[2] += 1  // Medio
+          else counts[3] += 1              // Bajo
         }
       }
     }
@@ -228,6 +227,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
                           evaluacion: {
                             select: {
                               nivelRiesgo: true,
+                              nivelProbabilidad: true,
                             },
                           },
                         },
@@ -257,6 +257,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
                           evaluacion: {
                             select: {
                               nivelRiesgo: true,
+                              nivelProbabilidad: true,
                             },
                           },
                         },

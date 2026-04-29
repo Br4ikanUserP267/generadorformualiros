@@ -6,12 +6,12 @@ function parseSearch(value: unknown) {
   return raw || ''
 }
 
-function buildWhere(search: string, aceptabilidad: string) {
+function buildWhere(search: string, interpProbabilidad: string) {
   return {
     ...(search ? {
       descripcion: { contains: search, mode: 'insensitive' as const },
     } : {}),
-    evaluacion: { aceptabilidad },
+    evaluacion: { interpProbabilidad },
     actividad: {
       zona: {
         proceso: {
@@ -32,10 +32,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const search = parseSearch(req.query.search)
 
     const [muyAlto, alto, medio, bajo] = await Promise.all([
-      prisma.peligro.count({ where: buildWhere(search, 'No Aceptable') }),
-      prisma.peligro.count({ where: buildWhere(search, 'Aceptable con Control Especifico') }),
-      prisma.peligro.count({ where: buildWhere(search, 'Mejorable') }),
-      prisma.peligro.count({ where: buildWhere(search, 'Aceptable') }),
+      prisma.peligro.count({ where: buildWhere(search, 'Muy Alto') }),
+      prisma.peligro.count({ where: buildWhere(search, 'Alto') }),
+      prisma.peligro.count({ where: buildWhere(search, 'Medio') }),
+      prisma.peligro.count({ where: buildWhere(search, 'Bajo') }),
     ])
 
     return res.status(200).json({

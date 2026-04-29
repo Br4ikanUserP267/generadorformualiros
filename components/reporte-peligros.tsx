@@ -17,6 +17,7 @@ type PeligroReporteItem = {
   nivelRiesgo: number | null
   interpRiesgo: string
   aceptabilidad: string
+  interpProbabilidad: string
   nombreMatriz: string
   matrizId: string
   actividad: string
@@ -37,10 +38,10 @@ type CountsResponse = {
 }
 
 const ACEPTABILIDAD_LEVELS = [
-  { key: 'No Aceptable', color: '#a50000', icon: '🔴' },
-  { key: 'Aceptable con Control Especifico', color: '#EAB308', icon: '🟠' },
-  { key: 'Mejorable', color: '#22c55e', icon: '🟢' },
-  { key: 'Aceptable', color: '#198754', icon: '🟢' },
+  { key: 'Muy Alto', color: '#a50000', icon: '🔴' },
+  { key: 'Alto', color: '#dc3545', icon: '🟠' },
+  { key: 'Medio', color: '#EAB308', icon: '🟢' },
+  { key: 'Bajo', color: '#198754', icon: '🟢' },
 ] as const
 
 function levelColor(label: string) {
@@ -60,12 +61,8 @@ function aceptabilidadColor(aceptabilidad: string) {
   return '#64748b'
 }
 
-function aceptabilidadToLevel(aceptabilidad: string) {
-  if (aceptabilidad === 'No Aceptable') return 'Muy Alto'
-  if (aceptabilidad === 'Aceptable con Control Especifico') return 'Alto'
-  if (aceptabilidad === 'Mejorable') return 'Medio'
-  if (aceptabilidad === 'Aceptable') return 'Bajo'
-  return aceptabilidad || 'Sin clasificación'
+function interpretacionNP(item: PeligroReporteItem) {
+  return (item as any).interpProbabilidad || 'Sin clasificación'
 }
 
 export function ReportePeligros() {
@@ -199,9 +196,9 @@ export function ReportePeligros() {
           {ACEPTABILIDAD_LEVELS.map((card) => {
             const selected = selectedAceptabilidad === card.key
             const count =
-              card.key === 'No Aceptable' ? counts.muyAlto :
-              card.key === 'Aceptable con Control Especifico' ? counts.alto :
-              card.key === 'Mejorable' ? counts.medio : counts.bajo
+              card.key === 'Muy Alto' ? counts.muyAlto :
+              card.key === 'Alto' ? counts.alto :
+              card.key === 'Medio' ? counts.medio : counts.bajo
             const percentage = totalCardsCount > 0 ? Math.round((count / totalCardsCount) * 100) : 0
 
             return (
@@ -251,15 +248,14 @@ export function ReportePeligros() {
                 <tr>
                   <th className="px-6 py-4 text-left font-bold text-[#5e6b62] uppercase tracking-wider">Peligro</th>
                   <th className="px-6 py-4 text-left font-bold text-[#5e6b62] uppercase tracking-wider">Clasificación</th>
-                  <th className="px-6 py-4 text-center font-bold text-[#5e6b62] uppercase tracking-wider">Nivel</th>
+                  <th className="px-6 py-4 text-center font-bold text-[#5e6b62] uppercase tracking-wider">NP (Prob.)</th>
+                  <th className="px-6 py-4 text-center font-bold text-[#5e6b62] uppercase tracking-wider">NR (Nivel)</th>
                   <th className="px-6 py-4 text-left font-bold text-[#5e6b62] uppercase tracking-wider">Origen (Matriz)</th>
                   <th className="px-6 py-4 text-center font-bold text-[#5e6b62] uppercase tracking-wider">Aceptabilidad</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-[#e2e9e4]/50">
                 {items.map((item) => {
-                  const nivelLabel = item.interpRiesgo || aceptabilidadToLevel(item.aceptabilidad)
-                  const nColor = levelColor(nivelLabel)
                   const aColor = aceptabilidadColor(item.aceptabilidad)
 
                   return (
@@ -269,9 +265,17 @@ export function ReportePeligros() {
                       <td className="px-6 py-4 text-center">
                         <span 
                           className="px-3 py-1 rounded-full text-[11px] font-bold text-white shadow-sm"
-                          style={{ backgroundColor: nColor }}
+                          style={{ backgroundColor: levelColor(item.interpProbabilidad || '') }}
                         >
-                          {nivelLabel || '—'}
+                          {item.interpProbabilidad || '—'}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 text-center">
+                        <span 
+                          className="px-3 py-1 rounded-full text-[11px] font-bold text-white shadow-sm"
+                          style={{ backgroundColor: levelColor(item.interpRiesgo || '') }}
+                        >
+                          {item.interpRiesgo || '—'}
                         </span>
                       </td>
                       <td className="px-6 py-4">

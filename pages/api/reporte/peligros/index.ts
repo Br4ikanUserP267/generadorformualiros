@@ -33,7 +33,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     const where = {
       ...(aceptabilidad.length > 0 ? {
-        evaluacion: { aceptabilidad: { in: aceptabilidad } },
+        evaluacion: { interpProbabilidad: { in: aceptabilidad } },
       } : {}),
       ...(search ? {
         descripcion: { contains: search, mode: 'insensitive' as const },
@@ -59,6 +59,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
               nivelRiesgo: true,
               interpRiesgo: true,
               aceptabilidad: true,
+              interpProbabilidad: true,
             },
           },
           actividad: {
@@ -99,6 +100,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         nivelRiesgo: row.evaluacion?.nivelRiesgo ?? null,
         interpRiesgo: row.evaluacion?.interpRiesgo || '',
         aceptabilidad: row.evaluacion?.aceptabilidad || '',
+        interpProbabilidad: row.evaluacion?.interpProbabilidad || '',
         nombreMatriz: matriz?.area || 'Matriz sin nombre',
         matrizId: matriz?.id || '',
         actividad: `Actividad ${orden + 1}`,
