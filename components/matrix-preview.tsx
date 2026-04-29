@@ -37,7 +37,7 @@ function interpNivelRiesgo(nr: number) {
 function aceptabilidadColor(text: string) {
   if (text.includes('No Aceptable')) return '#dc3545'
   if (text.includes('Control Especifico')) return '#EAB308'
-  if (text.includes('Mejorable')) return '#22c55e'
+  if (text.includes('Mejorable')) return '#198754'
   if (text.includes('Aceptable')) return '#198754'
   return '#9CA3AF'
 }
