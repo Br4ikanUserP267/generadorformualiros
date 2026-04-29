@@ -39,24 +39,24 @@ type CountsResponse = {
 
 const ACEPTABILIDAD_LEVELS = [
   { key: 'Muy Alto', color: '#a50000', icon: '🔴' },
-  { key: 'Alto', color: '#dc3545', icon: '🟠' },
+  { key: 'Alto', color: '#ef4444', icon: '🔴' },
   { key: 'Medio', color: '#EAB308', icon: '🟢' },
   { key: 'Bajo', color: '#198754', icon: '🟢' },
 ] as const
 
 function levelColor(label: string) {
   const norm = label.toLowerCase().trim()
-  if (norm === 'i' || norm === 'muy alto') return '#dc3545'
-  if (norm === 'ii' || norm === 'medio') return '#EAB308'
-  if (norm === 'iii' || norm === 'alto') return '#22c55e'
+  if (norm === 'i' || norm === 'muy alto') return '#a50000'
+  if (norm === 'ii' || norm === 'alto') return '#ef4444'
+  if (norm === 'iii' || norm === 'medio') return '#EAB308'
   if (norm === 'iv' || norm === 'bajo') return '#198754'
   return '#64748b'
 }
 
 function aceptabilidadColor(aceptabilidad: string) {
-  if (aceptabilidad === 'No Aceptable') return '#dc3545'
-  if (aceptabilidad === 'Aceptable con Control Especifico') return '#EAB308'
-  if (aceptabilidad === 'Mejorable') return '#22c55e'
+  if (aceptabilidad === 'No Aceptable') return '#a50000'
+  if (aceptabilidad === 'Aceptable con Control Especifico') return '#ef4444'
+  if (aceptabilidad === 'Mejorable') return '#198754'
   if (aceptabilidad === 'Aceptable') return '#198754'
   return '#64748b'
 }
@@ -212,7 +212,7 @@ export function ReportePeligros() {
                   <span className="text-xl">{card.icon}</span>
                 </div>
                 <div className="space-y-1">
-                    <span className="text-xs font-bold text-[#5e6b62] uppercase tracking-wider block">{card.key}</span>
+                    <span className="text-[10px] font-bold text-[#5e6b62] uppercase tracking-wider block leading-tight whitespace-normal">{card.key}</span>
                     <span className="text-[10px] font-bold text-gray-400">{percentage}% del total</span>
                 </div>
                 <div className="h-1.5 w-full rounded-full bg-gray-100 overflow-hidden">

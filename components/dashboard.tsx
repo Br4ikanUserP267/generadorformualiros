@@ -353,18 +353,18 @@ export function Dashboard() {
 
       <main className="max-w-[1400px] mx-auto p-6 space-y-6">
         {/* Stats Grid */}
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
           {[
             { label: 'Total matrices', val: stats.totM, color: '#1F7D3E', bg: 'bg-[#f0f9f1]' },
             { label: 'Total riesgos', val: stats.totP, color: '#2c3630', bg: 'bg-gray-100' },
-            { label: 'Muy alto', val: stats.ma, color: '#a50000', bg: 'bg-[#fce8e8]' },
-            { label: 'Alto', val: stats.al, color: '#dc3545', bg: 'bg-[#fdecea]' },
+            { label: 'Muy Alto', val: stats.ma, color: '#a50000', bg: 'bg-[#fce8e8]' },
+            { label: 'Alto', val: stats.al, color: '#ef4444', bg: 'bg-[#fdecea]' },
             { label: 'Medio', val: stats.me, color: '#fd7e14', bg: 'bg-[#fff3e0]' },
             { label: 'Bajo', val: stats.ba, color: '#198754', bg: 'bg-[#e8f5e9]' }
           ].map((s, i) => (
             <div key={i} className="bg-white border border-[#e2e9e4] rounded-2xl p-5 shadow-sm space-y-2">
               <span className="text-3xl font-bold block leading-none" style={{ color: s.color }}>{s.val}</span>
-              <span className="text-xs font-semibold text-[#5e6b62] uppercase tracking-wider">{s.label}</span>
+              <span className="text-[10px] font-bold text-[#5e6b62] uppercase tracking-wider leading-tight whitespace-normal">{s.label}</span>
               <div className={`h-1.5 w-full rounded-full ${s.bg}`} style={{ background: i > 1 ? s.color : undefined }} />
             </div>
           ))}
