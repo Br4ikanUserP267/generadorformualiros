@@ -31,7 +31,7 @@ function interpNivelRiesgo(nr: number) {
   if (!nr) return { label: '—', color: '#9CA3AF' }
   if (nr >= 4000 && nr <= 6000) return { label: 'I', color: '#dc3545' }
   if (nr >= 150 && nr <= 500) return { label: 'II', color: '#EAB308' }
-  if (nr >= 40 && nr <= 120) return { label: 'III', color: '#22c55e' }
+  if (nr >= 40 && nr <= 120) return { label: 'III', color: '#198754' }
   if (nr >= 10 && nr <= 20) return { label: 'IV', color: '#198754' }
   // catch-all mapping
   if (nr >= 501) return { label: 'I', color: '#dc3545' }
@@ -62,7 +62,7 @@ function aceptabilidadFromNivel(label: string) {
 function aceptabilidadColor(text: string) {
   if (text.includes('No Aceptable')) return '#dc3545' // Rojo
   if (text.includes('Control Especifico')) return '#EAB308' // Amarillo
-  if (text.includes('Mejorable')) return '#22c55e' // Verde
+  if (text.includes('Mejorable')) return '#198754' // Verde
   if (text.includes('Aceptable')) return '#198754' // Verde profundo
   return '#9CA3AF'
 }

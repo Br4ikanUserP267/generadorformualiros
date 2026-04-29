@@ -27,7 +27,7 @@ function interpNivelRiesgo(nr: number) {
   if (!nr) return { label: '—', color: '#9CA3AF' }
   if (nr >= 4000 && nr <= 6000) return { label: 'I', color: '#dc3545' }
   if (nr >= 150 && nr <= 500) return { label: 'II', color: '#EAB308' }
-  if (nr >= 40 && nr <= 120) return { label: 'III', color: '#22c55e' }
+  if (nr >= 40 && nr <= 120) return { label: 'III', color: '#198754' }
   if (nr >= 10 && nr <= 20) return { label: 'IV', color: '#198754' }
   if (nr >= 501) return { label: 'I', color: '#dc3545' }
   if (nr >= 121 && nr <= 500) return { label: 'II', color: '#f59e0b' }
@@ -43,11 +43,11 @@ function aceptabilidadColor(text: string) {
 }
 
 function getEvalFieldStyle(colKey: string, row: any) {
-  if (['np', 'interpNp'].includes(colKey)) {
+  if (colKey === 'interpNp') {
     const color = interpProbabilidad(row.np || 0).color
     return color !== '#9CA3AF' ? { backgroundColor: color, color: '#fff', fontWeight: '700' } : {}
   }
-  if (['nr', 'interpNr'].includes(colKey)) {
+  if (colKey === 'interpNr') {
     const color = interpNivelRiesgo(row.nr || 0).color
     return color !== '#9CA3AF' ? { backgroundColor: color, color: '#fff', fontWeight: '700' } : {}
   }
