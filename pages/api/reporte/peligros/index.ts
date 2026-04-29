@@ -83,7 +83,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
             },
           },
         },
-        orderBy: { evaluacion: { nivelRiesgo: 'desc' } },
+        orderBy: { evaluacion: { nivelProbabilidad: 'desc' } },
         take: pageSize,
         skip: page * pageSize,
       }),
