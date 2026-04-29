@@ -40,24 +40,24 @@ type CountsResponse = {
 const ACEPTABILIDAD_LEVELS = [
   { key: 'Muy Alto', color: '#a50000', icon: '🔴' },
   { key: 'Alto', color: '#ef4444', icon: '🔴' },
-  { key: 'Medio', color: '#EAB308', icon: '🟢' },
+  { key: 'Medio', color: '#EAB308', icon: '🟡' },
   { key: 'Bajo', color: '#198754', icon: '🟢' },
 ] as const
 
 function levelColor(label: string) {
   const norm = label.toLowerCase().trim()
-  if (norm === 'i' || norm === 'muy alto') return '#a50000'
-  if (norm === 'ii' || norm === 'alto') return '#ef4444'
-  if (norm === 'iii' || norm === 'medio') return '#EAB308'
-  if (norm === 'iv' || norm === 'bajo') return '#198754'
+  if (norm === 'muy alto') return '#a50000'              // NP: Muy Alto = Deep Red
+  if (norm === 'alto' || norm === 'i') return '#ef4444'   // NP: Alto = Red, NR: I = Red
+  if (norm === 'medio' || norm === 'ii') return '#EAB308' // NP: Medio = Yellow, NR: II = Yellow
+  if (norm === 'bajo' || norm === 'iii' || norm === 'iv') return '#198754' // Green
   return '#64748b'
 }
 
 function aceptabilidadColor(aceptabilidad: string) {
-  if (aceptabilidad === 'No Aceptable') return '#a50000'
-  if (aceptabilidad === 'Aceptable con Control Especifico') return '#ef4444'
-  if (aceptabilidad === 'Mejorable') return '#198754'
-  if (aceptabilidad === 'Aceptable') return '#198754'
+  if (aceptabilidad === 'No Aceptable') return '#ef4444'                    // Red
+  if (aceptabilidad === 'Aceptable con Control Especifico') return '#EAB308' // Yellow
+  if (aceptabilidad === 'Mejorable') return '#198754'                        // Green
+  if (aceptabilidad === 'Aceptable') return '#198754'                       // Green
   return '#64748b'
 }
 

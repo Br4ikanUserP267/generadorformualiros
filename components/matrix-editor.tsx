@@ -20,32 +20,32 @@ function makeId(prefix = '') { return prefix + Math.random().toString(36).slice(
 // risk interpretation helpers (GTC-45 rules)
 function interpProbabilidad(np: number) {
   if (!np) return { label: '—', color: '#9CA3AF' }
-  if (np >= 24 && np <= 40) return { label: 'Muy Alto', color: '#a50000' }
-  if (np >= 10 && np <= 23) return { label: 'Alto', color: '#ef4444' }
-  if (np >= 6 && np <= 9) return { label: 'Medio', color: '#EAB308' }
-  if (np >= 2 && np <= 5) return { label: 'Bajo', color: '#198754' }
+  if (np >= 24 && np <= 40) return { label: 'Muy Alto', color: '#a50000' } // Deep Red
+  if (np >= 10 && np <= 23) return { label: 'Alto', color: '#ef4444' }     // Red
+  if (np >= 6 && np <= 9) return { label: 'Medio', color: '#EAB308' }    // Yellow
+  if (np >= 2 && np <= 5) return { label: 'Bajo', color: '#198754' }     // Green
   return { label: String(np), color: '#9CA3AF' }
 }
 
 function interpNivelRiesgo(nr: number) {
   if (!nr) return { label: '—', color: '#9CA3AF' }
-  if (nr >= 4000 && nr <= 6000) return { label: 'I', color: '#a50000' }
-  if (nr >= 150 && nr <= 500) return { label: 'II', color: '#ef4444' }
-  if (nr >= 40 && nr <= 120) return { label: 'III', color: '#198754' }
-  if (nr >= 10 && nr <= 20) return { label: 'IV', color: '#198754' }
+  if (nr >= 4000 && nr <= 6000) return { label: 'I', color: '#ef4444' }    // I = Red
+  if (nr >= 150 && nr <= 500) return { label: 'II', color: '#EAB308' }    // II = Yellow
+  if (nr >= 40 && nr <= 120) return { label: 'III', color: '#198754' }    // III = Green
+  if (nr >= 10 && nr <= 20) return { label: 'IV', color: '#198754' }     // IV = Green
   // catch-all mapping
-  if (nr >= 501) return { label: 'I', color: '#a50000' }
-  if (nr >= 121 && nr <= 500) return { label: 'II', color: '#ef4444' }
+  if (nr >= 501) return { label: 'I', color: '#ef4444' }
+  if (nr >= 121 && nr <= 500) return { label: 'II', color: '#EAB308' }
   return { label: String(nr), color: '#9CA3AF' }
 }
 
 function renderPeligroBadge(nrVal: number) {
   if (!nrVal) return null;
   const label = interpNivelRiesgo(nrVal).label;
-  if (label === 'I') return { dot: '#a50000', bg: '#fce8e8', text: 'Muy alto' };
-  if (label === 'II') return { dot: '#ef4444', bg: '#fdecea', text: 'Alto' };
-  if (label === 'III') return { dot: '#EAB308', bg: '#fff3e0', text: 'Medio' };
-  if (label === 'IV') return { dot: '#198754', bg: '#e8f5e9', text: 'Bajo' };
+  if (label === 'I') return { dot: '#ef4444', bg: '#fce8e8', text: 'Nivel I' };
+  if (label === 'II') return { dot: '#EAB308', bg: '#fdecea', text: 'Nivel II' };
+  if (label === 'III') return { dot: '#198754', bg: '#fff3e0', text: 'Nivel III' };
+  if (label === 'IV') return { dot: '#198754', bg: '#e8f5e9', text: 'Nivel IV' };
   return null;
 }
 

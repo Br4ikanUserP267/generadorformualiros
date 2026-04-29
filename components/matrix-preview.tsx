@@ -16,29 +16,29 @@ interface ColumnWidths {
 // risk interpretation helpers matching matrix-editor
 function interpProbabilidad(np: number) {
   if (!np) return { label: '—', color: '#9CA3AF' }
-  if (np >= 24 && np <= 40) return { label: 'Muy Alto', color: '#a50000' }
-  if (np >= 10 && np <= 23) return { label: 'Alto', color: '#ef4444' }
-  if (np >= 6 && np <= 9) return { label: 'Medio', color: '#EAB308' }
-  if (np >= 2 && np <= 5) return { label: 'Bajo', color: '#198754' }
+  if (np >= 24 && np <= 40) return { label: 'Muy Alto', color: '#a50000' } // Deep Red
+  if (np >= 10 && np <= 23) return { label: 'Alto', color: '#ef4444' }     // Red
+  if (np >= 6 && np <= 9) return { label: 'Medio', color: '#EAB308' }    // Yellow
+  if (np >= 2 && np <= 5) return { label: 'Bajo', color: '#198754' }     // Green
   return { label: String(np), color: '#9CA3AF' }
 }
 
 function interpNivelRiesgo(nr: number) {
   if (!nr) return { label: '—', color: '#9CA3AF' }
-  if (nr >= 4000 && nr <= 6000) return { label: 'I', color: '#a50000' }
-  if (nr >= 150 && nr <= 500) return { label: 'II', color: '#ef4444' }
-  if (nr >= 40 && nr <= 120) return { label: 'III', color: '#198754' }
-  if (nr >= 10 && nr <= 20) return { label: 'IV', color: '#198754' }
-  if (nr >= 501) return { label: 'I', color: '#a50000' }
-  if (nr >= 121 && nr <= 500) return { label: 'II', color: '#ef4444' }
+  if (nr >= 4000 && nr <= 6000) return { label: 'I', color: '#ef4444' }    // I = Red
+  if (nr >= 150 && nr <= 500) return { label: 'II', color: '#EAB308' }    // II = Yellow
+  if (nr >= 40 && nr <= 120) return { label: 'III', color: '#198754' }    // III = Green
+  if (nr >= 10 && nr <= 20) return { label: 'IV', color: '#198754' }     // IV = Green
+  if (nr >= 501) return { label: 'I', color: '#ef4444' }
+  if (nr >= 121 && nr <= 500) return { label: 'II', color: '#EAB308' }
   return { label: String(nr), color: '#9CA3AF' }
 }
 
 function aceptabilidadColor(text: string) {
-  if (text.includes('No Aceptable')) return '#a50000'
-  if (text.includes('Control Especifico')) return '#ef4444'
-  if (text.includes('Mejorable')) return '#198754'
-  if (text.includes('Aceptable')) return '#198754'
+  if (text.includes('No Aceptable')) return '#ef4444'                    // Red
+  if (text.includes('Control Especifico')) return '#EAB308'               // Yellow
+  if (text.includes('Mejorable')) return '#198754'                        // Green
+  if (text.includes('Aceptable')) return '#198754'                       // Green
   return '#9CA3AF'
 }
 

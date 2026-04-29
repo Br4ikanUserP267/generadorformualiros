@@ -359,7 +359,7 @@ export function Dashboard() {
             { label: 'Total riesgos', val: stats.totP, color: '#2c3630', bg: 'bg-gray-100' },
             { label: 'Muy Alto', val: stats.ma, color: '#a50000', bg: 'bg-[#fce8e8]' },
             { label: 'Alto', val: stats.al, color: '#ef4444', bg: 'bg-[#fdecea]' },
-            { label: 'Medio', val: stats.me, color: '#fd7e14', bg: 'bg-[#fff3e0]' },
+            { label: 'Medio', val: stats.me, color: '#EAB308', bg: 'bg-[#fff3e0]' },
             { label: 'Bajo', val: stats.ba, color: '#198754', bg: 'bg-[#e8f5e9]' }
           ].map((s, i) => (
             <div key={i} className="bg-white border border-[#e2e9e4] rounded-2xl p-5 shadow-sm space-y-2">
