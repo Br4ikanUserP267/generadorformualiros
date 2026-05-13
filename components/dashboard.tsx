@@ -332,6 +332,13 @@ export function Dashboard() {
           </button>
 
           <button 
+            onClick={() => router.push('/dashboard/priorizacion')}
+            className="text-sm font-bold text-[#1F7D3E] hover:underline px-4 py-2 bg-[#f0f9f1] border border-[#d1e2d6] rounded-xl shadow-sm transition-all hover:bg-white"
+          >
+            Priorización de Riesgos
+          </button>
+
+          <button 
             onClick={() => router.push('/dashboard/reporte')}
             className="text-sm font-bold text-[#1F7D3E] hover:underline px-4 py-2 bg-[#f0f9f1] border border-[#d1e2d6] rounded-xl shadow-sm transition-all hover:bg-white"
           >

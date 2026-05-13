@@ -87,6 +87,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
                           control: true,
                           criterio: true,
                           evaluacion: true,
+                          evaluacionPost: true,
                           intervencion: true
                         },
                         orderBy: { orden: 'asc' }
@@ -111,22 +112,22 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           responsable: m.responsable || '',
           fecha_elaboracion: m.fechaElaboracion ? m.fechaElaboracion.toISOString().split('T')[0] : '',
           fecha_actualizacion: m.fechaActualizacion ? m.fechaActualizacion.toISOString().split('T')[0] : '',
-          files: m.archivos.map((a) => ({
+          files: (m as any).archivos.map((a: any) => ({
             name: a.nombreOriginal || 'file',
             type: a.tipoMime || '',
             data: a.url || ''
           })),
-          procesos: m.procesos.map(p => ({
+          procesos: ((m as any).procesos || []).map((p: any) => ({
             id: p.id,
             nombre: p.nombre,
             orden: p.orden || 0,
-            zonas: p.zonas.map(z => ({
+            zonas: (p.zonas || []).map((z: any) => ({
               id: z.id,
               nombre: z.nombre,
               orden: z.orden || 0,
               cargo: '', // From actividad or fallback
               rutinario: false,
-              actividades: z.actividades.map(a => ({
+              actividades: z.actividades.map((a: any) => ({
                 id: a.id,
                 nombre: a.nombre,
                 orden: a.orden || 0,
@@ -156,6 +157,16 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
                     interp_nr: pel.evaluacion?.interpRiesgo || '',
                     aceptabilidad: pel.evaluacion?.aceptabilidad || ''
                   },
+                  evaluacionPost: pel.evaluacionPost ? {
+                    nd: pel.evaluacionPost.nivelDeficiencia || null,
+                    ne: pel.evaluacionPost.nivelExposicion || null,
+                    nc: pel.evaluacionPost.nivelConsecuencia || null,
+                    np: pel.evaluacionPost.nivelProbabilidad || null,
+                    nr: pel.evaluacionPost.nivelRiesgo || null,
+                    interp_np: pel.evaluacionPost.interpProbabilidad || '',
+                    interp_nr: pel.evaluacionPost.interpRiesgo || '',
+                    aceptabilidad: pel.evaluacionPost.aceptabilidad || ''
+                  } : null,
                   criterios: {
                     num_expuestos: pel.criterio?.numExpuestos || null,
                     peor_consecuencia: pel.criterio?.peorConsecuencia || '',
@@ -242,6 +253,16 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
                             interpProbabilidad: pel.evaluacion.interp_np,
                             interpRiesgo: pel.evaluacion.interp_nr,
                             aceptabilidad: pel.evaluacion.aceptabilidad
+                          }} : undefined,
+                          evaluacionPost: pel.evaluacionPost ? { create: {
+                            nivelDeficiencia: Number(pel.evaluacionPost.nd) || null,
+                            nivelExposicion: Number(pel.evaluacionPost.ne) || null,
+                            nivelConsecuencia: Number(pel.evaluacionPost.nc) || null,
+                            nivelProbabilidad: Number(pel.evaluacionPost.np) || null,
+                            nivelRiesgo: Number(pel.evaluacionPost.nr) || null,
+                            interpProbabilidad: pel.evaluacionPost.interp_np,
+                            interpRiesgo: pel.evaluacionPost.interp_nr,
+                            aceptabilidad: pel.evaluacionPost.aceptabilidad
                           }} : undefined,
                           criterio: pel.criterios ? { create: {
                             numExpuestos: Number(pel.criterios.num_expuestos) || null,

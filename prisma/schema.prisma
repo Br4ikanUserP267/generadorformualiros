@@ -85,8 +85,9 @@ model Peligro {
   deletedAt       DateTime?     @map("deleted_at")
   control         Control?
   criterio        Criterio?
-  evaluacion      Evaluacion?
-  intervencion    Intervencion?
+  evaluacion       Evaluacion?
+  evaluacionPost   EvaluacionPost?
+  intervencion     Intervencion?
   actividad       Actividad     @relation(fields: [actividadId], references: [id], onDelete: Cascade)
 
   @@map("peligros")
@@ -167,6 +168,22 @@ model Configuracion {
   valor Json
 
   @@map("configuraciones")
+}
+
+model EvaluacionPost {
+  id                 String  @id @default(uuid())
+  peligroId          String  @unique @map("peligro_id")
+  nivelDeficiencia   Int?    @map("nivel_deficiencia")
+  nivelExposicion    Int?    @map("nivel_exposicion")
+  nivelProbabilidad  Int?    @map("nivel_probabilidad")
+  interpProbabilidad String? @map("interp_probabilidad")
+  nivelConsecuencia  Int?    @map("nivel_consecuencia")
+  nivelRiesgo        Int?    @map("nivel_riesgo")
+  interpRiesgo       String? @map("interp_riesgo")
+  aceptabilidad      String?
+  peligro            Peligro @relation(fields: [peligroId], references: [id], onDelete: Cascade)
+
+  @@map("evaluaciones_post")
 }
 
 // Keep schema clean - Archivo model is the final model

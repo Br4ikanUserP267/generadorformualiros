@@ -1,0 +1,433 @@
+"use client"
+
+import React, { useEffect, useState, useMemo } from 'react'
+import { useRouter } from 'next/navigation'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Badge } from '@/components/ui/badge'
+import { Input } from '@/components/ui/input'
+import { Button } from '@/components/ui/button'
+import { Textarea } from '@/components/ui/textarea'
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
+import { apiFetch } from '@/lib/utils'
+import { useAuth } from '@/lib/auth-context'
+import { toast } from '@/hooks/use-toast'
+
+type EvaluationData = {
+  nd: number | null
+  ne: number | null
+  nc: number | null
+  np: number | null
+  nr: number | null
+  interp_np: string
+  interp_nr: string
+  aceptabilidad: string
+}
+
+type RiskPrioritizationItem = {
+  id: string
+  descripcion: string
+  clasificacion: string
+  area: string
+  proceso: string
+  zona: string
+  actividad: string
+  evaluacion: EvaluationData
+  evaluacionPost: EvaluationData | null
+  intervencion: {
+    eliminacion: string
+    sustitucion: string
+    controles_ingenieria: string
+    controles_administrativos: string
+    epp: string
+    responsable: string
+    fecha_ejecucion: string
+  }
+}
+
+function interpProbabilidad(np: number) {
+  if (!np) return { label: '—', color: '#9CA3AF' }
+  if (np >= 24 && np <= 40) return { label: 'Muy Alto', color: '#a50000' }
+  if (np >= 10 && np <= 23) return { label: 'Alto', color: '#ef4444' }
+  if (np >= 6 && np <= 9) return { label: 'Medio', color: '#EAB308' }
+  if (np >= 2 && np <= 5) return { label: 'Bajo', color: '#198754' }
+  return { label: String(np), color: '#9CA3AF' }
+}
+
+function interpNivelRiesgo(nr: number) {
+  if (!nr) return { label: '—', color: '#9CA3AF' }
+  if (nr >= 4000 && nr <= 6000) return { label: 'I', color: '#ef4444' }
+  if (nr >= 150 && nr <= 500) return { label: 'II', color: '#EAB308' }
+  if (nr >= 40 && nr <= 120) return { label: 'III', color: '#198754' }
+  if (nr >= 10 && nr <= 20) return { label: 'IV', color: '#198754' }
+  if (nr >= 501) return { label: 'I', color: '#ef4444' }
+  if (nr >= 121 && nr <= 500) return { label: 'II', color: '#EAB308' }
+  return { label: String(nr), color: '#9CA3AF' }
+}
+
+function aceptabilidadFromNivel(label: string) {
+  switch (label) {
+    case 'I': return 'No Aceptable'
+    case 'II': return 'Aceptable con Control Especifico'
+    case 'III': return 'Mejorable'
+    case 'IV': return 'Aceptable'
+    default: return '—'
+  }
+}
+
+export function PriorizacionRiesgos() {
+  const router = useRouter()
+  const { user } = useAuth()
+  const [risks, setRisks] = useState<RiskPrioritizationItem[]>([])
+  const [loading, setLoading] = useState(true)
+  const [search, setSearch] = useState('')
+  const [selectedRisk, setSelectedRisk] = useState<RiskPrioritizationItem | null>(null)
+  const [showModal, setShowModal] = useState(false)
+  
+  // Form State
+  const [formIntervencion, setFormIntervencion] = useState<any>({})
+  const [formEvalPost, setFormEvalPost] = useState<any>({ nd: '', ne: '', nc: '' })
+
+  const loadRisks = async () => {
+    setLoading(true)
+    try {
+      const res = await apiFetch('/api/priorizacion')
+      if (!res.ok) throw new Error('Error al cargar riesgos')
+      const data = await res.json()
+      setRisks(data)
+    } catch (error) {
+      console.error(error)
+      toast({ title: 'Error', variant: 'destructive', description: 'No se pudieron cargar los riesgos prioritarios' })
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  useEffect(() => {
+    loadRisks()
+  }, [])
+
+  const filteredRisks = useMemo(() => {
+    if (!search.trim()) return risks
+    const s = search.toLowerCase()
+    return risks.filter(r => 
+      r.descripcion.toLowerCase().includes(s) || 
+      r.area.toLowerCase().includes(s) || 
+      r.proceso.toLowerCase().includes(s)
+    )
+  }, [risks, search])
+
+  const openIntervention = (risk: RiskPrioritizationItem) => {
+    setSelectedRisk(risk)
+    setFormIntervencion({ ...risk.intervencion })
+    setFormEvalPost({
+      nd: risk.evaluacionPost?.nd || '',
+      ne: risk.evaluacionPost?.ne || '',
+      nc: risk.evaluacionPost?.nc || ''
+    })
+    setShowModal(true)
+  }
+
+  const postEvalResult = useMemo(() => {
+    const nd = Number(formEvalPost.nd || 0)
+    const ne = Number(formEvalPost.ne || 0)
+    const nc = Number(formEvalPost.nc || 0)
+    const np = (!nd || !ne) ? 0 : nd * ne
+    const nr = (!np || !nc) ? 0 : np * nc
+    
+    const prob = interpProbabilidad(np)
+    const riesgo = interpNivelRiesgo(nr)
+    
+    return {
+      np,
+      nr,
+      interp_np: prob.label,
+      interp_nr: riesgo.label,
+      aceptabilidad: aceptabilidadFromNivel(riesgo.label),
+      probColor: prob.color,
+      riesgoColor: riesgo.color
+    }
+  }, [formEvalPost])
+
+  const saveIntervention = async () => {
+    if (!selectedRisk) return
+    
+    try {
+      const payload = {
+        peligroId: selectedRisk.id,
+        intervencion: formIntervencion,
+        evaluacionPost: {
+          nd: formEvalPost.nd,
+          ne: formEvalPost.ne,
+          nc: formEvalPost.nc,
+          np: postEvalResult.np,
+          nr: postEvalResult.nr,
+          interp_np: postEvalResult.interp_np,
+          interp_nr: postEvalResult.interp_nr,
+          aceptabilidad: postEvalResult.aceptabilidad
+        }
+      }
+
+      const res = await apiFetch('/api/priorizacion/intervencion', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      })
+
+      if (!res.ok) throw new Error('Error al guardar')
+
+      toast({ title: 'Éxito', description: 'Intervención guardada correctamente' })
+      setShowModal(false)
+      loadRisks() // Refresh list (will remove if Bajo)
+    } catch (error) {
+      console.error(error)
+      toast({ title: 'Error', variant: 'destructive', description: 'No se pudo guardar la intervención' })
+    }
+  }
+
+  return (
+    <div className="min-h-screen bg-[#f8faf9] text-[#2c3630]">
+      {/* Topbar */}
+      <header className="sticky top-0 z-30 bg-white/80 backdrop-blur-md border-b border-[#e2e9e4] px-6 py-4 flex items-center justify-between">
+        <div className="flex items-center gap-4">
+          <button 
+            onClick={() => router.push('/dashboard')}
+            className="flex items-center gap-2 px-3 py-1.5 rounded-lg hover:bg-gray-100 transition-colors text-sm font-semibold text-[#1F7D3E]"
+          >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+            Volver
+          </button>
+          <div className="w-[1px] h-6 bg-[#e2e9e4]" />
+          <h1 className="text-lg font-bold text-[#1F7D3E]">Priorización de Riesgos</h1>
+        </div>
+        
+        <div className="flex items-center gap-4">
+          <div className="text-right hidden sm:block">
+            <p className="text-sm font-bold text-[#5e6b62] leading-tight">{user?.nombre}</p>
+            <p className="text-[10px] font-bold text-[#8aa08f] uppercase tracking-wider">Gestión de Intervenciones</p>
+          </div>
+        </div>
+      </header>
+
+      <main className="max-w-[1400px] mx-auto p-6 space-y-6">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div>
+            <h2 className="text-2xl font-black text-[#1F7D3E] tracking-tight">Riesgos por Intervenir</h2>
+            <p className="text-sm font-medium text-[#5e6b62]">Mostrando riesgos con probabilidad Media, Alta o Muy Alta que aún no han sido mitigados.</p>
+          </div>
+          <div className="w-full md:w-72">
+            <Input 
+              placeholder="Buscar riesgo, área o proceso..." 
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="bg-white border-[#e2e9e4] rounded-xl"
+            />
+          </div>
+        </div>
+
+        {loading ? (
+          <div className="py-20 text-center animate-pulse text-[#5e6b62] font-medium">Cargando riesgos prioritarios...</div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {filteredRisks.map(risk => (
+              <Card key={risk.id} className="border-[#e2e9e4] shadow-sm hover:shadow-md transition-all hover:border-[#1F7D3E]">
+                <CardHeader className="pb-3 border-b border-[#f0f4f1] bg-[#fcfdfc]">
+                  <div className="flex justify-between items-start gap-2">
+                    <Badge className="bg-[#f0f9f1] text-[#1F7D3E] border-[#d1e2d6] text-[10px] uppercase tracking-wider">{risk.clasificacion}</Badge>
+                    <div 
+                      className="px-2.5 py-0.5 rounded-full text-[10px] font-bold text-white uppercase shadow-sm"
+                      style={{ backgroundColor: interpProbabilidad(risk.evaluacion.np || 0).color }}
+                    >
+                      {risk.evaluacion.interp_np}
+                    </div>
+                  </div>
+                  <CardTitle className="text-base font-bold mt-2 line-clamp-2 leading-tight h-10">{risk.descripcion}</CardTitle>
+                </CardHeader>
+                <CardContent className="pt-4 space-y-4">
+                  <div className="grid grid-cols-2 gap-y-3 text-[11px]">
+                    <div className="space-y-0.5">
+                      <p className="text-[#8aa08f] font-bold uppercase tracking-widest">Área</p>
+                      <p className="font-bold text-[#2c3630]">{risk.area}</p>
+                    </div>
+                    <div className="space-y-0.5">
+                      <p className="text-[#8aa08f] font-bold uppercase tracking-widest">Proceso</p>
+                      <p className="font-bold text-[#2c3630]">{risk.proceso}</p>
+                    </div>
+                    <div className="space-y-0.5 col-span-2">
+                      <p className="text-[#8aa08f] font-bold uppercase tracking-widest">Actividad</p>
+                      <p className="font-bold text-[#2c3630]">{risk.actividad}</p>
+                    </div>
+                  </div>
+
+                  <div className="pt-4 border-t border-[#f0f4f1] flex items-center justify-between">
+                    <div className="space-y-1">
+                      <p className="text-[10px] font-bold text-[#5e6b62] uppercase tracking-wider">Estado Post-Intervención</p>
+                      {risk.evaluacionPost ? (
+                        <Badge 
+                          className="text-white border-none text-[10px] uppercase font-black"
+                          style={{ backgroundColor: interpProbabilidad(risk.evaluacionPost.np || 0).color }}
+                        >
+                          {risk.evaluacionPost.interp_np}
+                        </Badge>
+                      ) : (
+                        <span className="text-[10px] font-bold text-gray-400 italic">Pendiente de re-evaluar</span>
+                      )}
+                    </div>
+                    <Button 
+                      size="sm" 
+                      onClick={() => openIntervention(risk)}
+                      className="bg-[#1F7D3E] hover:bg-[#186331] text-white font-bold rounded-xl px-4"
+                    >
+                      Intervenir
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+            
+            {filteredRisks.length === 0 && (
+              <div className="col-span-full py-20 text-center bg-white border border-dashed border-[#e2e9e4] rounded-2xl">
+                <p className="text-sm font-medium text-[#5e6b62]">No hay riesgos que requieran priorización en este momento.</p>
+                <p className="text-xs text-gray-400 mt-1">Todos los riesgos críticos han sido mitigados o no se encontraron coincidencias.</p>
+              </div>
+            )}
+          </div>
+        )}
+      </main>
+
+      <Dialog open={showModal} onOpenChange={setShowModal}>
+        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="text-xl font-bold text-[#1F7D3E]">Intervención de Riesgo</DialogTitle>
+          </DialogHeader>
+          
+          <div className="space-y-6 py-4">
+            <div className="bg-[#fcfdfc] border border-[#e2e9e4] rounded-xl p-4 space-y-2">
+              <h4 className="text-xs font-bold text-[#1F7D3E] uppercase tracking-widest">Riesgo Original</h4>
+              <p className="text-sm font-bold text-[#2c3630]">{selectedRisk?.descripcion}</p>
+              <div className="flex gap-2 items-center mt-2">
+                <Badge variant="outline" className="text-[10px]">{selectedRisk?.area}</Badge>
+                <Badge variant="outline" className="text-[10px]">{selectedRisk?.proceso}</Badge>
+                <Badge className="text-[10px] text-white border-none" style={{ backgroundColor: interpProbabilidad(selectedRisk?.evaluacion.np || 0).color }}>
+                  NP: {selectedRisk?.evaluacion.interp_np}
+                </Badge>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {/* Intervention Actions */}
+              <div className="space-y-4">
+                <h4 className="text-sm font-bold text-[#1F7D3E] flex items-center gap-2">
+                  <span className="w-6 h-6 rounded-full bg-[#1F7D3E] text-white flex items-center justify-center text-xs">1</span>
+                  Medidas de Intervención
+                </h4>
+                
+                <div className="space-y-3">
+                  <div>
+                    <label className="text-[10px] font-bold text-[#5e6b62] uppercase tracking-wider mb-1 block">Eliminación / Sustitución</label>
+                    <Textarea 
+                      placeholder="Acciones para eliminar o sustituir el riesgo..."
+                      value={formIntervencion.eliminacion || ''}
+                      onChange={e => setFormIntervencion({...formIntervencion, eliminacion: e.target.value})}
+                      className="text-xs min-h-[60px]"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-[10px] font-bold text-[#5e6b62] uppercase tracking-wider mb-1 block">Controles de Ingeniería / Admin</label>
+                    <Textarea 
+                      placeholder="Controles técnicos o administrativos..."
+                      value={formIntervencion.controles_ingenieria || ''}
+                      onChange={e => setFormIntervencion({...formIntervencion, controles_ingenieria: e.target.value})}
+                      className="text-xs min-h-[60px]"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-[10px] font-bold text-[#5e6b62] uppercase tracking-wider mb-1 block">EPP / Responsable</label>
+                    <div className="flex gap-2">
+                      <Input 
+                        placeholder="EPP"
+                        value={formIntervencion.epp || ''}
+                        onChange={e => setFormIntervencion({...formIntervencion, epp: e.target.value})}
+                        className="text-xs"
+                      />
+                      <Input 
+                        placeholder="Responsable"
+                        value={formIntervencion.responsable || ''}
+                        onChange={e => setFormIntervencion({...formIntervencion, responsable: e.target.value})}
+                        className="text-xs"
+                      />
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Re-evaluation */}
+              <div className="space-y-4 bg-[#f8faf9] p-4 rounded-xl border border-[#e2e9e4]">
+                <h4 className="text-sm font-bold text-[#1F7D3E] flex items-center gap-2">
+                  <span className="w-6 h-6 rounded-full bg-[#1F7D3E] text-white flex items-center justify-center text-xs">2</span>
+                  Evaluación Post-Intervención
+                </h4>
+
+                <div className="grid grid-cols-3 gap-3">
+                  <div>
+                    <label className="text-[10px] font-bold text-[#5e6b62] uppercase tracking-wider mb-1 block text-center">ND</label>
+                    <Input 
+                      type="number"
+                      value={formEvalPost.nd}
+                      onChange={e => setFormEvalPost({...formEvalPost, nd: e.target.value})}
+                      className="text-center font-bold"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-[10px] font-bold text-[#5e6b62] uppercase tracking-wider mb-1 block text-center">NE</label>
+                    <Input 
+                      type="number"
+                      value={formEvalPost.ne}
+                      onChange={e => setFormEvalPost({...formEvalPost, ne: e.target.value})}
+                      className="text-center font-bold"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-[10px] font-bold text-[#5e6b62] uppercase tracking-wider mb-1 block text-center">NC</label>
+                    <Input 
+                      type="number"
+                      value={formEvalPost.nc}
+                      onChange={e => setFormEvalPost({...formEvalPost, nc: e.target.value})}
+                      className="text-center font-bold"
+                    />
+                  </div>
+                </div>
+
+                <div className="mt-6 p-4 bg-white rounded-xl border border-[#e2e9e4] space-y-4">
+                  <div className="flex justify-between items-center">
+                    <span className="text-xs font-bold text-[#5e6b62]">Nuevo Nivel de Probabilidad</span>
+                    <Badge className="text-white border-none font-black" style={{ backgroundColor: postEvalResult.probColor }}>
+                      {postEvalResult.interp_np} ({postEvalResult.np})
+                    </Badge>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-xs font-bold text-[#5e6b62]">Nuevo Nivel de Riesgo</span>
+                    <Badge className="text-white border-none font-black" style={{ backgroundColor: postEvalResult.riesgoColor }}>
+                      {postEvalResult.interp_nr} ({postEvalResult.nr})
+                    </Badge>
+                  </div>
+                  
+                  {postEvalResult.interp_np === 'Bajo' && (
+                    <div className="mt-2 p-2 bg-[#f0f9f1] border border-[#d1e2d6] rounded-lg flex items-center gap-2 text-[#1F7D3E]">
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                      <span className="text-[10px] font-bold uppercase tracking-tight">¡Riesgo mitigado! Se removerá de esta lista.</span>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <DialogFooter className="gap-2 sm:gap-0">
+            <Button variant="ghost" onClick={() => setShowModal(false)} className="font-bold text-gray-500">Cancelar</Button>
+            <Button onClick={saveIntervention} className="bg-[#1F7D3E] hover:bg-[#186331] text-white font-bold px-8">Guardar Intervención</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </div>
+  )
+}
