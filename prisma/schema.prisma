@@ -32,6 +32,7 @@ model Matriz {
   usuario            Usuario   @relation(fields: [usuarioId], references: [id])
   procesos           Proceso[]
 
+  @@index([usuarioId])
   @@map("matrices")
 }
 
@@ -44,6 +45,7 @@ model Proceso {
   matriz    Matriz    @relation(fields: [matrizId], references: [id], onDelete: Cascade)
   zonas     Zona[]
 
+  @@index([matrizId])
   @@map("procesos")
 }
 
@@ -56,6 +58,7 @@ model Zona {
   actividades Actividad[]
   proceso     Proceso     @relation(fields: [procesoId], references: [id], onDelete: Cascade)
 
+  @@index([procesoId])
   @@map("zonas")
 }
 
@@ -72,6 +75,7 @@ model Actividad {
   zona        Zona      @relation(fields: [zonaId], references: [id], onDelete: Cascade)
   peligros    Peligro[]
 
+  @@index([zonaId])
   @@map("actividades")
 }
 
@@ -90,6 +94,7 @@ model Peligro {
   intervencion     Intervencion?
   actividad       Actividad     @relation(fields: [actividadId], references: [id], onDelete: Cascade)
 
+  @@index([actividadId])
   @@map("peligros")
 }
 

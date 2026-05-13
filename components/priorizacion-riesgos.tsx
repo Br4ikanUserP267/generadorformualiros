@@ -374,31 +374,46 @@ export function PriorizacionRiesgos() {
 
                 <div className="grid grid-cols-3 gap-3">
                   <div>
-                    <label className="text-[10px] font-bold text-[#5e6b62] uppercase tracking-wider mb-1 block text-center">ND</label>
-                    <Input 
-                      type="number"
+                    <label className="text-[10px] font-bold text-[#5e6b62] uppercase tracking-wider mb-1 block">ND</label>
+                    <select 
                       value={formEvalPost.nd}
                       onChange={e => setFormEvalPost({...formEvalPost, nd: e.target.value})}
-                      className="text-center font-bold"
-                    />
+                      className="w-full p-2 border rounded-xl text-xs font-bold bg-white border-[#e2e9e4]"
+                    >
+                      <option value="">—</option>
+                      <option value="10">10 (Muy alto)</option>
+                      <option value="6">6 (Alto)</option>
+                      <option value="2">2 (Medio)</option>
+                      <option value="0">0 (Bajo)</option>
+                    </select>
                   </div>
                   <div>
-                    <label className="text-[10px] font-bold text-[#5e6b62] uppercase tracking-wider mb-1 block text-center">NE</label>
-                    <Input 
-                      type="number"
+                    <label className="text-[10px] font-bold text-[#5e6b62] uppercase tracking-wider mb-1 block">NE</label>
+                    <select 
                       value={formEvalPost.ne}
                       onChange={e => setFormEvalPost({...formEvalPost, ne: e.target.value})}
-                      className="text-center font-bold"
-                    />
+                      className="w-full p-2 border rounded-xl text-xs font-bold bg-white border-[#e2e9e4]"
+                    >
+                      <option value="">—</option>
+                      <option value="4">4 (Continua)</option>
+                      <option value="3">3 (Frecuente)</option>
+                      <option value="2">2 (Ocasional)</option>
+                      <option value="1">1 (Esporádica)</option>
+                    </select>
                   </div>
                   <div>
-                    <label className="text-[10px] font-bold text-[#5e6b62] uppercase tracking-wider mb-1 block text-center">NC</label>
-                    <Input 
-                      type="number"
+                    <label className="text-[10px] font-bold text-[#5e6b62] uppercase tracking-wider mb-1 block">NC</label>
+                    <select 
                       value={formEvalPost.nc}
                       onChange={e => setFormEvalPost({...formEvalPost, nc: e.target.value})}
-                      className="text-center font-bold"
-                    />
+                      className="w-full p-2 border rounded-xl text-xs font-bold bg-white border-[#e2e9e4]"
+                    >
+                      <option value="">—</option>
+                      <option value="100">100 (Mortal)</option>
+                      <option value="60">60 (Muy grave)</option>
+                      <option value="25">25 (Grave)</option>
+                      <option value="10">10 (Leve)</option>
+                    </select>
                   </div>
                 </div>
 

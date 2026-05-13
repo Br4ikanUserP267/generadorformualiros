@@ -18,7 +18,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     // Fetch risks where initial NP is Medio, Alto, or Muy Alto
     // AND where post-intervention NP is NOT Bajo (or doesn't exist)
-    const dangers = await prisma.peligro.findMany({
+    const dangers = await (prisma.peligro.findMany as any)({
       where: {
         actividad: {
           zona: {
@@ -45,25 +45,35 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
             }
           }
         ]
-      },
-      include: {
+      } as any,
+      select: {
+        id: true,
+        descripcion: true,
+        clasificacion: true,
         evaluacion: true,
         evaluacionPost: true,
         intervencion: true,
         actividad: {
-          include: {
+          select: {
+            nombre: true,
             zona: {
-              include: {
+              select: {
+                nombre: true,
                 proceso: {
-                  include: {
-                    matriz: true
+                  select: {
+                    nombre: true,
+                    matriz: {
+                      select: {
+                        area: true
+                      }
+                    }
                   }
                 }
               }
             }
           }
         }
-      },
+      } as any,
       orderBy: {
         evaluacion: {
           nivelProbabilidad: 'desc'

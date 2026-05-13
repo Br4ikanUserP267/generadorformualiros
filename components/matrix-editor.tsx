@@ -1245,20 +1245,24 @@ export default function MatrixEditor({ id }: { id?: string }) {
 
                               {r._ui?.activeTab===1 && (
                                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                  {/* Initial Evaluation */}
+                                  <div className="md:col-span-3 border-b border-[#dce8dc] pb-2 mb-2">
+                                    <h4 className="text-[11px] font-bold text-[#1F7D3E] uppercase tracking-wider">Evaluación Inicial</h4>
+                                  </div>
                                   <div>
-                                    <div className="text-xs">Nivel Deficiencia (ND)</div>
-                                    <select value={r.evaluacion?.nd ?? ''} onChange={(e:any)=> updatePeligroField(currentProceso.id, currentZona.id, currentActividad.id, r.id, ['evaluacion','nd'], e.target.value?Number(e.target.value):null)} className="w-full p-2 border rounded">
-                                      <option value="">Seleccionar</option>
+                                    <div className="text-xs">ND</div>
+                                    <select value={r.evaluacion?.nd ?? ''} onChange={(e:any)=> updatePeligroField(currentProceso.id, currentZona.id, currentActividad.id, r.id, ['evaluacion','nd'], e.target.value?Number(e.target.value):null)} className="w-full p-2 border rounded text-xs font-bold">
+                                      <option value="">—</option>
                                       <option value={10}>10 (Muy alto)</option>
                                       <option value={6}>6 (Alto)</option>
                                       <option value={2}>2 (Medio)</option>
-                                      <option value={1}>1 (Bajo)</option>
+                                      <option value={0}>0 (Bajo)</option>
                                     </select>
                                   </div>
                                   <div>
-                                    <div className="text-xs">Nivel Exposición (NE)</div>
-                                    <select value={r.evaluacion?.ne ?? ''} onChange={(e:any)=> updatePeligroField(currentProceso.id, currentZona.id, currentActividad.id, r.id, ['evaluacion','ne'], e.target.value?Number(e.target.value):null)} className="w-full p-2 border rounded">
-                                      <option value="">Seleccionar</option>
+                                    <div className="text-xs">NE</div>
+                                    <select value={r.evaluacion?.ne ?? ''} onChange={(e:any)=> updatePeligroField(currentProceso.id, currentZona.id, currentActividad.id, r.id, ['evaluacion','ne'], e.target.value?Number(e.target.value):null)} className="w-full p-2 border rounded text-xs font-bold">
+                                      <option value="">—</option>
                                       <option value={4}>4 (Continua)</option>
                                       <option value={3}>3 (Frecuente)</option>
                                       <option value={2}>2 (Ocasional)</option>
@@ -1266,43 +1270,103 @@ export default function MatrixEditor({ id }: { id?: string }) {
                                     </select>
                                   </div>
                                   <div>
-                                    <div className="text-xs">Nivel Probabilidad (NP)</div>
-                                    <Input readOnly value={String(r.evaluacion?.np ?? '')} />
-                                  </div>
-
-                                  <div>
-                                    <div className="text-xs">Nivel Consecuencia (NC)</div>
-                                    <select value={r.evaluacion?.nc ?? ''} onChange={(e:any)=> updatePeligroField(currentProceso.id, currentZona.id, currentActividad.id, r.id, ['evaluacion','nc'], e.target.value?Number(e.target.value):null)} className="w-full p-2 border rounded">
-                                      <option value="">Seleccionar</option>
-                                      <option value={100}>100 (Mortal o catastrófico)</option>
+                                    <div className="text-xs">NC</div>
+                                    <select value={r.evaluacion?.nc ?? ''} onChange={(e:any)=> updatePeligroField(currentProceso.id, currentZona.id, currentActividad.id, r.id, ['evaluacion','nc'], e.target.value?Number(e.target.value):null)} className="w-full p-2 border rounded text-xs font-bold">
+                                      <option value="">—</option>
+                                      <option value={100}>100 (Mortal)</option>
                                       <option value={60}>60 (Muy grave)</option>
                                       <option value={25}>25 (Grave)</option>
                                       <option value={10}>10 (Leve)</option>
                                     </select>
                                   </div>
-                                  <div>
-                                    <div className="text-xs">Nivel Riesgo (NR)</div>
-                                    <Input readOnly value={String(r.evaluacion?.nr ?? '')} />
-                                  </div>
+
+                                  {/* Residual Evaluation (Post-Intervention) */}
+                                  {r.evaluacionPost && (
+                                    <>
+                                      <div className="md:col-span-3 border-b border-[#dce8dc] pb-2 mt-4 mb-2">
+                                        <h4 className="text-[11px] font-bold text-[#1F7D3E] uppercase tracking-wider flex items-center gap-2">
+                                          Evaluación Residual (Post-Intervención)
+                                          <Badge variant="outline" className="bg-[#f0f9f1] text-[#1F7D3E] border-[#d1e2d6] text-[9px]">Actualizado</Badge>
+                                        </h4>
+                                      </div>
+                                      <div>
+                                        <div className="text-xs text-[#5e6b62]">ND Residual</div>
+                                        <Input readOnly className="h-8 bg-gray-50 font-bold text-xs" value={r.evaluacionPost.nd || '—'} />
+                                      </div>
+                                      <div>
+                                        <div className="text-xs text-[#5e6b62]">NE Residual</div>
+                                        <Input readOnly className="h-8 bg-gray-50 font-bold text-xs" value={r.evaluacionPost.ne || '—'} />
+                                      </div>
+                                      <div>
+                                        <div className="text-xs text-[#5e6b62]">NC Residual</div>
+                                        <Input readOnly className="h-8 bg-gray-50 font-bold text-xs" value={r.evaluacionPost.nc || '—'} />
+                                      </div>
+                                    </>
+                                  )}
 
                                   <div className="md:col-span-3 mt-3 p-3 bg-[#f6faf6] rounded-md border border-[#dce8dc]">
-                                    <div className="text-xs font-medium">Aceptabilidad Del Riesgo</div>
-                                    <div className="mt-2 grid md:grid-cols-3 gap-4 items-center">
-                                      <div className="flex flex-col">
-                                        <div className="text-xs text-slate-600">Interpretación Nivel Probabilidad</div>
-                                        <div className="mt-2"><span className="px-2 py-1 rounded" style={{background: interpProbabilidad(Number(r.evaluacion?.np||0)).color, color:'#fff'}}>{interpProbabilidad(Number(r.evaluacion?.np||0)).label}</span></div>
+                                    <div className="text-xs font-medium mb-2 uppercase tracking-tight text-[#1F7D3E]">Resultados de Probabilidad y Riesgo</div>
+                                    <div className="grid md:grid-cols-2 gap-y-4 gap-x-8">
+                                      {/* Probability Side-by-Side */}
+                                      <div className="flex flex-col gap-2">
+                                        <div className="text-[10px] font-bold text-[#8aa08f] uppercase">Nivel Probabilidad (NP)</div>
+                                        <div className="flex items-center gap-3">
+                                          <div className="flex flex-col">
+                                            <span className="text-[9px] text-gray-400 font-bold">INICIAL: {r.evaluacion?.np || '—'}</span>
+                                            <span className="px-2 py-0.5 rounded text-[10px] font-bold text-white text-center" style={{background: interpProbabilidad(Number(r.evaluacion?.np||0)).color}}>
+                                              {interpProbabilidad(Number(r.evaluacion?.np||0)).label}
+                                            </span>
+                                          </div>
+                                          {r.evaluacionPost && (
+                                            <>
+                                              <div className="text-gray-300">→</div>
+                                              <div className="flex flex-col">
+                                                <span className="text-[9px] text-[#1F7D3E] font-bold">RESIDUAL: {r.evaluacionPost.np || '—'}</span>
+                                                <span className="px-2 py-0.5 rounded text-[10px] font-bold text-white text-center" style={{background: interpProbabilidad(Number(r.evaluacionPost.np||0)).color}}>
+                                                  {interpProbabilidad(Number(r.evaluacionPost.np||0)).label}
+                                                </span>
+                                              </div>
+                                            </>
+                                          )}
+                                        </div>
                                       </div>
-                                      <div className="flex flex-col">
-                                        <div className="text-xs text-slate-600">Interpretación Nivel Riesgo</div>
-                                        <div className="mt-2"><span className="px-2 py-1 rounded" style={{background: interpNivelRiesgo(Number(r.evaluacion?.nr||0)).color, color:'#fff'}}>{interpNivelRiesgo(Number(r.evaluacion?.nr||0)).label}</span></div>
+
+                                      {/* Risk Level Side-by-Side */}
+                                      <div className="flex flex-col gap-2">
+                                        <div className="text-[10px] font-bold text-[#8aa08f] uppercase">Nivel de Riesgo (NR)</div>
+                                        <div className="flex items-center gap-3">
+                                          <div className="flex flex-col">
+                                            <span className="text-[9px] text-gray-400 font-bold">INICIAL: {r.evaluacion?.nr || '—'}</span>
+                                            <span className="px-2 py-0.5 rounded text-[10px] font-bold text-white text-center" style={{background: interpNivelRiesgo(Number(r.evaluacion?.nr||0)).color}}>
+                                              {interpNivelRiesgo(Number(r.evaluacion?.nr||0)).label}
+                                            </span>
+                                          </div>
+                                          {r.evaluacionPost && (
+                                            <>
+                                              <div className="text-gray-300">→</div>
+                                              <div className="flex flex-col">
+                                                <span className="text-[9px] text-[#1F7D3E] font-bold">RESIDUAL: {r.evaluacionPost.nr || '—'}</span>
+                                                <span className="px-2 py-0.5 rounded text-[10px] font-bold text-white text-center" style={{background: interpNivelRiesgo(Number(r.evaluacionPost.nr||0)).color}}>
+                                                  {interpNivelRiesgo(Number(r.evaluacionPost.nr||0)).label}
+                                                </span>
+                                              </div>
+                                            </>
+                                          )}
+                                        </div>
                                       </div>
-                                      <div className="flex flex-col">
-                                        <div className="text-xs text-slate-600">Aceptabilidad Del Riesgo</div>
-                                        <div className="mt-2">
-                                          {(() => {
-                                            const aceptabilidadText = aceptabilidadFromNivel(r.evaluacion?.nivel_riesgo || interpNivelRiesgo(Number(r.evaluacion?.nr||0)).label)
-                                            return <span className="px-2 py-1 rounded" style={{background: aceptabilidadColor(aceptabilidadText), color:'#fff'}}>{aceptabilidadText}</span>
-                                          })()}
+
+                                      {/* Acceptability Side-by-Side */}
+                                      <div className="md:col-span-2 pt-2 border-t border-[#e2e9e4]">
+                                        <div className="text-[10px] font-bold text-[#8aa08f] uppercase mb-1">Aceptabilidad del Riesgo</div>
+                                        <div className="flex items-center gap-4">
+                                          <span className="text-[10px] font-medium text-gray-500">
+                                            Inicial: <span className="font-bold" style={{color: aceptabilidadColor(aceptabilidadFromNivel(r.evaluacion?.nivel_riesgo || interpNivelRiesgo(Number(r.evaluacion?.nr||0)).label))}}>{aceptabilidadFromNivel(r.evaluacion?.nivel_riesgo || interpNivelRiesgo(Number(r.evaluacion?.nr||0)).label)}</span>
+                                          </span>
+                                          {r.evaluacionPost && (
+                                            <span className="text-[10px] font-medium text-[#1F7D3E]">
+                                              → Residual: <span className="font-bold underline">{aceptabilidadFromNivel(interpNivelRiesgo(Number(r.evaluacionPost.nr||0)).label)}</span>
+                                            </span>
+                                          )}
                                         </div>
                                       </div>
                                     </div>
