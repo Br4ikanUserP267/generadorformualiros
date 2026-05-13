@@ -227,65 +227,70 @@ export function PriorizacionRiesgos() {
         {loading ? (
           <div className="py-20 text-center animate-pulse text-[#5e6b62] font-medium">Cargando riesgos prioritarios...</div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {filteredRisks.map(risk => (
-              <Card key={risk.id} className="border-[#e2e9e4] shadow-sm hover:shadow-md transition-all hover:border-[#1F7D3E]">
-                <CardHeader className="pb-3 border-b border-[#f0f4f1] bg-[#fcfdfc]">
-                  <div className="flex justify-between items-start gap-2">
-                    <Badge className="bg-[#f0f9f1] text-[#1F7D3E] border-[#d1e2d6] text-[10px] uppercase tracking-wider">{risk.clasificacion}</Badge>
-                    <div 
-                      className="px-2.5 py-0.5 rounded-full text-[10px] font-bold text-white uppercase shadow-sm"
-                      style={{ backgroundColor: interpProbabilidad(risk.evaluacion.np || 0).color }}
-                    >
-                      {risk.evaluacion.interp_np}
-                    </div>
-                  </div>
-                  <CardTitle className="text-base font-bold mt-2 line-clamp-2 leading-tight h-10">{risk.descripcion}</CardTitle>
-                </CardHeader>
-                <CardContent className="pt-4 space-y-4">
-                  <div className="grid grid-cols-2 gap-y-3 text-[11px]">
-                    <div className="space-y-0.5">
-                      <p className="text-[#8aa08f] font-bold uppercase tracking-widest">Área</p>
-                      <p className="font-bold text-[#2c3630]">{risk.area}</p>
-                    </div>
-                    <div className="space-y-0.5">
-                      <p className="text-[#8aa08f] font-bold uppercase tracking-widest">Proceso</p>
-                      <p className="font-bold text-[#2c3630]">{risk.proceso}</p>
-                    </div>
-                    <div className="space-y-0.5 col-span-2">
-                      <p className="text-[#8aa08f] font-bold uppercase tracking-widest">Actividad</p>
-                      <p className="font-bold text-[#2c3630]">{risk.actividad}</p>
-                    </div>
-                  </div>
-
-                  <div className="pt-4 border-t border-[#f0f4f1] flex items-center justify-between">
-                    <div className="space-y-1">
-                      <p className="text-[10px] font-bold text-[#5e6b62] uppercase tracking-wider">Estado Post-Intervención</p>
-                      {risk.evaluacionPost ? (
-                        <Badge 
-                          className="text-white border-none text-[10px] uppercase font-black"
-                          style={{ backgroundColor: interpProbabilidad(risk.evaluacionPost.np || 0).color }}
+          <div className="bg-white border border-[#e2e9e4] rounded-2xl overflow-hidden shadow-sm">
+            <div className="overflow-x-auto">
+              <table className="w-full border-collapse text-[13px]">
+                <thead className="bg-[#f8faf9] border-b border-[#e2e9e4]">
+                  <tr>
+                    <th className="px-6 py-4 text-left font-bold text-[#5e6b62] uppercase tracking-wider">Peligro / Descripción</th>
+                    <th className="px-6 py-4 text-left font-bold text-[#5e6b62] uppercase tracking-wider">Clasificación</th>
+                    <th className="px-6 py-4 text-left font-bold text-[#5e6b62] uppercase tracking-wider">Área / Proceso</th>
+                    <th className="px-6 py-4 text-center font-bold text-[#5e6b62] uppercase tracking-wider">Estado Inicial</th>
+                    <th className="px-6 py-4 text-center font-bold text-[#5e6b62] uppercase tracking-wider">Estado Post</th>
+                    <th className="px-6 py-4 text-right font-bold text-[#5e6b62] uppercase tracking-wider">Acciones</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-[#e2e9e4]/50">
+                  {filteredRisks.map(risk => (
+                    <tr key={risk.id} className="hover:bg-[#f0f9f1]/20 transition-colors group">
+                      <td className="px-6 py-4 max-w-xs">
+                        <div className="font-bold text-[#2c3630] line-clamp-2">{risk.descripcion}</div>
+                        <div className="text-[10px] text-[#8aa08f] mt-0.5">{risk.actividad}</div>
+                      </td>
+                      <td className="px-6 py-4">
+                        <Badge variant="outline" className="bg-[#f8faf9] text-[#5e6b62] border-[#e2e9e4] text-[10px] uppercase">{risk.clasificacion}</Badge>
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="font-medium text-[#2c3630]">{risk.area}</div>
+                        <div className="text-[11px] text-[#5e6b62]">{risk.proceso}</div>
+                      </td>
+                      <td className="px-6 py-4 text-center">
+                        <span 
+                          className="px-3 py-1 rounded-full text-[10px] font-black text-white shadow-sm uppercase tracking-tight"
+                          style={{ backgroundColor: interpProbabilidad(risk.evaluacion.np || 0).color }}
                         >
-                          {risk.evaluacionPost.interp_np}
-                        </Badge>
-                      ) : (
-                        <span className="text-[10px] font-bold text-gray-400 italic">Pendiente de re-evaluar</span>
-                      )}
-                    </div>
-                    <Button 
-                      size="sm" 
-                      onClick={() => openIntervention(risk)}
-                      className="bg-[#1F7D3E] hover:bg-[#186331] text-white font-bold rounded-xl px-4"
-                    >
-                      Intervenir
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
+                          {risk.evaluacion.interp_np}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 text-center">
+                        {risk.evaluacionPost ? (
+                          <span 
+                            className="px-3 py-1 rounded-full text-[10px] font-black text-white shadow-sm uppercase tracking-tight"
+                            style={{ backgroundColor: interpProbabilidad(risk.evaluacionPost.np || 0).color }}
+                          >
+                            {risk.evaluacionPost.interp_np}
+                          </span>
+                        ) : (
+                          <span className="text-[10px] font-bold text-gray-300 italic uppercase">Pendiente</span>
+                        )}
+                      </td>
+                      <td className="px-6 py-4 text-right">
+                        <Button 
+                          size="sm" 
+                          onClick={() => openIntervention(risk)}
+                          className="bg-[#1F7D3E] hover:bg-[#186331] text-white font-bold rounded-xl px-4 py-1 h-8"
+                        >
+                          Intervenir
+                        </Button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
             
             {filteredRisks.length === 0 && (
-              <div className="col-span-full py-20 text-center bg-white border border-dashed border-[#e2e9e4] rounded-2xl">
+              <div className="py-20 text-center bg-white border-t border-[#e2e9e4]">
                 <p className="text-sm font-medium text-[#5e6b62]">No hay riesgos que requieran priorización en este momento.</p>
                 <p className="text-xs text-gray-400 mt-1">Todos los riesgos críticos han sido mitigados o no se encontraron coincidencias.</p>
               </div>
