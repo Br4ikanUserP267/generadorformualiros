@@ -1218,7 +1218,7 @@ export default function MatrixEditor({ id }: { id?: string }) {
                               <div className="font-medium">{getStablePeligroLabel(r, idx)}</div>
                             </div>
                             <div className="flex items-center gap-2">
-                              <div style={{width:14,height:14,background: interpProbabilidad(Number(r.evaluacion?.np||0)).color, borderRadius:999}}></div>
+                              <div style={{width:14,height:14,background: interpProbabilidad(Number((r.evaluacionPost || r.evaluacion)?.np||0)).color, borderRadius:999}}></div>
                               <button onClick={(e:any)=>{ e.stopPropagation(); duplicatePeligro(currentProceso.id, currentZona.id, currentActividad.id, r.id) }} className="text-slate-500 hover:text-slate-700" aria-label="Duplicar peligro"><CopyIcon size={14} /></button>
                               <button onClick={(e:any)=>{ e.stopPropagation(); removePeligro(currentProceso.id, currentZona.id, currentActividad.id, r.id) }} className="text-red-400 hover:text-red-700" aria-label="Eliminar peligro"><TrashIcon size={14} /></button>
                             </div>
