@@ -64,6 +64,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
                     nombre: true,
                     matriz: {
                       select: {
+                        id: true,
                         area: true
                       }
                     }
@@ -86,6 +87,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       descripcion: d.descripcion,
       clasificacion: d.clasificacion,
       area: d.actividad.zona.proceso.matriz.area,
+      matrizId: d.actividad.zona.proceso.matriz.id,
       proceso: d.actividad.zona.proceso.nombre,
       zona: d.actividad.zona.nombre,
       actividad: d.actividad.nombre,

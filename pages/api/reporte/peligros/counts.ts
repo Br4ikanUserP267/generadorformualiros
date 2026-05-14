@@ -11,7 +11,15 @@ function buildWhere(search: string, interpProbabilidad: string) {
     ...(search ? {
       descripcion: { contains: search, mode: 'insensitive' as const },
     } : {}),
-    evaluacion: { interpProbabilidad },
+    OR: [
+      {
+        evaluacionPost: { interpProbabilidad }
+      },
+      {
+        evaluacionPost: null,
+        evaluacion: { interpProbabilidad }
+      }
+    ],
     actividad: {
       zona: {
         proceso: {

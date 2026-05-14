@@ -33,7 +33,15 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     const where = {
       ...(aceptabilidad.length > 0 ? {
-        evaluacion: { interpProbabilidad: { in: aceptabilidad } },
+        OR: [
+          {
+            evaluacionPost: { interpProbabilidad: { in: aceptabilidad } }
+          },
+          {
+            evaluacionPost: null,
+            evaluacion: { interpProbabilidad: { in: aceptabilidad } }
+          }
+        ]
       } : {}),
       ...(search ? {
         descripcion: { contains: search, mode: 'insensitive' as const },
@@ -48,8 +56,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     }
 
     const [rows, total] = await Promise.all([
-      prisma.peligro.findMany({
-        where,
+      (prisma.peligro.findMany as any)({
+        where: where as any,
         select: {
           id: true,
           descripcion: true,
@@ -61,6 +69,14 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
               aceptabilidad: true,
               interpProbabilidad: true,
             },
+          },
+          evaluacionPost: {
+            select: {
+              nivelRiesgo: true,
+              interpRiesgo: true,
+              aceptabilidad: true,
+              interpProbabilidad: true,
+            }
           },
           actividad: {
             select: {
@@ -82,25 +98,25 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
               },
             },
           },
-        },
-        orderBy: { evaluacion: { nivelProbabilidad: 'desc' } },
+        } as any,
+        orderBy: { evaluacion: { nivelProbabilidad: 'desc' } } as any,
         take: pageSize,
         skip: page * pageSize,
       }),
-      prisma.peligro.count({ where }),
+      prisma.peligro.count({ where: where as any }),
     ])
 
-    const data = rows.map((row) => {
+    const data = (rows as any[]).map((row) => {
       const orden = typeof row.actividad?.orden === 'number' ? row.actividad.orden : 0
       const matriz = row.actividad?.zona?.proceso?.matriz
       return {
         id: row.id,
         peligro: row.descripcion || '',
         clasificacion: row.clasificacion || '',
-        nivelRiesgo: row.evaluacion?.nivelRiesgo ?? null,
-        interpRiesgo: row.evaluacion?.interpRiesgo || '',
-        aceptabilidad: row.evaluacion?.aceptabilidad || '',
-        interpProbabilidad: row.evaluacion?.interpProbabilidad || '',
+        nivelRiesgo: row.evaluacionPost?.nivelRiesgo ?? row.evaluacion?.nivelRiesgo ?? null,
+        interpRiesgo: row.evaluacionPost?.interpRiesgo ?? row.evaluacion?.interpRiesgo ?? '',
+        aceptabilidad: row.evaluacionPost?.aceptabilidad ?? row.evaluacion?.aceptabilidad ?? '',
+        interpProbabilidad: row.evaluacionPost?.interpProbabilidad ?? row.evaluacion?.interpProbabilidad ?? '',
         nombreMatriz: matriz?.area || 'Matriz sin nombre',
         matrizId: matriz?.id || '',
         actividad: `Actividad ${orden + 1}`,

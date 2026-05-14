@@ -25,6 +25,7 @@ type EvaluationData = {
 
 type RiskPrioritizationItem = {
   id: string
+  matrizId: string
   descripcion: string
   clasificacion: string
   area: string
@@ -244,7 +245,14 @@ export function PriorizacionRiesgos() {
                   {filteredRisks.map(risk => (
                     <tr key={risk.id} className="hover:bg-[#f0f9f1]/20 transition-colors group">
                       <td className="px-6 py-4 max-w-xs">
-                        <div className="font-bold text-[#2c3630] line-clamp-2">{risk.descripcion}</div>
+                        <div 
+                          className="font-bold text-[#2c3630] line-clamp-2 cursor-pointer hover:text-[#1F7D3E] hover:underline transition-all flex items-center gap-1.5"
+                          onClick={() => router.push(`/matriz/${risk.matrizId}?peligroId=${risk.id}`)}
+                          title="Click para ver en la matriz"
+                        >
+                          {risk.descripcion}
+                          <svg className="opacity-0 group-hover:opacity-100 transition-opacity text-[#1F7D3E]" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+                        </div>
                         <div className="text-[10px] text-[#8aa08f] mt-0.5">{risk.actividad}</div>
                       </td>
                       <td className="px-6 py-4">

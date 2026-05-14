@@ -73,7 +73,8 @@ function computeCountsFromSummary(summary: any) {
         const peligros = actividad?.peligros || []
         totalPeligros += peligros.length
         for (const peligro of peligros) {
-          const np = Number(peligro?.evaluacion?.nivelProbabilidad || 0)
+          const evalActual = peligro?.evaluacionPost || peligro?.evaluacion
+          const np = Number(evalActual?.nivelProbabilidad || 0)
           if (!np || np === 0) counts[3] += 1
           else if (np >= 24) counts[0] += 1 // Muy Alto
           else if (np >= 10) counts[1] += 1 // Alto
@@ -203,7 +204,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     const [total, matrices, totalsSource] = await Promise.all([
       prisma.matriz.count({ where }),
-      prisma.matriz.findMany({
+      (prisma.matriz.findMany as any)({
         where,
         select: {
           id: true,
@@ -230,6 +231,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
                               nivelProbabilidad: true,
                             },
                           },
+                          evaluacionPost: {
+                            select: {
+                              nivelRiesgo: true,
+                              nivelProbabilidad: true,
+                            },
+                          },
                         },
                       },
                     },
@@ -238,12 +245,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
               },
             },
           },
-        },
+        } as any,
         orderBy: { createdAt: 'desc' },
         take: pageSize,
         skip,
       }),
-      prisma.matriz.findMany({
+      (prisma.matriz.findMany as any)({
         where,
         select: {
           procesos: {
@@ -260,6 +267,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
                               nivelProbabilidad: true,
                             },
                           },
+                          evaluacionPost: {
+                            select: {
+                              nivelRiesgo: true,
+                              nivelProbabilidad: true,
+                            },
+                          },
                         },
                       },
                     },
@@ -268,7 +281,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
               },
             },
           },
-        },
+        } as any,
       }),
     ])
 

@@ -461,20 +461,37 @@ export default function MatrixEditor({ id }: { id?: string }) {
       for (let i=0;i<path.length-1;i++) { cur = cur[path[i]] }
       cur[path[path.length-1]] = value
 
-      // If evaluation fields updated, recalc
-      const nd = Number(r.evaluacion.nd || 0)
-      const ne = Number(r.evaluacion.ne || 0)
-      const nc = Number(r.evaluacion.nc || 0)
-      const np = (!nd || !ne) ? 0 : nd * ne
-      const nr = (!np || !nc) ? 0 : np * nc
-      r.evaluacion.np = np
-      r.evaluacion.nr = nr
-      r.evaluacion.interp_np = interpProbabilidad(np).label
-      r.evaluacion.interp_nr = interpNivelRiesgo(nr).label
-      r.evaluacion.nivel_riesgo = interpNivelRiesgo(nr).label
-      // compute aceptabilidad from nivel
-      const nivelLabel = interpNivelRiesgo(nr).label
-      r.evaluacion.aceptabilidad = nivelLabel ? aceptabilidadFromNivel(nivelLabel) : ''
+      // If evaluation fields updated, recalc initial
+      if (path[0] === 'evaluacion') {
+        const nd = Number(r.evaluacion.nd || 0)
+        const ne = Number(r.evaluacion.ne || 0)
+        const nc = Number(r.evaluacion.nc || 0)
+        const np = (!nd || !ne) ? 0 : nd * ne
+        const nr = (!np || !nc) ? 0 : np * nc
+        r.evaluacion.np = np
+        r.evaluacion.nr = nr
+        r.evaluacion.interp_np = interpProbabilidad(np).label
+        r.evaluacion.interp_nr = interpNivelRiesgo(nr).label
+        r.evaluacion.nivel_riesgo = interpNivelRiesgo(nr).label
+        const nivelLabel = interpNivelRiesgo(nr).label
+        r.evaluacion.aceptabilidad = nivelLabel ? aceptabilidadFromNivel(nivelLabel) : ''
+      }
+
+      // Recalc residual if updated
+      if (r.evaluacionPost) {
+        const ndP = Number(r.evaluacionPost.nd || 0)
+        const neP = Number(r.evaluacionPost.ne || 0)
+        const ncP = Number(r.evaluacionPost.nc || 0)
+        const npP = (!ndP || !neP) ? 0 : ndP * neP
+        const nrP = (!npP || !ncP) ? 0 : npP * ncP
+        r.evaluacionPost.np = npP
+        r.evaluacionPost.nr = nrP
+        r.evaluacionPost.interp_np = interpProbabilidad(npP).label
+        r.evaluacionPost.interp_nr = interpNivelRiesgo(nrP).label
+        r.evaluacionPost.nivel_riesgo = interpNivelRiesgo(nrP).label
+        const nivelLabelP = interpNivelRiesgo(nrP).label
+        r.evaluacionPost.aceptabilidad = nivelLabelP ? aceptabilidadFromNivel(nivelLabelP) : ''
+      }
       return m
     })
   }
@@ -1291,15 +1308,45 @@ export default function MatrixEditor({ id }: { id?: string }) {
                                       </div>
                                       <div>
                                         <div className="text-xs text-[#5e6b62]">ND Residual</div>
-                                        <Input readOnly className="h-8 bg-gray-50 font-bold text-xs" value={r.evaluacionPost.nd || '—'} />
+                                        <select 
+                                          value={r.evaluacionPost.nd ?? ''} 
+                                          onChange={(e:any) => updatePeligroField(currentProceso.id, currentZona.id, currentActividad.id, r.id, ['evaluacionPost', 'nd'], e.target.value ? Number(e.target.value) : null)}
+                                          className="w-full p-2 border rounded text-xs font-bold bg-[#fcfdfc] border-[#dce8dc]"
+                                        >
+                                          <option value="">—</option>
+                                          <option value={10}>10 (Muy alto)</option>
+                                          <option value={6}>6 (Alto)</option>
+                                          <option value={2}>2 (Medio)</option>
+                                          <option value={0}>0 (Bajo)</option>
+                                        </select>
                                       </div>
                                       <div>
                                         <div className="text-xs text-[#5e6b62]">NE Residual</div>
-                                        <Input readOnly className="h-8 bg-gray-50 font-bold text-xs" value={r.evaluacionPost.ne || '—'} />
+                                        <select 
+                                          value={r.evaluacionPost.ne ?? ''} 
+                                          onChange={(e:any) => updatePeligroField(currentProceso.id, currentZona.id, currentActividad.id, r.id, ['evaluacionPost', 'ne'], e.target.value ? Number(e.target.value) : null)}
+                                          className="w-full p-2 border rounded text-xs font-bold bg-[#fcfdfc] border-[#dce8dc]"
+                                        >
+                                          <option value="">—</option>
+                                          <option value={4}>4 (Continua)</option>
+                                          <option value={3}>3 (Frecuente)</option>
+                                          <option value={2}>2 (Ocasional)</option>
+                                          <option value={1}>1 (Esporádica)</option>
+                                        </select>
                                       </div>
                                       <div>
                                         <div className="text-xs text-[#5e6b62]">NC Residual</div>
-                                        <Input readOnly className="h-8 bg-gray-50 font-bold text-xs" value={r.evaluacionPost.nc || '—'} />
+                                        <select 
+                                          value={r.evaluacionPost.nc ?? ''} 
+                                          onChange={(e:any) => updatePeligroField(currentProceso.id, currentZona.id, currentActividad.id, r.id, ['evaluacionPost', 'nc'], e.target.value ? Number(e.target.value) : null)}
+                                          className="w-full p-2 border rounded text-xs font-bold bg-[#fcfdfc] border-[#dce8dc]"
+                                        >
+                                          <option value="">—</option>
+                                          <option value={100}>100 (Mortal)</option>
+                                          <option value={60}>60 (Muy grave)</option>
+                                          <option value={25}>25 (Grave)</option>
+                                          <option value={10}>10 (Leve)</option>
+                                        </select>
                                       </div>
                                     </>
                                   )}
