@@ -1267,7 +1267,7 @@ export default function MatrixEditor({ id }: { id?: string }) {
                                     <h4 className="text-[11px] font-bold text-[#1F7D3E] uppercase tracking-wider">Evaluación Inicial</h4>
                                   </div>
                                   <div>
-                                    <div className="text-xs">ND</div>
+                                    <div className="text-xs">Nivel de Deficiencia</div>
                                     <select value={r.evaluacion?.nd ?? ''} onChange={(e:any)=> updatePeligroField(currentProceso.id, currentZona.id, currentActividad.id, r.id, ['evaluacion','nd'], e.target.value?Number(e.target.value):null)} className="w-full p-2 border rounded text-xs font-bold">
                                       <option value="">—</option>
                                       <option value={10}>10 (Muy alto)</option>
@@ -1277,7 +1277,7 @@ export default function MatrixEditor({ id }: { id?: string }) {
                                     </select>
                                   </div>
                                   <div>
-                                    <div className="text-xs">NE</div>
+                                    <div className="text-xs">Nivel de Exposición</div>
                                     <select value={r.evaluacion?.ne ?? ''} onChange={(e:any)=> updatePeligroField(currentProceso.id, currentZona.id, currentActividad.id, r.id, ['evaluacion','ne'], e.target.value?Number(e.target.value):null)} className="w-full p-2 border rounded text-xs font-bold">
                                       <option value="">—</option>
                                       <option value={4}>4 (Continua)</option>
@@ -1287,7 +1287,7 @@ export default function MatrixEditor({ id }: { id?: string }) {
                                     </select>
                                   </div>
                                   <div>
-                                    <div className="text-xs">NC</div>
+                                    <div className="text-xs">Nivel de Consecuencia</div>
                                     <select value={r.evaluacion?.nc ?? ''} onChange={(e:any)=> updatePeligroField(currentProceso.id, currentZona.id, currentActividad.id, r.id, ['evaluacion','nc'], e.target.value?Number(e.target.value):null)} className="w-full p-2 border rounded text-xs font-bold">
                                       <option value="">—</option>
                                       <option value={100}>100 (Mortal)</option>
@@ -1307,7 +1307,7 @@ export default function MatrixEditor({ id }: { id?: string }) {
                                         </h4>
                                       </div>
                                       <div>
-                                        <div className="text-xs text-[#5e6b62]">ND Residual</div>
+                                        <div className="text-xs text-[#5e6b62]">Nivel de Deficiencia Residual</div>
                                         <select 
                                           value={r.evaluacionPost.nd ?? ''} 
                                           onChange={(e:any) => updatePeligroField(currentProceso.id, currentZona.id, currentActividad.id, r.id, ['evaluacionPost', 'nd'], e.target.value ? Number(e.target.value) : null)}
@@ -1321,7 +1321,7 @@ export default function MatrixEditor({ id }: { id?: string }) {
                                         </select>
                                       </div>
                                       <div>
-                                        <div className="text-xs text-[#5e6b62]">NE Residual</div>
+                                        <div className="text-xs text-[#5e6b62]">Nivel de Exposición Residual</div>
                                         <select 
                                           value={r.evaluacionPost.ne ?? ''} 
                                           onChange={(e:any) => updatePeligroField(currentProceso.id, currentZona.id, currentActividad.id, r.id, ['evaluacionPost', 'ne'], e.target.value ? Number(e.target.value) : null)}
@@ -1335,7 +1335,7 @@ export default function MatrixEditor({ id }: { id?: string }) {
                                         </select>
                                       </div>
                                       <div>
-                                        <div className="text-xs text-[#5e6b62]">NC Residual</div>
+                                        <div className="text-xs text-[#5e6b62]">Nivel de Consecuencia Residual</div>
                                         <select 
                                           value={r.evaluacionPost.nc ?? ''} 
                                           onChange={(e:any) => updatePeligroField(currentProceso.id, currentZona.id, currentActividad.id, r.id, ['evaluacionPost', 'nc'], e.target.value ? Number(e.target.value) : null)}
@@ -1356,7 +1356,7 @@ export default function MatrixEditor({ id }: { id?: string }) {
                                     <div className="grid md:grid-cols-2 gap-y-4 gap-x-8">
                                       {/* Probability Side-by-Side */}
                                       <div className="flex flex-col gap-2">
-                                        <div className="text-[10px] font-bold text-[#8aa08f] uppercase">Nivel Probabilidad (NP)</div>
+                                        <div className="text-[10px] font-bold text-[#8aa08f] uppercase">Nivel de Probabilidad</div>
                                         <div className="flex items-center gap-3">
                                           <div className="flex flex-col">
                                             <span className="text-[9px] text-gray-400 font-bold">INICIAL: {r.evaluacion?.np || '—'}</span>
@@ -1380,7 +1380,7 @@ export default function MatrixEditor({ id }: { id?: string }) {
 
                                       {/* Risk Level Side-by-Side */}
                                       <div className="flex flex-col gap-2">
-                                        <div className="text-[10px] font-bold text-[#8aa08f] uppercase">Nivel de Riesgo (NR)</div>
+                                        <div className="text-[10px] font-bold text-[#8aa08f] uppercase">Nivel de Riesgo</div>
                                         <div className="flex items-center gap-3">
                                           <div className="flex flex-col">
                                             <span className="text-[9px] text-gray-400 font-bold">INICIAL: {r.evaluacion?.nr || '—'}</span>

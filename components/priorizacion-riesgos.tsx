@@ -382,7 +382,7 @@ export function PriorizacionRiesgos() {
 
                 <div className="grid grid-cols-3 gap-3">
                   <div>
-                    <label className="text-[10px] font-bold text-[#5e6b62] uppercase tracking-wider mb-1 block">ND</label>
+                    <label className="text-[10px] font-bold text-[#5e6b62] uppercase tracking-wider mb-1 block">Nivel de Deficiencia</label>
                     <select 
                       value={formEvalPost.nd}
                       onChange={e => setFormEvalPost({...formEvalPost, nd: e.target.value})}
@@ -396,7 +396,7 @@ export function PriorizacionRiesgos() {
                     </select>
                   </div>
                   <div>
-                    <label className="text-[10px] font-bold text-[#5e6b62] uppercase tracking-wider mb-1 block">NE</label>
+                    <label className="text-[10px] font-bold text-[#5e6b62] uppercase tracking-wider mb-1 block">Nivel de Exposición</label>
                     <select 
                       value={formEvalPost.ne}
                       onChange={e => setFormEvalPost({...formEvalPost, ne: e.target.value})}
@@ -410,7 +410,7 @@ export function PriorizacionRiesgos() {
                     </select>
                   </div>
                   <div>
-                    <label className="text-[10px] font-bold text-[#5e6b62] uppercase tracking-wider mb-1 block">NC</label>
+                    <label className="text-[10px] font-bold text-[#5e6b62] uppercase tracking-wider mb-1 block">Nivel de Consecuencia</label>
                     <select 
                       value={formEvalPost.nc}
                       onChange={e => setFormEvalPost({...formEvalPost, nc: e.target.value})}
