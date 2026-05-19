@@ -308,7 +308,7 @@ export function PriorizacionRiesgos() {
       </main>
 
       <Dialog open={showModal} onOpenChange={setShowModal}>
-        <DialogContent className="w-[95vw] max-w-6xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="w-[95vw] sm:max-w-5xl md:max-w-7xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="text-xl font-bold text-[#1F7D3E]">Intervención de Riesgo</DialogTitle>
           </DialogHeader>
