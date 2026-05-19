@@ -308,16 +308,16 @@ export function PriorizacionRiesgos() {
       </main>
 
       <Dialog open={showModal} onOpenChange={setShowModal}>
-        <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="w-[95vw] max-w-6xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="text-xl font-bold text-[#1F7D3E]">Intervención de Riesgo</DialogTitle>
           </DialogHeader>
           
-          <div className="space-y-8 py-6">
-            <div className="bg-[#fcfdfc] border border-[#e2e9e4] rounded-xl p-5 space-y-3 shadow-sm">
+          <div className="space-y-6 py-2">
+            <div className="bg-[#fcfdfc] border border-[#e2e9e4] rounded-xl p-4 space-y-2 shadow-sm">
               <h4 className="text-xs font-black text-[#1F7D3E] uppercase tracking-widest">Riesgo Original</h4>
               <p className="text-base font-bold text-[#2c3630] leading-relaxed">{selectedRisk?.descripcion}</p>
-              <div className="flex flex-wrap gap-2 items-center mt-3">
+              <div className="flex flex-wrap gap-2 items-center mt-2">
                 <Badge variant="outline" className="text-xs font-semibold px-2.5 py-0.5 bg-[#f4f7f5] border-[#d2dfd6] text-[#425046]">{selectedRisk?.area}</Badge>
                 <Badge variant="outline" className="text-xs font-semibold px-2.5 py-0.5 bg-[#f4f7f5] border-[#d2dfd6] text-[#425046]">{selectedRisk?.proceso}</Badge>
                 <Badge className="text-xs font-extrabold px-3 py-0.5 text-white border-none" style={{ backgroundColor: interpProbabilidad(selectedRisk?.evaluacion.np || 0).color }}>
@@ -326,50 +326,50 @@ export function PriorizacionRiesgos() {
               </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {/* Intervention Actions */}
-              <div className="space-y-6">
+              <div className="space-y-5">
                 <h4 className="text-base font-black text-[#1F7D3E] flex items-center gap-2.5 border-b border-[#e2e9e4] pb-2">
                   <span className="w-7 h-7 rounded-full bg-[#1F7D3E] text-white flex items-center justify-center text-sm font-black">1</span>
                   Medidas de Intervención
                 </h4>
                 
-                <div className="space-y-5">
+                <div className="space-y-4">
                   <div>
-                    <label className="text-xs font-bold text-[#5e6b62] uppercase tracking-wider mb-2 block">Eliminación / Sustitución</label>
+                    <label className="text-xs font-bold text-[#5e6b62] uppercase tracking-wider mb-1.5 block">Eliminación / Sustitución</label>
                     <Textarea 
                       placeholder="Acciones específicas para eliminar o sustituir el riesgo..."
                       value={formIntervencion.eliminacion || ''}
                       onChange={e => setFormIntervencion({...formIntervencion, eliminacion: e.target.value})}
-                      className="text-xs min-h-[90px] p-3.5 rounded-xl border-[#e2e9e4] focus-visible:ring-[#1F7D3E] leading-relaxed"
+                      className="text-xs min-h-[75px] p-3 rounded-xl border-[#e2e9e4] focus-visible:ring-[#1F7D3E] leading-relaxed"
                     />
                   </div>
                   <div>
-                    <label className="text-xs font-bold text-[#5e6b62] uppercase tracking-wider mb-2 block">Controles de Ingeniería / Admin</label>
+                    <label className="text-xs font-bold text-[#5e6b62] uppercase tracking-wider mb-1.5 block">Controles de Ingeniería / Admin</label>
                     <Textarea 
                       placeholder="Controles técnicos, de ingeniería o administrativos a implementar..."
                       value={formIntervencion.controles_ingenieria || ''}
                       onChange={e => setFormIntervencion({...formIntervencion, controles_ingenieria: e.target.value})}
-                      className="text-xs min-h-[90px] p-3.5 rounded-xl border-[#e2e9e4] focus-visible:ring-[#1F7D3E] leading-relaxed"
+                      className="text-xs min-h-[75px] p-3 rounded-xl border-[#e2e9e4] focus-visible:ring-[#1F7D3E] leading-relaxed"
                     />
                   </div>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
-                      <label className="text-xs font-bold text-[#5e6b62] uppercase tracking-wider mb-2 block">EPP</label>
+                      <label className="text-xs font-bold text-[#5e6b62] uppercase tracking-wider mb-1.5 block">EPP</label>
                       <Input 
                         placeholder="Ninguno o EPP específico..."
                         value={formIntervencion.epp || ''}
                         onChange={e => setFormIntervencion({...formIntervencion, epp: e.target.value})}
-                        className="text-xs h-11 p-3.5 rounded-xl border-[#e2e9e4] focus-visible:ring-[#1F7D3E]"
+                        className="text-xs h-10 p-3 rounded-xl border-[#e2e9e4] focus-visible:ring-[#1F7D3E]"
                       />
                     </div>
                     <div>
-                      <label className="text-xs font-bold text-[#5e6b62] uppercase tracking-wider mb-2 block">Responsable</label>
+                      <label className="text-xs font-bold text-[#5e6b62] uppercase tracking-wider mb-1.5 block">Responsable</label>
                       <Input 
                         placeholder="Nombre o rol del responsable..."
                         value={formIntervencion.responsable || ''}
                         onChange={e => setFormIntervencion({...formIntervencion, responsable: e.target.value})}
-                        className="text-xs h-11 p-3.5 rounded-xl border-[#e2e9e4] focus-visible:ring-[#1F7D3E]"
+                        className="text-xs h-10 p-3 rounded-xl border-[#e2e9e4] focus-visible:ring-[#1F7D3E]"
                       />
                     </div>
                   </div>
@@ -377,19 +377,19 @@ export function PriorizacionRiesgos() {
               </div>
 
               {/* Re-evaluation */}
-              <div className="space-y-6 bg-[#f8faf9] p-6 rounded-xl border border-[#e2e9e4] shadow-sm">
+              <div className="space-y-5 bg-[#f8faf9] p-5 rounded-xl border border-[#e2e9e4] shadow-sm">
                 <h4 className="text-base font-black text-[#1F7D3E] flex items-center gap-2.5 border-b border-[#e2e9e4] pb-2">
                   <span className="w-7 h-7 rounded-full bg-[#1F7D3E] text-white flex items-center justify-center text-sm font-black">2</span>
                   Evaluación Post-Intervención
                 </h4>
 
-                <div className="space-y-4">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                   <div>
-                    <label className="text-xs font-bold text-[#5e6b62] uppercase tracking-wider mb-2 block">Nivel de Deficiencia</label>
+                    <label className="text-xs font-bold text-[#5e6b62] uppercase tracking-wider mb-1.5 block">Nivel de Deficiencia</label>
                     <select 
                       value={formEvalPost.nd}
                       onChange={e => setFormEvalPost({...formEvalPost, nd: e.target.value})}
-                      className="w-full p-3 border rounded-xl text-xs font-bold bg-white border-[#e2e9e4] focus:border-[#1F7D3E] focus:ring-1 focus:ring-[#1F7D3E] outline-none"
+                      className="w-full p-2.5 border rounded-xl text-xs font-bold bg-white border-[#e2e9e4] focus:border-[#1F7D3E] focus:ring-1 focus:ring-[#1F7D3E] outline-none"
                     >
                       <option value="">— Seleccionar —</option>
                       <option value="10">10 (Muy alto)</option>
@@ -399,11 +399,11 @@ export function PriorizacionRiesgos() {
                     </select>
                   </div>
                   <div>
-                    <label className="text-xs font-bold text-[#5e6b62] uppercase tracking-wider mb-2 block">Nivel de Exposición</label>
+                    <label className="text-xs font-bold text-[#5e6b62] uppercase tracking-wider mb-1.5 block">Nivel de Exposición</label>
                     <select 
                       value={formEvalPost.ne}
                       onChange={e => setFormEvalPost({...formEvalPost, ne: e.target.value})}
-                      className="w-full p-3 border rounded-xl text-xs font-bold bg-white border-[#e2e9e4] focus:border-[#1F7D3E] focus:ring-1 focus:ring-[#1F7D3E] outline-none"
+                      className="w-full p-2.5 border rounded-xl text-xs font-bold bg-white border-[#e2e9e4] focus:border-[#1F7D3E] focus:ring-1 focus:ring-[#1F7D3E] outline-none"
                     >
                       <option value="">— Seleccionar —</option>
                       <option value="4">4 (Continua)</option>
@@ -413,11 +413,11 @@ export function PriorizacionRiesgos() {
                     </select>
                   </div>
                   <div>
-                    <label className="text-xs font-bold text-[#5e6b62] uppercase tracking-wider mb-2 block">Nivel de Consecuencia</label>
+                    <label className="text-xs font-bold text-[#5e6b62] uppercase tracking-wider mb-1.5 block">Nivel de Consecuencia</label>
                     <select 
                       value={formEvalPost.nc}
                       onChange={e => setFormEvalPost({...formEvalPost, nc: e.target.value})}
-                      className="w-full p-3 border rounded-xl text-xs font-bold bg-white border-[#e2e9e4] focus:border-[#1F7D3E] focus:ring-1 focus:ring-[#1F7D3E] outline-none"
+                      className="w-full p-2.5 border rounded-xl text-xs font-bold bg-white border-[#e2e9e4] focus:border-[#1F7D3E] focus:ring-1 focus:ring-[#1F7D3E] outline-none"
                     >
                       <option value="">— Seleccionar —</option>
                       <option value="100">100 (Mortal)</option>
@@ -428,22 +428,22 @@ export function PriorizacionRiesgos() {
                   </div>
                 </div>
 
-                <div className="mt-6 p-5 bg-white rounded-xl border border-[#e2e9e4] space-y-4 shadow-inner">
-                  <div className="flex justify-between items-center">
-                    <span className="text-xs font-bold text-[#5e6b62]">Nuevo Nivel de Probabilidad</span>
-                    <Badge className="text-xs font-black px-3 py-1 text-white border-none shadow-sm" style={{ backgroundColor: postEvalResult.probColor }}>
+                <div className="mt-4 p-4 bg-white rounded-xl border border-[#e2e9e4] grid grid-cols-1 sm:grid-cols-2 gap-4 shadow-inner">
+                  <div className="flex flex-col gap-1 justify-center">
+                    <span className="text-xs font-bold text-[#5e6b62] uppercase tracking-wider">Nuevo Nivel de Probabilidad</span>
+                    <Badge className="w-fit text-xs font-black px-3 py-1 text-white border-none shadow-sm" style={{ backgroundColor: postEvalResult.probColor }}>
                       {postEvalResult.interp_np} ({postEvalResult.np})
                     </Badge>
                   </div>
-                  <div className="flex justify-between items-center">
-                    <span className="text-xs font-bold text-[#5e6b62]">Nuevo Nivel de Riesgo</span>
-                    <Badge className="text-xs font-black px-3 py-1 text-white border-none shadow-sm" style={{ backgroundColor: postEvalResult.riesgoColor }}>
+                  <div className="flex flex-col gap-1 justify-center">
+                    <span className="text-xs font-bold text-[#5e6b62] uppercase tracking-wider">Nuevo Nivel de Riesgo</span>
+                    <Badge className="w-fit text-xs font-black px-3 py-1 text-white border-none shadow-sm" style={{ backgroundColor: postEvalResult.riesgoColor }}>
                       {postEvalResult.interp_nr} ({postEvalResult.nr})
                     </Badge>
                   </div>
                   
                   {postEvalResult.interp_np === 'Bajo' && (
-                    <div className="mt-3 p-3 bg-[#f0f9f1] border border-[#d1e2d6] rounded-xl flex items-center gap-2.5 text-[#1F7D3E] shadow-sm animate-pulse">
+                    <div className="sm:col-span-2 mt-2 p-3 bg-[#f0f9f1] border border-[#d1e2d6] rounded-xl flex items-center gap-2.5 text-[#1F7D3E] shadow-sm animate-pulse">
                       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
                       <span className="text-xs font-black uppercase tracking-wider">¡Riesgo mitigado! Se removerá de la lista.</span>
                     </div>
