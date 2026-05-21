@@ -83,6 +83,8 @@ export function PriorizacionRiesgos() {
   const [search, setSearch] = useState('')
   const [selectedRisk, setSelectedRisk] = useState<RiskPrioritizationItem | null>(null)
   const [showModal, setShowModal] = useState(false)
+  const [currentPage, setCurrentPage] = useState(1)
+  const ITEMS_PER_PAGE = 10
   
   // Form State
   const [formIntervencion, setFormIntervencion] = useState<any>({})
@@ -116,6 +118,20 @@ export function PriorizacionRiesgos() {
       r.proceso.toLowerCase().includes(s)
     )
   }, [risks, search])
+
+  // Reset to first page when search changes
+  useEffect(() => {
+    setCurrentPage(1)
+  }, [search])
+
+  const totalPages = useMemo(() => {
+    return Math.max(1, Math.ceil(filteredRisks.length / ITEMS_PER_PAGE))
+  }, [filteredRisks])
+
+  const paginatedRisks = useMemo(() => {
+    const startIndex = (currentPage - 1) * ITEMS_PER_PAGE
+    return filteredRisks.slice(startIndex, startIndex + ITEMS_PER_PAGE)
+  }, [filteredRisks, currentPage])
 
   const openIntervention = (risk: RiskPrioritizationItem) => {
     setSelectedRisk(risk)
@@ -242,7 +258,7 @@ export function PriorizacionRiesgos() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-[#e2e9e4]/50">
-                  {filteredRisks.map(risk => (
+                  {paginatedRisks.map(risk => (
                     <tr key={risk.id} className="hover:bg-[#f0f9f1]/20 transition-colors group">
                       <td className="px-6 py-4 max-w-xs">
                         <div 
@@ -296,6 +312,74 @@ export function PriorizacionRiesgos() {
                 </tbody>
               </table>
             </div>
+
+            {/* Pagination Controls */}
+            {filteredRisks.length > 0 && (
+              <div className="px-6 py-4 border-t border-[#e2e9e4] bg-[#fcfdfc] flex flex-col sm:flex-row items-center justify-between gap-4">
+                <div className="text-xs font-semibold text-[#5e6b62]">
+                  Mostrando <span className="font-bold text-[#1F7D3E]">{Math.min(filteredRisks.length, (currentPage - 1) * ITEMS_PER_PAGE + 1)}</span> a{" "}
+                  <span className="font-bold text-[#1F7D3E]">{Math.min(filteredRisks.length, currentPage * ITEMS_PER_PAGE)}</span> de{" "}
+                  <span className="font-bold text-[#1F7D3E]">{filteredRisks.length}</span> riesgos
+                </div>
+                
+                <div className="flex flex-wrap items-center gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    disabled={currentPage === 1}
+                    onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                    className="h-8 border-[#e2e9e4] hover:bg-white text-xs font-bold text-[#5e6b62] rounded-lg transition-colors flex items-center gap-1 disabled:opacity-50"
+                  >
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+                    Anterior
+                  </Button>
+                  
+                  <div className="flex items-center gap-1">
+                    {Array.from({ length: totalPages }, (_, i) => i + 1)
+                      .filter(page => {
+                        return (
+                          page === 1 ||
+                          page === totalPages ||
+                          Math.abs(page - currentPage) <= 1
+                        )
+                      })
+                      .map((page, index, array) => {
+                        const showEllipsis = index > 0 && page - array[index - 1] > 1;
+                        return (
+                          <React.Fragment key={page}>
+                            {showEllipsis && (
+                              <span className="px-1.5 text-gray-400 text-xs">...</span>
+                            )}
+                            <Button
+                              variant={currentPage === page ? "default" : "outline"}
+                              size="sm"
+                              onClick={() => setCurrentPage(page)}
+                              className={`h-8 w-8 text-xs font-bold rounded-lg p-0 transition-all ${
+                                currentPage === page
+                                  ? "bg-[#1F7D3E] hover:bg-[#186331] text-white border-none shadow-sm"
+                                  : "border-[#e2e9e4] hover:bg-white text-[#5e6b62]"
+                              }`}
+                            >
+                              {page}
+                            </Button>
+                          </React.Fragment>
+                        );
+                      })}
+                  </div>
+
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    disabled={currentPage === totalPages}
+                    onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                    className="h-8 border-[#e2e9e4] hover:bg-white text-xs font-bold text-[#5e6b62] rounded-lg transition-colors flex items-center gap-1 disabled:opacity-50"
+                  >
+                    Siguiente
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+                  </Button>
+                </div>
+              </div>
+            )}
             
             {filteredRisks.length === 0 && (
               <div className="py-20 text-center bg-white border-t border-[#e2e9e4]">
