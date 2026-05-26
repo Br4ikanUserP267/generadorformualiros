@@ -54,11 +54,8 @@ COPY --from=builder /app/public ./public
 RUN mkdir -p /app/public/uploads/matrices && \
 	chmod -R 755 /app/public/uploads
 
-# Create non-root user for security
+# Create non-root user for security (can be used if container runs in non-root environment)
 RUN addgroup -g 1001 -S nodejs && adduser -S nextjs -u 1001
-
-# Ensure proper permissions for nextjs user (though we run as root to avoid bind-mount permission issues)
-RUN chown -R nextjs:nodejs /app
 
 # Temporarily disabled running as non-root to allow write access to the host bind-mounted volume
 # USER nextjs
