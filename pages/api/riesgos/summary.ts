@@ -148,8 +148,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     const isUserAdmin = user.role === 'SUPER_ADMIN' || user.role === 'ADMIN';
     const andConditions: Prisma.MatrizWhereInput[] = [
-      { deletedAt: null },
-      ...(isUserAdmin ? [] : [{ usuarioId: user.id }])
+      { deletedAt: null }
     ]
 
     if (search) {

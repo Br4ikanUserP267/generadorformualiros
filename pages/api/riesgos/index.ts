@@ -69,8 +69,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       
       const rows = await prisma.matriz.findMany({
         where: {
-          deletedAt: null,
-          ...(isUserAdmin ? {} : { usuarioId: user.id })
+          deletedAt: null
         },
         include: {
 // ... (rest of include)
