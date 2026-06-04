@@ -15,30 +15,27 @@ interface ColumnWidths {
 
 // risk interpretation helpers matching matrix-editor
 function interpProbabilidad(np: number) {
-  if (!np) return { label: '—', color: '#9CA3AF' }
-  if (np >= 24 && np <= 40) return { label: 'Muy Alto', color: '#a50000' } // Deep Red
-  if (np >= 10 && np <= 23) return { label: 'Alto', color: '#ef4444' }     // Red
-  if (np >= 6 && np <= 9) return { label: 'Medio', color: '#EAB308' }    // Yellow
-  if (np >= 2 && np <= 5) return { label: 'Bajo', color: '#198754' }     // Green
-  return { label: String(np), color: '#9CA3AF' }
+  if (!np) return { label: '', color: '#9CA3AF' }
+  if (np <= 4) return { label: 'Bajo', color: '#198754' }     // Green
+  if (np <= 8) return { label: 'Medio', color: '#EAB308' }    // Yellow
+  if (np <= 20) return { label: 'Alto', color: '#ef4444' }     // Red
+  return { label: 'Muy Alto', color: '#a50000' } // Deep Red
 }
 
 function interpNivelRiesgo(nr: number) {
-  if (!nr) return { label: '—', color: '#9CA3AF' }
-  if (nr >= 4000 && nr <= 6000) return { label: 'I', color: '#ef4444' }    // I = Red
-  if (nr >= 150 && nr <= 500) return { label: 'II', color: '#EAB308' }    // II = Yellow
-  if (nr >= 40 && nr <= 120) return { label: 'III', color: '#198754' }    // III = Green
-  if (nr >= 10 && nr <= 20) return { label: 'IV', color: '#198754' }     // IV = Green
-  if (nr >= 501) return { label: 'I', color: '#ef4444' }
-  if (nr >= 121 && nr <= 500) return { label: 'II', color: '#EAB308' }
-  return { label: String(nr), color: '#9CA3AF' }
+  if (!nr) return { label: '', color: '#9CA3AF' }
+  if (nr <= 20) return { label: 'IV', color: '#198754' }     // IV = Green
+  if (nr <= 120) return { label: 'III', color: '#198754' }    // III = Green
+  if (nr <= 500) return { label: 'II', color: '#EAB308' }    // II = Yellow
+  return { label: 'I', color: '#ef4444' }    // I = Red
 }
 
 function aceptabilidadColor(text: string) {
-  if (text.includes('No Aceptable')) return '#ef4444'                    // Red
-  if (text.includes('Control Especifico')) return '#EAB308'               // Yellow
-  if (text.includes('Mejorable')) return '#198754'                        // Green
-  if (text.includes('Aceptable')) return '#198754'                       // Green
+  if (!text) return '#9CA3AF'
+  if (text.includes('No Aceptable')) return '#dc3545' // Rojo
+  if (text.includes('Control Especifico')) return '#EAB308' // Amarillo
+  if (text.includes('Mejorable')) return '#198754' // Verde
+  if (text.includes('Aceptable')) return '#198754' // Verde profundo
   return '#9CA3AF'
 }
 
@@ -75,14 +72,14 @@ export function MatrixPreview({ matrizId, onClose }: MatrixPreviewProps) {
     controlFuente: 150,
     controlMedio: 150,
     controlIndividuo: 150,
-    nd: 60,
-    ne: 60,
-    np: 60,
-    interpNp: 140,
-    nc: 60,
-    nr: 60,
-    interpNr: 160,
-    aceptabilidad: 180,
+    nd: 130,
+    ne: 130,
+    np: 130,
+    interpNp: 220,
+    nc: 130,
+    nr: 130,
+    interpNr: 200,
+    aceptabilidad: 200,
     numExpuestos: 100,
     peorConsecuencia: 150,
     requisitoLegal: 100,
@@ -107,14 +104,14 @@ export function MatrixPreview({ matrizId, onClose }: MatrixPreviewProps) {
     controlFuente: 'Control Fuente',
     controlMedio: 'Control Medio',
     controlIndividuo: 'Control Individuo',
-    nd: 'ND',
-    ne: 'NE',
-    np: 'NP',
-    interpNp: 'Interpretación NP',
-    nc: 'NC',
-    nr: 'NR',
-    interpNr: 'Interpretación NR',
-    aceptabilidad: 'Aceptabilidad',
+    nd: 'Nivel Deficiencia',
+    ne: 'Nivel Exposición',
+    np: 'Nivel Probabilidad',
+    interpNp: 'Interpretación Nivel Probabilidad',
+    nc: 'Nivel Consecuencia',
+    nr: 'Nivel Riesgo',
+    interpNr: 'Interpretación Nivel Riesgo',
+    aceptabilidad: 'Aceptabilidad Del Riesgo',
     numExpuestos: 'Nº Expuestos',
     peorConsecuencia: 'Peor Consecuencia',
     requisitoLegal: 'Requisito Legal',

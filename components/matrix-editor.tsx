@@ -19,29 +19,25 @@ function makeId(prefix = '') { return prefix + Math.random().toString(36).slice(
 
 // risk interpretation helpers (GTC-45 rules)
 function interpProbabilidad(np: number) {
-  if (!np) return { label: '—', color: '#9CA3AF' }
-  if (np >= 24 && np <= 40) return { label: 'Muy Alto', color: '#a50000' } // Deep Red
-  if (np >= 10 && np <= 23) return { label: 'Alto', color: '#ef4444' }     // Red
-  if (np >= 6 && np <= 9) return { label: 'Medio', color: '#EAB308' }    // Yellow
-  if (np >= 2 && np <= 5) return { label: 'Bajo', color: '#198754' }     // Green
-  return { label: String(np), color: '#9CA3AF' }
+  if (!np) return { label: '', color: '#9CA3AF' }
+  if (np <= 4) return { label: 'Bajo', color: '#198754' }     // Green
+  if (np <= 8) return { label: 'Medio', color: '#EAB308' }    // Yellow
+  if (np <= 20) return { label: 'Alto', color: '#ef4444' }     // Red
+  return { label: 'Muy Alto', color: '#a50000' } // Deep Red
 }
 
 function interpNivelRiesgo(nr: number) {
-  if (!nr) return { label: '—', color: '#9CA3AF' }
-  if (nr >= 4000 && nr <= 6000) return { label: 'I', color: '#ef4444' }    // I = Red
-  if (nr >= 150 && nr <= 500) return { label: 'II', color: '#EAB308' }    // II = Yellow
-  if (nr >= 40 && nr <= 120) return { label: 'III', color: '#198754' }    // III = Green
-  if (nr >= 10 && nr <= 20) return { label: 'IV', color: '#198754' }     // IV = Green
-  // catch-all mapping
-  if (nr >= 501) return { label: 'I', color: '#ef4444' }
-  if (nr >= 121 && nr <= 500) return { label: 'II', color: '#EAB308' }
-  return { label: String(nr), color: '#9CA3AF' }
+  if (!nr) return { label: '', color: '#9CA3AF' }
+  if (nr <= 20) return { label: 'IV', color: '#198754' }     // IV = Green
+  if (nr <= 120) return { label: 'III', color: '#198754' }    // III = Green
+  if (nr <= 500) return { label: 'II', color: '#EAB308' }    // II = Yellow
+  return { label: 'I', color: '#ef4444' }    // I = Red
 }
 
 function renderPeligroBadge(nrVal: number) {
   if (!nrVal) return null;
   const label = interpNivelRiesgo(nrVal).label;
+  if (!label) return null;
   if (label === 'I') return { dot: '#ef4444', bg: '#fce8e8', text: 'Nivel I' };
   if (label === 'II') return { dot: '#EAB308', bg: '#fdecea', text: 'Nivel II' };
   if (label === 'III') return { dot: '#198754', bg: '#fff3e0', text: 'Nivel III' };
@@ -50,16 +46,18 @@ function renderPeligroBadge(nrVal: number) {
 }
 
 function aceptabilidadFromNivel(label: string) {
+  if (!label) return ''
   switch (label) {
-    case 'I': return 'No Aceptable'
-    case 'II': return 'Aceptable con Control Especifico'
-    case 'III': return 'Mejorable'
     case 'IV': return 'Aceptable'
-    default: return '—'
+    case 'III': return 'Mejorable'
+    case 'II': return 'Aceptable con Control Especifico'
+    case 'I': return 'No Aceptable'
+    default: return ''
   }
 }
 
 function aceptabilidadColor(text: string) {
+  if (!text) return '#9CA3AF'
   if (text.includes('No Aceptable')) return '#dc3545' // Rojo
   if (text.includes('Control Especifico')) return '#EAB308' // Amarillo
   if (text.includes('Mejorable')) return '#198754' // Verde
@@ -1261,163 +1259,313 @@ export default function MatrixEditor({ id }: { id?: string }) {
                               )}
 
                               {r._ui?.activeTab===1 && (
-                                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                <div className={`grid gap-6 w-full ${r.evaluacionPost ? 'grid-cols-1 lg:grid-cols-2' : 'grid-cols-1'}`}>
                                   {/* Initial Evaluation */}
-                                  <div className="md:col-span-3 border-b border-[#dce8dc] pb-2 mb-2">
-                                    <h4 className="text-[11px] font-bold text-[#1F7D3E] uppercase tracking-wider">Evaluación Inicial</h4>
-                                  </div>
-                                  <div>
-                                    <div className="text-xs">Nivel de Deficiencia</div>
-                                    <select value={r.evaluacion?.nd ?? ''} onChange={(e:any)=> updatePeligroField(currentProceso.id, currentZona.id, currentActividad.id, r.id, ['evaluacion','nd'], e.target.value?Number(e.target.value):null)} className="w-full p-2 border rounded text-xs font-bold">
-                                      <option value="">—</option>
-                                      <option value={10}>10 (Muy alto)</option>
-                                      <option value={6}>6 (Alto)</option>
-                                      <option value={2}>2 (Medio)</option>
-                                      <option value={0}>0 (Bajo)</option>
-                                    </select>
-                                  </div>
-                                  <div>
-                                    <div className="text-xs">Nivel de Exposición</div>
-                                    <select value={r.evaluacion?.ne ?? ''} onChange={(e:any)=> updatePeligroField(currentProceso.id, currentZona.id, currentActividad.id, r.id, ['evaluacion','ne'], e.target.value?Number(e.target.value):null)} className="w-full p-2 border rounded text-xs font-bold">
-                                      <option value="">—</option>
-                                      <option value={4}>4 (Continua)</option>
-                                      <option value={3}>3 (Frecuente)</option>
-                                      <option value={2}>2 (Ocasional)</option>
-                                      <option value={1}>1 (Esporádica)</option>
-                                    </select>
-                                  </div>
-                                  <div>
-                                    <div className="text-xs">Nivel de Consecuencia</div>
-                                    <select value={r.evaluacion?.nc ?? ''} onChange={(e:any)=> updatePeligroField(currentProceso.id, currentZona.id, currentActividad.id, r.id, ['evaluacion','nc'], e.target.value?Number(e.target.value):null)} className="w-full p-2 border rounded text-xs font-bold">
-                                      <option value="">—</option>
-                                      <option value={100}>100 (Mortal)</option>
-                                      <option value={60}>60 (Muy grave)</option>
-                                      <option value={25}>25 (Grave)</option>
-                                      <option value={10}>10 (Leve)</option>
-                                    </select>
-                                  </div>
+                                  <div className="bg-white p-4 rounded-xl border border-[#dce8dc] shadow-sm space-y-4">
+                                    <h4 className="text-xs font-black text-[#1F7D3E] uppercase tracking-wider border-b border-[#dce8dc] pb-1">
+                                      Evaluación Inicial
+                                    </h4>
 
-                                  {/* Residual Evaluation (Post-Intervention) */}
-                                  {r.evaluacionPost && (
-                                    <>
-                                      <div className="md:col-span-3 border-b border-[#dce8dc] pb-2 mt-4 mb-2">
-                                        <h4 className="text-[11px] font-bold text-[#1F7D3E] uppercase tracking-wider flex items-center gap-2">
-                                          Evaluación Residual (Post-Intervención)
-                                          <Badge variant="outline" className="bg-[#f0f9f1] text-[#1F7D3E] border-[#d1e2d6] text-[9px]">Actualizado</Badge>
-                                        </h4>
-                                      </div>
-                                      <div>
-                                        <div className="text-xs text-[#5e6b62]">Nivel de Deficiencia Residual</div>
-                                        <select 
-                                          value={r.evaluacionPost.nd ?? ''} 
-                                          onChange={(e:any) => updatePeligroField(currentProceso.id, currentZona.id, currentActividad.id, r.id, ['evaluacionPost', 'nd'], e.target.value ? Number(e.target.value) : null)}
-                                          className="w-full p-2 border rounded text-xs font-bold bg-[#fcfdfc] border-[#dce8dc]"
-                                        >
-                                          <option value="">—</option>
-                                          <option value={10}>10 (Muy alto)</option>
-                                          <option value={6}>6 (Alto)</option>
-                                          <option value={2}>2 (Medio)</option>
-                                          <option value={0}>0 (Bajo)</option>
-                                        </select>
-                                      </div>
-                                      <div>
-                                        <div className="text-xs text-[#5e6b62]">Nivel de Exposición Residual</div>
-                                        <select 
-                                          value={r.evaluacionPost.ne ?? ''} 
-                                          onChange={(e:any) => updatePeligroField(currentProceso.id, currentZona.id, currentActividad.id, r.id, ['evaluacionPost', 'ne'], e.target.value ? Number(e.target.value) : null)}
-                                          className="w-full p-2 border rounded text-xs font-bold bg-[#fcfdfc] border-[#dce8dc]"
-                                        >
-                                          <option value="">—</option>
-                                          <option value={4}>4 (Continua)</option>
-                                          <option value={3}>3 (Frecuente)</option>
-                                          <option value={2}>2 (Ocasional)</option>
-                                          <option value={1}>1 (Esporádica)</option>
-                                        </select>
-                                      </div>
-                                      <div>
-                                        <div className="text-xs text-[#5e6b62]">Nivel de Consecuencia Residual</div>
-                                        <select 
-                                          value={r.evaluacionPost.nc ?? ''} 
-                                          onChange={(e:any) => updatePeligroField(currentProceso.id, currentZona.id, currentActividad.id, r.id, ['evaluacionPost', 'nc'], e.target.value ? Number(e.target.value) : null)}
-                                          className="w-full p-2 border rounded text-xs font-bold bg-[#fcfdfc] border-[#dce8dc]"
-                                        >
-                                          <option value="">—</option>
-                                          <option value={100}>100 (Mortal)</option>
-                                          <option value={60}>60 (Muy grave)</option>
-                                          <option value={25}>25 (Grave)</option>
-                                          <option value={10}>10 (Leve)</option>
-                                        </select>
-                                      </div>
-                                    </>
-                                  )}
-
-                                  <div className="md:col-span-3 mt-3 p-3 bg-[#f6faf6] rounded-md border border-[#dce8dc]">
-                                    <div className="text-xs font-medium mb-2 uppercase tracking-tight text-[#1F7D3E]">Resultados de Probabilidad y Riesgo</div>
-                                    <div className="grid md:grid-cols-2 gap-y-4 gap-x-8">
-                                      {/* Probability Side-by-Side */}
-                                      <div className="flex flex-col gap-2">
-                                        <div className="text-[10px] font-bold text-[#8aa08f] uppercase">Nivel de Probabilidad</div>
-                                        <div className="flex items-center gap-3">
-                                          <div className="flex flex-col">
-                                            <span className="text-[9px] text-gray-400 font-bold">INICIAL: {r.evaluacion?.np || '—'}</span>
-                                            <span className="px-2 py-0.5 rounded text-[10px] font-bold text-white text-center" style={{background: interpProbabilidad(Number(r.evaluacion?.np||0)).color}}>
-                                              {interpProbabilidad(Number(r.evaluacion?.np||0)).label}
-                                            </span>
+                                    <div className="space-y-4">
+                                      {/* EVALUACIÓN DEL RIESGO */}
+                                      <div className="space-y-3">
+                                        <div className="text-[11px] font-black text-[#1F7D3E]/80 uppercase tracking-widest">
+                                          EVALUACIÓN DEL RIESGO
+                                        </div>
+                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                          {/* Nivel Deficiencia */}
+                                          <div>
+                                            <label className="text-[10px] font-bold text-[#5e6b62] uppercase tracking-wider block mb-1">
+                                              Nivel Deficiencia
+                                            </label>
+                                            <select
+                                              value={r.evaluacion?.nd ?? ''}
+                                              onChange={(e: any) => updatePeligroField(currentProceso.id, currentZona.id, currentActividad.id, r.id, ['evaluacion', 'nd'], e.target.value ? Number(e.target.value) : null)}
+                                              className="w-full p-2 border rounded-lg text-xs font-bold bg-[#fcfdfc] border-[#dce8dc]"
+                                            >
+                                              <option value="">— Seleccionar —</option>
+                                              <option value={10}>10</option>
+                                              <option value={6}>6</option>
+                                              <option value={2}>2</option>
+                                            </select>
                                           </div>
-                                          {r.evaluacionPost && (
-                                            <>
-                                              <div className="text-gray-300">→</div>
-                                              <div className="flex flex-col">
-                                                <span className="text-[9px] text-[#1F7D3E] font-bold">RESIDUAL: {r.evaluacionPost.np || '—'}</span>
-                                                <span className="px-2 py-0.5 rounded text-[10px] font-bold text-white text-center" style={{background: interpProbabilidad(Number(r.evaluacionPost.np||0)).color}}>
-                                                  {interpProbabilidad(Number(r.evaluacionPost.np||0)).label}
-                                                </span>
+
+                                          {/* Nivel Exposición */}
+                                          <div>
+                                            <label className="text-[10px] font-bold text-[#5e6b62] uppercase tracking-wider block mb-1">
+                                              Nivel Exposición
+                                            </label>
+                                            <select
+                                              value={r.evaluacion?.ne ?? ''}
+                                              onChange={(e: any) => updatePeligroField(currentProceso.id, currentZona.id, currentActividad.id, r.id, ['evaluacion', 'ne'], e.target.value ? Number(e.target.value) : null)}
+                                              className="w-full p-2 border rounded-lg text-xs font-bold bg-[#fcfdfc] border-[#dce8dc]"
+                                            >
+                                              <option value="">— Seleccionar —</option>
+                                              <option value={4}>4</option>
+                                              <option value={3}>3</option>
+                                              <option value={2}>2</option>
+                                              <option value={1}>1</option>
+                                            </select>
+                                          </div>
+
+                                          {/* Nivel Probabilidad */}
+                                          <div>
+                                            <label className="text-[10px] font-bold text-[#5e6b62] uppercase tracking-wider block mb-1">
+                                              Nivel Probabilidad
+                                            </label>
+                                            <div className="w-full p-2 border rounded-lg text-xs font-bold bg-slate-50 border-[#dce8dc]">
+                                              {r.evaluacion?.np ?? '—'}
+                                            </div>
+                                          </div>
+
+                                          {/* Interpretación Nivel Probabilidad */}
+                                          <div>
+                                            <label className="text-[10px] font-bold text-[#5e6b62] uppercase tracking-wider block mb-1">
+                                              Interpretación Nivel Probabilidad
+                                            </label>
+                                            {r.evaluacion?.interp_np ? (
+                                              <div
+                                                className="w-full p-2 rounded-lg text-xs font-black text-center text-white"
+                                                style={{ backgroundColor: interpProbabilidad(Number(r.evaluacion?.np || 0)).color }}
+                                              >
+                                                {r.evaluacion.interp_np}
                                               </div>
-                                            </>
-                                          )}
+                                            ) : (
+                                              <div className="w-full p-2 border rounded-lg text-xs font-bold bg-slate-50 border-[#dce8dc] text-gray-400">
+                                                —
+                                              </div>
+                                            )}
+                                          </div>
+
+                                          {/* Nivel Consecuencia */}
+                                          <div>
+                                            <label className="text-[10px] font-bold text-[#5e6b62] uppercase tracking-wider block mb-1">
+                                              Nivel Consecuencia
+                                            </label>
+                                            <select
+                                              value={r.evaluacion?.nc ?? ''}
+                                              onChange={(e: any) => updatePeligroField(currentProceso.id, currentZona.id, currentActividad.id, r.id, ['evaluacion', 'nc'], e.target.value ? Number(e.target.value) : null)}
+                                              className="w-full p-2 border rounded-lg text-xs font-bold bg-[#fcfdfc] border-[#dce8dc]"
+                                            >
+                                              <option value="">— Seleccionar —</option>
+                                              <option value={100}>100</option>
+                                              <option value={60}>60</option>
+                                              <option value={25}>25</option>
+                                              <option value={10}>10</option>
+                                            </select>
+                                          </div>
+
+                                          {/* Nivel Riesgo */}
+                                          <div>
+                                            <label className="text-[10px] font-bold text-[#5e6b62] uppercase tracking-wider block mb-1">
+                                              Nivel Riesgo
+                                            </label>
+                                            <div className="w-full p-2 border rounded-lg text-xs font-bold bg-slate-50 border-[#dce8dc]">
+                                              {r.evaluacion?.nr ?? '—'}
+                                            </div>
+                                          </div>
+
+                                          {/* Interpretación Nivel Riesgo */}
+                                          <div className="sm:col-span-2">
+                                            <label className="text-[10px] font-bold text-[#5e6b62] uppercase tracking-wider block mb-1">
+                                              Interpretación Nivel Riesgo
+                                            </label>
+                                            {r.evaluacion?.interp_nr ? (
+                                              <div
+                                                className="w-full p-2 rounded-lg text-xs font-black text-center text-white"
+                                                style={{ backgroundColor: interpNivelRiesgo(Number(r.evaluacion?.nr || 0)).color }}
+                                              >
+                                                {r.evaluacion.interp_nr}
+                                              </div>
+                                            ) : (
+                                              <div className="w-full p-2 border rounded-lg text-xs font-bold bg-slate-50 border-[#dce8dc] text-gray-400">
+                                                —
+                                              </div>
+                                            )}
+                                          </div>
                                         </div>
                                       </div>
 
-                                      {/* Risk Level Side-by-Side */}
-                                      <div className="flex flex-col gap-2">
-                                        <div className="text-[10px] font-bold text-[#8aa08f] uppercase">Nivel de Riesgo</div>
-                                        <div className="flex items-center gap-3">
-                                          <div className="flex flex-col">
-                                            <span className="text-[9px] text-gray-400 font-bold">INICIAL: {r.evaluacion?.nr || '—'}</span>
-                                            <span className="px-2 py-0.5 rounded text-[10px] font-bold text-white text-center" style={{background: interpNivelRiesgo(Number(r.evaluacion?.nr||0)).color}}>
-                                              {interpNivelRiesgo(Number(r.evaluacion?.nr||0)).label}
-                                            </span>
-                                          </div>
-                                          {r.evaluacionPost && (
-                                            <>
-                                              <div className="text-gray-300">→</div>
-                                              <div className="flex flex-col">
-                                                <span className="text-[9px] text-[#1F7D3E] font-bold">RESIDUAL: {r.evaluacionPost.nr || '—'}</span>
-                                                <span className="px-2 py-0.5 rounded text-[10px] font-bold text-white text-center" style={{background: interpNivelRiesgo(Number(r.evaluacionPost.nr||0)).color}}>
-                                                  {interpNivelRiesgo(Number(r.evaluacionPost.nr||0)).label}
-                                                </span>
-                                              </div>
-                                            </>
-                                          )}
+                                      {/* VALORACIÓN DEL RIESGO */}
+                                      <div className="space-y-3 pt-2 border-t border-[#e2e9e4]">
+                                        <div className="text-[11px] font-black text-[#1F7D3E]/80 uppercase tracking-widest">
+                                          VALORACIÓN DEL RIESGO
                                         </div>
-                                      </div>
-
-                                      {/* Acceptability Side-by-Side */}
-                                      <div className="md:col-span-2 pt-2 border-t border-[#e2e9e4]">
-                                        <div className="text-[10px] font-bold text-[#8aa08f] uppercase mb-1">Aceptabilidad del Riesgo</div>
-                                        <div className="flex items-center gap-4">
-                                          <span className="text-[10px] font-medium text-gray-500">
-                                            Inicial: <span className="font-bold" style={{color: aceptabilidadColor(aceptabilidadFromNivel(r.evaluacion?.nivel_riesgo || interpNivelRiesgo(Number(r.evaluacion?.nr||0)).label))}}>{aceptabilidadFromNivel(r.evaluacion?.nivel_riesgo || interpNivelRiesgo(Number(r.evaluacion?.nr||0)).label)}</span>
-                                          </span>
-                                          {r.evaluacionPost && (
-                                            <span className="text-[10px] font-medium text-[#1F7D3E]">
-                                              → Residual: <span className="font-bold underline">{aceptabilidadFromNivel(interpNivelRiesgo(Number(r.evaluacionPost.nr||0)).label)}</span>
-                                            </span>
+                                        <div>
+                                          <label className="text-[10px] font-bold text-[#5e6b62] uppercase tracking-wider block mb-1">
+                                            Aceptabilidad Del Riesgo
+                                          </label>
+                                          {r.evaluacion?.aceptabilidad ? (
+                                            <div
+                                              className="w-full p-2 rounded-lg text-xs font-black text-center text-white"
+                                              style={{ backgroundColor: aceptabilidadColor(r.evaluacion.aceptabilidad) }}
+                                            >
+                                              {r.evaluacion.aceptabilidad}
+                                            </div>
+                                          ) : (
+                                            <div className="w-full p-2 border rounded-lg text-xs font-bold bg-slate-50 border-[#dce8dc] text-gray-400">
+                                              —
+                                            </div>
                                           )}
                                         </div>
                                       </div>
                                     </div>
                                   </div>
+
+                                  {/* Residual Evaluation (Post-Intervention) */}
+                                  {r.evaluacionPost && (
+                                    <div className="bg-[#fcfdfc] p-4 rounded-xl border border-[#dce8dc] shadow-sm space-y-4">
+                                      <h4 className="text-xs font-black text-[#1F7D3E] uppercase tracking-wider border-b border-[#dce8dc] pb-1 flex items-center gap-2">
+                                        Evaluación Residual
+                                        <Badge variant="outline" className="bg-[#f0f9f1] text-[#1F7D3E] border-[#d1e2d6] text-[9px]">Actualizado</Badge>
+                                      </h4>
+
+                                      <div className="space-y-4">
+                                        {/* EVALUACIÓN DEL RIESGO */}
+                                        <div className="space-y-3">
+                                          <div className="text-[11px] font-black text-[#1F7D3E]/80 uppercase tracking-widest">
+                                            EVALUACIÓN DEL RIESGO
+                                          </div>
+                                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                            {/* Nivel Deficiencia */}
+                                            <div>
+                                              <label className="text-[10px] font-bold text-[#5e6b62] uppercase tracking-wider block mb-1">
+                                                Nivel Deficiencia
+                                              </label>
+                                              <select
+                                                value={r.evaluacionPost.nd ?? ''}
+                                                onChange={(e: any) => updatePeligroField(currentProceso.id, currentZona.id, currentActividad.id, r.id, ['evaluacionPost', 'nd'], e.target.value ? Number(e.target.value) : null)}
+                                                className="w-full p-2 border rounded-lg text-xs font-bold bg-[#fcfdfc] border-[#dce8dc]"
+                                              >
+                                                <option value="">— Seleccionar —</option>
+                                                <option value={10}>10</option>
+                                                <option value={6}>6</option>
+                                                <option value={2}>2</option>
+                                              </select>
+                                            </div>
+
+                                            {/* Nivel Exposición */}
+                                            <div>
+                                              <label className="text-[10px] font-bold text-[#5e6b62] uppercase tracking-wider block mb-1">
+                                                Nivel Exposición
+                                              </label>
+                                              <select
+                                                value={r.evaluacionPost.ne ?? ''}
+                                                onChange={(e: any) => updatePeligroField(currentProceso.id, currentZona.id, currentActividad.id, r.id, ['evaluacionPost', 'ne'], e.target.value ? Number(e.target.value) : null)}
+                                                className="w-full p-2 border rounded-lg text-xs font-bold bg-[#fcfdfc] border-[#dce8dc]"
+                                              >
+                                                <option value="">— Seleccionar —</option>
+                                                <option value={4}>4</option>
+                                                <option value={3}>3</option>
+                                                <option value={2}>2</option>
+                                                <option value={1}>1</option>
+                                              </select>
+                                            </div>
+
+                                            {/* Nivel Probabilidad */}
+                                            <div>
+                                              <label className="text-[10px] font-bold text-[#5e6b62] uppercase tracking-wider block mb-1">
+                                                Nivel Probabilidad
+                                              </label>
+                                              <div className="w-full p-2 border rounded-lg text-xs font-bold bg-slate-50 border-[#dce8dc]">
+                                                {r.evaluacionPost.np ?? '—'}
+                                              </div>
+                                            </div>
+
+                                            {/* Interpretación Nivel Probabilidad */}
+                                            <div>
+                                              <label className="text-[10px] font-bold text-[#5e6b62] uppercase tracking-wider block mb-1">
+                                                Interpretación Nivel Probabilidad
+                                              </label>
+                                              {r.evaluacionPost.interp_np ? (
+                                                <div
+                                                  className="w-full p-2 rounded-lg text-xs font-black text-center text-white"
+                                                  style={{ backgroundColor: interpProbabilidad(Number(r.evaluacionPost.np || 0)).color }}
+                                                >
+                                                  {r.evaluacionPost.interp_np}
+                                                </div>
+                                              ) : (
+                                                <div className="w-full p-2 border rounded-lg text-xs font-bold bg-slate-50 border-[#dce8dc] text-gray-400">
+                                                  —
+                                                </div>
+                                              )}
+                                            </div>
+
+                                            {/* Nivel Consecuencia */}
+                                            <div>
+                                              <label className="text-[10px] font-bold text-[#5e6b62] uppercase tracking-wider block mb-1">
+                                                Nivel Consecuencia
+                                              </label>
+                                              <select
+                                                value={r.evaluacionPost.nc ?? ''}
+                                                onChange={(e: any) => updatePeligroField(currentProceso.id, currentZona.id, currentActividad.id, r.id, ['evaluacionPost', 'nc'], e.target.value ? Number(e.target.value) : null)}
+                                                className="w-full p-2 border rounded-lg text-xs font-bold bg-[#fcfdfc] border-[#dce8dc]"
+                                              >
+                                                <option value="">— Seleccionar —</option>
+                                                <option value={100}>100</option>
+                                                <option value={60}>60</option>
+                                                <option value={25}>25</option>
+                                                <option value={10}>10</option>
+                                              </select>
+                                            </div>
+
+                                            {/* Nivel Riesgo */}
+                                            <div>
+                                              <label className="text-[10px] font-bold text-[#5e6b62] uppercase tracking-wider block mb-1">
+                                                Nivel Riesgo
+                                              </label>
+                                              <div className="w-full p-2 border rounded-lg text-xs font-bold bg-slate-50 border-[#dce8dc]">
+                                                {r.evaluacionPost.nr ?? '—'}
+                                              </div>
+                                            </div>
+
+                                            {/* Interpretación Nivel Riesgo */}
+                                            <div className="sm:col-span-2">
+                                              <label className="text-[10px] font-bold text-[#5e6b62] uppercase tracking-wider block mb-1">
+                                                Interpretación Nivel Riesgo
+                                              </label>
+                                              {r.evaluacionPost.interp_nr ? (
+                                                <div
+                                                  className="w-full p-2 rounded-lg text-xs font-black text-center text-white"
+                                                  style={{ backgroundColor: interpNivelRiesgo(Number(r.evaluacionPost.nr || 0)).color }}
+                                                >
+                                                  {r.evaluacionPost.interp_nr}
+                                                </div>
+                                              ) : (
+                                                <div className="w-full p-2 border rounded-lg text-xs font-bold bg-slate-50 border-[#dce8dc] text-gray-400">
+                                                  —
+                                                </div>
+                                              )}
+                                            </div>
+                                          </div>
+                                        </div>
+
+                                        {/* VALORACIÓN DEL RIESGO */}
+                                        <div className="space-y-3 pt-2 border-t border-[#e2e9e4]">
+                                          <div className="text-[11px] font-black text-[#1F7D3E]/80 uppercase tracking-widest">
+                                            VALORACIÓN DEL RIESGO
+                                          </div>
+                                          <div>
+                                            <label className="text-[10px] font-bold text-[#5e6b62] uppercase tracking-wider block mb-1">
+                                              Aceptabilidad Del Riesgo
+                                            </label>
+                                            {r.evaluacionPost.aceptabilidad ? (
+                                              <div
+                                                className="w-full p-2 rounded-lg text-xs font-black text-center text-white"
+                                                style={{ backgroundColor: aceptabilidadColor(r.evaluacionPost.aceptabilidad) }}
+                                              >
+                                                {r.evaluacionPost.aceptabilidad}
+                                              </div>
+                                            ) : (
+                                              <div className="w-full p-2 border rounded-lg text-xs font-bold bg-slate-50 border-[#dce8dc] text-gray-400">
+                                                —
+                                              </div>
+                                            )}
+                                          </div>
+                                        </div>
+                                      </div>
+                                    </div>
+                                  )}
                                 </div>
                               )}
 

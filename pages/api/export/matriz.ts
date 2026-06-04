@@ -370,8 +370,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       { col: 'P', text: 'Nivel Probabilidad' },
       { col: 'Q', text: 'Interpretación Nivel Probabilidad' },
       { col: 'R', text: 'Nivel Consecuencia' },
-      { col: 'S', text: 'Nivel de Riesgo' },
-      { col: 'T', text: 'Interpretación Nivel de Riesgo' },
+      { col: 'S', text: 'Nivel Riesgo' },
+      { col: 'T', text: 'Interpretación Nivel Riesgo' },
       // U is merged from row 9
       { col: 'V', text: 'N° Expuestos' },
       { col: 'W', text: 'Peor Consecuencia' },

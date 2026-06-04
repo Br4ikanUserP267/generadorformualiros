@@ -46,33 +46,39 @@ type RiskPrioritizationItem = {
 }
 
 function interpProbabilidad(np: number) {
-  if (!np) return { label: '—', color: '#9CA3AF' }
-  if (np >= 24 && np <= 40) return { label: 'Muy Alto', color: '#a50000' }
-  if (np >= 10 && np <= 23) return { label: 'Alto', color: '#ef4444' }
-  if (np >= 6 && np <= 9) return { label: 'Medio', color: '#EAB308' }
-  if (np >= 2 && np <= 5) return { label: 'Bajo', color: '#198754' }
-  return { label: String(np), color: '#9CA3AF' }
+  if (!np) return { label: '', color: '#9CA3AF' }
+  if (np <= 4) return { label: 'Bajo', color: '#198754' }     // Green
+  if (np <= 8) return { label: 'Medio', color: '#EAB308' }    // Yellow
+  if (np <= 20) return { label: 'Alto', color: '#ef4444' }     // Red
+  return { label: 'Muy Alto', color: '#a50000' } // Deep Red
 }
 
 function interpNivelRiesgo(nr: number) {
-  if (!nr) return { label: '—', color: '#9CA3AF' }
-  if (nr >= 4000 && nr <= 6000) return { label: 'I', color: '#ef4444' }
-  if (nr >= 150 && nr <= 500) return { label: 'II', color: '#EAB308' }
-  if (nr >= 40 && nr <= 120) return { label: 'III', color: '#198754' }
-  if (nr >= 10 && nr <= 20) return { label: 'IV', color: '#198754' }
-  if (nr >= 501) return { label: 'I', color: '#ef4444' }
-  if (nr >= 121 && nr <= 500) return { label: 'II', color: '#EAB308' }
-  return { label: String(nr), color: '#9CA3AF' }
+  if (!nr) return { label: '', color: '#9CA3AF' }
+  if (nr <= 20) return { label: 'IV', color: '#198754' }     // IV = Green
+  if (nr <= 120) return { label: 'III', color: '#198754' }    // III = Green
+  if (nr <= 500) return { label: 'II', color: '#EAB308' }    // II = Yellow
+  return { label: 'I', color: '#ef4444' }    // I = Red
 }
 
 function aceptabilidadFromNivel(label: string) {
+  if (!label) return ''
   switch (label) {
-    case 'I': return 'No Aceptable'
-    case 'II': return 'Aceptable con Control Especifico'
-    case 'III': return 'Mejorable'
     case 'IV': return 'Aceptable'
-    default: return '—'
+    case 'III': return 'Mejorable'
+    case 'II': return 'Aceptable con Control Especifico'
+    case 'I': return 'No Aceptable'
+    default: return ''
   }
+}
+
+function aceptabilidadColor(text: string) {
+  if (!text) return '#9CA3AF'
+  if (text.includes('No Aceptable')) return '#dc3545' // Rojo
+  if (text.includes('Control Especifico')) return '#EAB308' // Amarillo
+  if (text.includes('Mejorable')) return '#198754' // Verde
+  if (text.includes('Aceptable')) return '#198754' // Verde profundo
+  return '#9CA3AF'
 }
 
 export function PriorizacionRiesgos() {
@@ -467,72 +473,157 @@ export function PriorizacionRiesgos() {
                   Evaluación Post-Intervención
                 </h4>
 
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                  <div>
-                    <label className="text-xs font-bold text-[#5e6b62] uppercase tracking-wider mb-1.5 block">Nivel de Deficiencia</label>
-                    <select 
-                      value={formEvalPost.nd}
-                      onChange={e => setFormEvalPost({...formEvalPost, nd: e.target.value})}
-                      className="w-full p-2.5 border rounded-xl text-xs font-bold bg-white border-[#e2e9e4] focus:border-[#1F7D3E] focus:ring-1 focus:ring-[#1F7D3E] outline-none"
-                    >
-                      <option value="">— Seleccionar —</option>
-                      <option value="10">10 (Muy alto)</option>
-                      <option value="6">6 (Alto)</option>
-                      <option value="2">2 (Medio)</option>
-                      <option value="0">0 (Bajo)</option>
-                    </select>
+                <div className="space-y-4">
+                  {/* EVALUACIÓN DEL RIESGO */}
+                  <div className="space-y-3">
+                    <div className="text-[11px] font-black text-[#1F7D3E]/80 uppercase tracking-widest">
+                      EVALUACIÓN DEL RIESGO
+                    </div>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      {/* Nivel Deficiencia */}
+                      <div>
+                        <label className="text-[10px] font-bold text-[#5e6b62] uppercase tracking-wider block mb-1">
+                          Nivel Deficiencia
+                        </label>
+                        <select 
+                          value={formEvalPost.nd}
+                          onChange={e => setFormEvalPost({...formEvalPost, nd: e.target.value})}
+                          className="w-full p-2 border rounded-lg text-xs font-bold bg-white border-[#e2e9e4] focus:border-[#1F7D3E] focus:ring-1 focus:ring-[#1F7D3E] outline-none"
+                        >
+                          <option value="">— Seleccionar —</option>
+                          <option value="10">10</option>
+                          <option value="6">6</option>
+                          <option value="2">2</option>
+                        </select>
+                      </div>
+
+                      {/* Nivel Exposición */}
+                      <div>
+                        <label className="text-[10px] font-bold text-[#5e6b62] uppercase tracking-wider block mb-1">
+                          Nivel Exposición
+                        </label>
+                        <select 
+                          value={formEvalPost.ne}
+                          onChange={e => setFormEvalPost({...formEvalPost, ne: e.target.value})}
+                          className="w-full p-2 border rounded-lg text-xs font-bold bg-white border-[#e2e9e4] focus:border-[#1F7D3E] focus:ring-1 focus:ring-[#1F7D3E] outline-none"
+                        >
+                          <option value="">— Seleccionar —</option>
+                          <option value="4">4</option>
+                          <option value="3">3</option>
+                          <option value="2">2</option>
+                          <option value="1">1</option>
+                        </select>
+                      </div>
+
+                      {/* Nivel Probabilidad */}
+                      <div>
+                        <label className="text-[10px] font-bold text-[#5e6b62] uppercase tracking-wider block mb-1">
+                          Nivel Probabilidad
+                        </label>
+                        <div className="w-full p-2.5 border rounded-lg text-xs font-bold bg-slate-50 border-[#e2e9e4]">
+                          {postEvalResult.np || '—'}
+                        </div>
+                      </div>
+
+                      {/* Interpretación Nivel Probabilidad */}
+                      <div>
+                        <label className="text-[10px] font-bold text-[#5e6b62] uppercase tracking-wider block mb-1">
+                          Interpretación Nivel Probabilidad
+                        </label>
+                        {postEvalResult.interp_np ? (
+                          <div
+                            className="w-full p-2 rounded-lg text-xs font-black text-center text-white"
+                            style={{ backgroundColor: postEvalResult.probColor }}
+                          >
+                            {postEvalResult.interp_np}
+                          </div>
+                        ) : (
+                          <div className="w-full p-2.5 border rounded-lg text-xs font-bold bg-slate-50 border-[#e2e9e4] text-gray-400">
+                            —
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Nivel Consecuencia */}
+                      <div>
+                        <label className="text-[10px] font-bold text-[#5e6b62] uppercase tracking-wider block mb-1">
+                          Nivel Consecuencia
+                        </label>
+                        <select 
+                          value={formEvalPost.nc}
+                          onChange={e => setFormEvalPost({...formEvalPost, nc: e.target.value})}
+                          className="w-full p-2 border rounded-lg text-xs font-bold bg-white border-[#e2e9e4] focus:border-[#1F7D3E] focus:ring-1 focus:ring-[#1F7D3E] outline-none"
+                        >
+                          <option value="">— Seleccionar —</option>
+                          <option value="100">100</option>
+                          <option value="60">60</option>
+                          <option value="25">25</option>
+                          <option value="10">10</option>
+                        </select>
+                      </div>
+
+                      {/* Nivel Riesgo */}
+                      <div>
+                        <label className="text-[10px] font-bold text-[#5e6b62] uppercase tracking-wider block mb-1">
+                          Nivel Riesgo
+                        </label>
+                        <div className="w-full p-2.5 border rounded-lg text-xs font-bold bg-slate-50 border-[#e2e9e4]">
+                          {postEvalResult.nr || '—'}
+                        </div>
+                      </div>
+
+                      {/* Interpretación Nivel Riesgo */}
+                      <div className="sm:col-span-2">
+                        <label className="text-[10px] font-bold text-[#5e6b62] uppercase tracking-wider block mb-1">
+                          Interpretación Nivel Riesgo
+                        </label>
+                        {postEvalResult.interp_nr ? (
+                          <div
+                            className="w-full p-2 rounded-lg text-xs font-black text-center text-white"
+                            style={{ backgroundColor: postEvalResult.riesgoColor }}
+                          >
+                            {postEvalResult.interp_nr}
+                          </div>
+                        ) : (
+                          <div className="w-full p-2.5 border rounded-lg text-xs font-bold bg-slate-50 border-[#e2e9e4] text-gray-400">
+                            —
+                          </div>
+                        )}
+                      </div>
+                    </div>
                   </div>
-                  <div>
-                    <label className="text-xs font-bold text-[#5e6b62] uppercase tracking-wider mb-1.5 block">Nivel de Exposición</label>
-                    <select 
-                      value={formEvalPost.ne}
-                      onChange={e => setFormEvalPost({...formEvalPost, ne: e.target.value})}
-                      className="w-full p-2.5 border rounded-xl text-xs font-bold bg-white border-[#e2e9e4] focus:border-[#1F7D3E] focus:ring-1 focus:ring-[#1F7D3E] outline-none"
-                    >
-                      <option value="">— Seleccionar —</option>
-                      <option value="4">4 (Continua)</option>
-                      <option value="3">3 (Frecuente)</option>
-                      <option value="2">2 (Ocasional)</option>
-                      <option value="1">1 (Esporádica)</option>
-                    </select>
-                  </div>
-                  <div>
-                    <label className="text-xs font-bold text-[#5e6b62] uppercase tracking-wider mb-1.5 block">Nivel de Consecuencia</label>
-                    <select 
-                      value={formEvalPost.nc}
-                      onChange={e => setFormEvalPost({...formEvalPost, nc: e.target.value})}
-                      className="w-full p-2.5 border rounded-xl text-xs font-bold bg-white border-[#e2e9e4] focus:border-[#1F7D3E] focus:ring-1 focus:ring-[#1F7D3E] outline-none"
-                    >
-                      <option value="">— Seleccionar —</option>
-                      <option value="100">100 (Mortal)</option>
-                      <option value="60">60 (Muy grave)</option>
-                      <option value="25">25 (Grave)</option>
-                      <option value="10">10 (Leve)</option>
-                    </select>
+
+                  {/* VALORACIÓN DEL RIESGO */}
+                  <div className="space-y-3 pt-2 border-t border-[#e2e9e4]">
+                    <div className="text-[11px] font-black text-[#1F7D3E]/80 uppercase tracking-widest">
+                      VALORACIÓN DEL RIESGO
+                    </div>
+                    <div>
+                      <label className="text-[10px] font-bold text-[#5e6b62] uppercase tracking-wider block mb-1">
+                        Aceptabilidad Del Riesgo
+                      </label>
+                      {postEvalResult.aceptabilidad ? (
+                        <div
+                          className="w-full p-2 rounded-lg text-xs font-black text-center text-white"
+                          style={{ backgroundColor: aceptabilidadColor(postEvalResult.aceptabilidad) }}
+                        >
+                          {postEvalResult.aceptabilidad}
+                        </div>
+                      ) : (
+                        <div className="w-full p-2.5 border rounded-lg text-xs font-bold bg-slate-50 border-[#e2e9e4] text-gray-400">
+                          —
+                        </div>
+                      )}
+                    </div>
                   </div>
                 </div>
 
-                <div className="mt-4 p-4 bg-white rounded-xl border border-[#e2e9e4] grid grid-cols-1 sm:grid-cols-2 gap-4 shadow-inner">
-                  <div className="flex flex-col gap-1 justify-center">
-                    <span className="text-xs font-bold text-[#5e6b62] uppercase tracking-wider">Nuevo Nivel de Probabilidad</span>
-                    <Badge className="w-fit text-xs font-black px-3 py-1 text-white border-none shadow-sm" style={{ backgroundColor: postEvalResult.probColor }}>
-                      {postEvalResult.interp_np} ({postEvalResult.np})
-                    </Badge>
+                {postEvalResult.interp_np === 'Bajo' && (
+                  <div className="mt-4 p-3 bg-[#f0f9f1] border border-[#d1e2d6] rounded-xl flex items-center gap-2.5 text-[#1F7D3E] shadow-sm animate-pulse">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                    <span className="text-xs font-black uppercase tracking-wider">¡Riesgo mitigado! Se removerá de la lista.</span>
                   </div>
-                  <div className="flex flex-col gap-1 justify-center">
-                    <span className="text-xs font-bold text-[#5e6b62] uppercase tracking-wider">Nuevo Nivel de Riesgo</span>
-                    <Badge className="w-fit text-xs font-black px-3 py-1 text-white border-none shadow-sm" style={{ backgroundColor: postEvalResult.riesgoColor }}>
-                      {postEvalResult.interp_nr} ({postEvalResult.nr})
-                    </Badge>
-                  </div>
-                  
-                  {postEvalResult.interp_np === 'Bajo' && (
-                    <div className="sm:col-span-2 mt-2 p-3 bg-[#f0f9f1] border border-[#d1e2d6] rounded-xl flex items-center gap-2.5 text-[#1F7D3E] shadow-sm animate-pulse">
-                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-                      <span className="text-xs font-black uppercase tracking-wider">¡Riesgo mitigado! Se removerá de la lista.</span>
-                    </div>
-                  )}
-                </div>
+                )}
               </div>
             </div>
           </div>
