@@ -84,6 +84,16 @@ function getStablePeligroLabel(peligro: any, fallbackIndex: number) {
   return baseLabel
 }
 
+function getStableActividadLabel(actividad: any, fallbackIndex: number) {
+  const baseLabel = actividad.nombre || `Actividad ${fallbackIndex + 1}`
+  if (actividad.descripcion) {
+    const desc = actividad.descripcion.trim()
+    const truncated = desc.length > 50 ? desc.slice(0, 50) + '...' : desc
+    return `${baseLabel}: ${truncated}`
+  }
+  return baseLabel
+}
+
 export default function MatrixEditor({ id }: { id?: string }) {
   const router = useRouter()
   const searchParams = useSearchParams()
@@ -1112,7 +1122,7 @@ export default function MatrixEditor({ id }: { id?: string }) {
                                 {expanded && (
                                   <div className="pl-4 pr-2 pb-2">
                                     <div className="space-y-1" onDragOver={(e)=> onActividadDragOver(e, null)} onDrop={(e)=> onActividadDrop(e, p.id, z.id, null)}>
-                                      {(z.actividades||[]).map((a: any) => (
+                                      {(z.actividades||[]).map((a: any, actIdx: number) => (
                                         <div
                                           key={a.id}
                                           className={`flex items-center justify-between p-2 rounded cursor-pointer ${selected.actividadId===a.id? 'bg-[#e8f2ea] border-l-2 border-l-[#1F7D3E]':''} ${dragOverActividadId===a.id? 'bg-[#dcebdd]' : ''} ${dragOverActividadId===a.id && dragOverActividadEdge==='before' ? 'border-t-2 border-t-[#2d7a40]' : ''} ${dragOverActividadId===a.id && dragOverActividadEdge==='after' ? 'border-b-2 border-b-[#2d7a40]' : ''}`}
@@ -1146,7 +1156,9 @@ export default function MatrixEditor({ id }: { id?: string }) {
                                                 <path d="M4 17h16"></path>
                                               </svg>
                                             </div>
-                                            <div className="text-xs truncate" title={a.nombre}>{a.nombre}</div>
+                                            <div className="text-xs truncate" title={a.descripcion ? `${a.nombre}: ${a.descripcion}` : a.nombre}>
+                                              {getStableActividadLabel(a, actIdx)}
+                                            </div>
                                           </div>
                                           <div className="flex items-center gap-1.5 flex-none ml-2">
                                             <button aria-label="Editar actividad" className="text-slate-500 hover:text-slate-700" onClick={(e:any)=>{ e.stopPropagation(); editActividad(p.id, z.id, a) }}>
