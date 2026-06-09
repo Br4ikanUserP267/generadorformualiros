@@ -491,9 +491,9 @@ export function PriorizacionRiesgos() {
                           className="w-full p-2 border rounded-lg text-xs font-bold bg-white border-[#e2e9e4] focus:border-[#1F7D3E] focus:ring-1 focus:ring-[#1F7D3E] outline-none"
                         >
                           <option value="">— Seleccionar —</option>
-                          <option value="10">10</option>
-                          <option value="6">6</option>
-                          <option value="2">2</option>
+                          <option value="10">10 - Muy Alto</option>
+                          <option value="6">6 - Alto</option>
+                          <option value="2">2 - Bajo</option>
                         </select>
                       </div>
 
@@ -508,10 +508,10 @@ export function PriorizacionRiesgos() {
                           className="w-full p-2 border rounded-lg text-xs font-bold bg-white border-[#e2e9e4] focus:border-[#1F7D3E] focus:ring-1 focus:ring-[#1F7D3E] outline-none"
                         >
                           <option value="">— Seleccionar —</option>
-                          <option value="4">4</option>
-                          <option value="3">3</option>
-                          <option value="2">2</option>
-                          <option value="1">1</option>
+                          <option value="4">4 - Continua</option>
+                          <option value="3">3 - Frecuente</option>
+                          <option value="2">2 - Ocasional</option>
+                          <option value="1">1 - Esporádica</option>
                         </select>
                       </div>
 
@@ -555,10 +555,10 @@ export function PriorizacionRiesgos() {
                           className="w-full p-2 border rounded-lg text-xs font-bold bg-white border-[#e2e9e4] focus:border-[#1F7D3E] focus:ring-1 focus:ring-[#1F7D3E] outline-none"
                         >
                           <option value="">— Seleccionar —</option>
-                          <option value="100">100</option>
-                          <option value="60">60</option>
-                          <option value="25">25</option>
-                          <option value="10">10</option>
+                          <option value="100">100 - Mortal o Catastrófico</option>
+                          <option value="60">60 - Muy Grave</option>
+                          <option value="25">25 - Grave</option>
+                          <option value="10">10 - Leve</option>
                         </select>
                       </div>
 
