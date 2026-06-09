@@ -90,7 +90,7 @@ export function PriorizacionRiesgos() {
   const [selectedRisk, setSelectedRisk] = useState<RiskPrioritizationItem | null>(null)
   const [showModal, setShowModal] = useState(false)
   const [currentPage, setCurrentPage] = useState(1)
-  const ITEMS_PER_PAGE = 10
+  const [itemsPerPage, setItemsPerPage] = useState(10)
   
   // Form State
   const [formIntervencion, setFormIntervencion] = useState<any>({})
@@ -125,19 +125,19 @@ export function PriorizacionRiesgos() {
     )
   }, [risks, search])
 
-  // Reset to first page when search changes
+  // Reset to first page when search or itemsPerPage changes
   useEffect(() => {
     setCurrentPage(1)
-  }, [search])
+  }, [search, itemsPerPage])
 
   const totalPages = useMemo(() => {
-    return Math.max(1, Math.ceil(filteredRisks.length / ITEMS_PER_PAGE))
-  }, [filteredRisks])
+    return Math.max(1, Math.ceil(filteredRisks.length / itemsPerPage))
+  }, [filteredRisks, itemsPerPage])
 
   const paginatedRisks = useMemo(() => {
-    const startIndex = (currentPage - 1) * ITEMS_PER_PAGE
-    return filteredRisks.slice(startIndex, startIndex + ITEMS_PER_PAGE)
-  }, [filteredRisks, currentPage])
+    const startIndex = (currentPage - 1) * itemsPerPage
+    return filteredRisks.slice(startIndex, startIndex + itemsPerPage)
+  }, [filteredRisks, currentPage, itemsPerPage])
 
   const openIntervention = (risk: RiskPrioritizationItem) => {
     setSelectedRisk(risk)
@@ -324,10 +324,26 @@ export function PriorizacionRiesgos() {
             {/* Pagination Controls */}
             {filteredRisks.length > 0 && (
               <div className="px-6 py-4 border-t border-[#e2e9e4] bg-[#fcfdfc] flex flex-col sm:flex-row items-center justify-between gap-4">
-                <div className="text-xs font-semibold text-[#5e6b62]">
-                  Mostrando <span className="font-bold text-[#1F7D3E]">{Math.min(filteredRisks.length, (currentPage - 1) * ITEMS_PER_PAGE + 1)}</span> a{" "}
-                  <span className="font-bold text-[#1F7D3E]">{Math.min(filteredRisks.length, currentPage * ITEMS_PER_PAGE)}</span> de{" "}
-                  <span className="font-bold text-[#1F7D3E]">{filteredRisks.length}</span> riesgos
+                <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
+                  <div className="text-xs font-semibold text-[#5e6b62]">
+                    Mostrando <span className="font-bold text-[#1F7D3E]">{Math.min(filteredRisks.length, (currentPage - 1) * itemsPerPage + 1)}</span> a{" "}
+                    <span className="font-bold text-[#1F7D3E]">{Math.min(filteredRisks.length, currentPage * itemsPerPage)}</span> de{" "}
+                    <span className="font-bold text-[#1F7D3E]">{filteredRisks.length}</span> riesgos
+                  </div>
+                  <div className="flex items-center gap-1.5 text-[10px] sm:text-xs text-[#5e6b62] font-semibold uppercase tracking-wider">
+                    <span>Ver:</span>
+                    <select 
+                      value={itemsPerPage} 
+                      onChange={e => setItemsPerPage(Number(e.target.value))}
+                      className="p-1 border rounded-lg bg-white border-[#e2e9e4] focus:outline-none focus:border-[#1F7D3E] font-bold text-xs text-[#2c3630]"
+                    >
+                      <option value={10}>10</option>
+                      <option value={20}>20</option>
+                      <option value={30}>30</option>
+                      <option value={50}>50</option>
+                      <option value={100}>100</option>
+                    </select>
+                  </div>
                 </div>
                 
                 <div className="flex flex-wrap items-center gap-2">

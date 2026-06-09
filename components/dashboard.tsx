@@ -126,13 +126,12 @@ export function Dashboard() {
   const [facetTipos, setFacetTipos] = useState<string[]>([])
   const summariesCacheRef = useRef<Record<string, any>>({})
   const prefetchTokenRef = useRef(0)
-
-  const PAGE_SIZE = 6
+  const [pageSize, setPageSize] = useState(10)
 
   const buildSummaryParams = (page: number) => {
     const params = new URLSearchParams()
     params.set('page', String(page))
-    params.set('pageSize', String(PAGE_SIZE))
+    params.set('pageSize', String(pageSize))
     if (search.trim()) params.set('search', search.trim())
     if (dateDesde) params.set('dateDesde', dateDesde)
     if (dateHasta) params.set('dateHasta', dateHasta)
@@ -213,7 +212,7 @@ export function Dashboard() {
 
   useEffect(() => {
     void loadSummaries(currentPage)
-  }, [currentPage, search, dateDesde, dateHasta, tipoFilter])
+  }, [currentPage, search, dateDesde, dateHasta, tipoFilter, pageSize])
 
   useEffect(() => {
     void loadFacets()
@@ -223,7 +222,7 @@ export function Dashboard() {
     setCurrentPage(1)
     summariesCacheRef.current = {}
     prefetchTokenRef.current += 1
-  }, [search, dateDesde, dateHasta, tipoFilter])
+  }, [search, dateDesde, dateHasta, tipoFilter, pageSize])
 
   const tiposList = useMemo(() => facetTipos, [facetTipos])
 
@@ -539,9 +538,25 @@ export function Dashboard() {
         {/* Pagination */}
         {totalMatrices > 0 && (
           <div className="flex flex-wrap items-center justify-between gap-2 pt-4 border-t border-[#e2e9e4]">
-            <p className="text-[10px] sm:text-xs font-semibold text-[#5e6b62] uppercase tracking-wider">
-              Pág. {currentPage}/{totalPages} <span className="mx-1 sm:mx-2 opacity-30">|</span> {totalMatrices} totales
-            </p>
+            <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
+              <p className="text-[10px] sm:text-xs font-semibold text-[#5e6b62] uppercase tracking-wider">
+                Pág. {currentPage}/{totalPages} <span className="mx-1 sm:mx-2 opacity-30">|</span> {totalMatrices} totales
+              </p>
+              <div className="flex items-center gap-1.5 text-[10px] sm:text-xs text-[#5e6b62] font-semibold uppercase tracking-wider">
+                <span>Ver:</span>
+                <select 
+                  value={pageSize} 
+                  onChange={e => setPageSize(Number(e.target.value))}
+                  className="p-1 border rounded-lg bg-white border-[#e2e9e4] focus:outline-none focus:border-[#1F7D3E] font-bold text-xs text-[#2c3630]"
+                >
+                  <option value={10}>10</option>
+                  <option value={20}>20</option>
+                  <option value={30}>30</option>
+                  <option value={50}>50</option>
+                  <option value={100}>100</option>
+                </select>
+              </div>
+            </div>
             <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
               <button 
                 className="px-3 sm:px-4 py-1.5 sm:py-2 rounded-xl border border-[#e2e9e4] bg-white text-xs font-bold text-[#2c3630] disabled:opacity-30 disabled:cursor-not-allowed hover:bg-gray-50 transition-colors"

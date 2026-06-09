@@ -71,7 +71,7 @@ export function ReportePeligros() {
   const [items, setItems] = useState<PeligroReporteItem[]>([])
   const [total, setTotal] = useState(0)
   const [page, setPage] = useState(0)
-  const [pageSize] = useState(12)
+  const [pageSize, setPageSize] = useState(10)
   const [search, setSearch] = useState('')
   const [selectedAceptabilidad, setSelectedAceptabilidad] = useState<string | null>(null)
   const [counts, setCounts] = useState<CountsResponse>({ muyAlto: 0, alto: 0, medio: 0, bajo: 0 })
@@ -126,7 +126,7 @@ export function ReportePeligros() {
 
   useEffect(() => {
     setPage(0)
-  }, [search, selectedAceptabilidad])
+  }, [search, selectedAceptabilidad, pageSize])
 
   useEffect(() => {
     void loadData(page)
@@ -314,8 +314,24 @@ export function ReportePeligros() {
 
           {/* Pagination */}
           <div className="px-3 sm:px-6 py-3 sm:py-4 border-t border-[#e2e9e4] flex flex-col sm:flex-row items-center justify-between gap-2 bg-[#f8faf9]/30">
-            <div className="text-[11px] font-bold text-[#8aa08f] uppercase tracking-widest">
-              Página {Math.min(page + 1, totalPages)} de {totalPages}
+            <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
+              <div className="text-[11px] font-bold text-[#8aa08f] uppercase tracking-widest">
+                Página {Math.min(page + 1, totalPages)} de {totalPages}
+              </div>
+              <div className="flex items-center gap-1.5 text-[10px] sm:text-xs text-[#5e6b62] font-semibold uppercase tracking-wider">
+                <span>Ver:</span>
+                <select 
+                  value={pageSize} 
+                  onChange={e => setPageSize(Number(e.target.value))}
+                  className="p-1 border rounded-lg bg-white border-[#e2e9e4] focus:outline-none focus:border-[#1F7D3E] font-bold text-xs text-[#2c3630]"
+                >
+                  <option value={10}>10</option>
+                  <option value={20}>20</option>
+                  <option value={30}>30</option>
+                  <option value={50}>50</option>
+                  <option value={100}>100</option>
+                </select>
+              </div>
             </div>
             <div className="flex items-center gap-2">
               <Button 
