@@ -311,18 +311,18 @@ export function Dashboard() {
   return (
     <div className="min-h-screen bg-[#f8faf9] text-[#2c3630]">
       {/* Topbar */}
-      <header className="sticky top-0 z-30 bg-white/80 backdrop-blur-md border-b border-[#e2e9e4] px-6 py-4 flex items-center justify-between">
-        <div className="flex items-center gap-4">
+      <header className="sticky top-0 z-30 bg-white/80 backdrop-blur-md border-b border-[#e2e9e4] px-4 md:px-6 py-3 flex flex-col md:flex-row items-center justify-between gap-3">
+        <div className="flex items-center gap-4 justify-between w-full md:w-auto">
           <div className="flex items-center gap-3">
             <img src="/matriz-riesgos/csm_logo_long.png" alt="Logo" className="h-10 object-contain" />
-            <div className="w-[1px] h-8 bg-[#e2e9e4]" />
+            <div className="w-[1px] h-8 bg-[#e2e9e4] hidden md:block" />
             <h1 className="text-base font-bold text-[#1F7D3E] leading-tight hidden md:block">
               Sistema de Gestión de Seguridad<br/>y Salud en el Trabajo
             </h1>
           </div>
         </div>
 
-        <div className="flex items-center gap-4">
+        <div className="flex flex-wrap items-center justify-center sm:justify-end gap-2 sm:gap-3 w-full md:w-auto">
           <button 
             onClick={() => setInstructionsOpen(true)}
             className="text-sm font-bold text-[#5e6b62] hover:text-[#1F7D3E] flex items-center gap-2 px-4 py-2 bg-white border border-[#e2e9e4] rounded-xl shadow-sm transition-all hover:bg-[#f0f9f1] hover:border-[#d1e2d6]"

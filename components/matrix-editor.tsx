@@ -220,6 +220,7 @@ export default function MatrixEditor({ id }: { id?: string }) {
   }, [matrix, peligroIdParam, id])
 
   const [searchTerm, setSearchTerm] = useState('')
+  const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false)
   const [showProcesoModal, setShowProcesoModal] = useState(false)
   const [editingProceso, setEditingProceso] = useState<any>(null)
   const [showActividadModal, setShowActividadModal] = useState(false)
@@ -827,6 +828,34 @@ export default function MatrixEditor({ id }: { id?: string }) {
     return mapped
   }, [matrix?.procesos, searchTerm])
 
+  const searchResults = useMemo(() => {
+    if (!searchTerm.trim()) return []
+    const term = searchTerm.toLowerCase().trim()
+    const results: Array<{ proceso: any, zona: any, actividad: any }> = []
+    
+    ;(matrix?.procesos || []).forEach((p: any) => {
+      ;(p.zonas || []).forEach((z: any) => {
+        ;(z.actividades || []).forEach((a: any) => {
+          const aMatches =
+            a.nombre.toLowerCase().includes(term) ||
+            (a.descripcion || '').toLowerCase().includes(term) ||
+            (a.tareas || '').toLowerCase().includes(term) ||
+            (a.cargo || '').toLowerCase().includes(term)
+
+          const dangerMatches = (a.peligros || []).some((pel: any) =>
+            (pel.descripcion || '').toLowerCase().includes(term) ||
+            (pel.clasificacion || '').toLowerCase().includes(term)
+          )
+
+          if (aMatches || dangerMatches) {
+            results.push({ proceso: p, zona: z, actividad: a })
+          }
+        })
+      })
+    })
+    return results
+  }, [matrix?.procesos, searchTerm])
+
   async function saveMatrix() {
     try {
       let currentMatrix = { ...matrix }
@@ -1034,8 +1063,8 @@ export default function MatrixEditor({ id }: { id?: string }) {
   return (
     <div className="min-h-screen bg-[#f8faf9] text-[#2c3630]">
       {/* Premium Topbar */}
-      <header className="sticky top-0 z-30 bg-white/80 backdrop-blur-md border-b border-[#e2e9e4] px-6 py-3 flex items-center justify-between">
-        <div className="flex items-center gap-3">
+      <header className="sticky top-0 z-30 bg-white/80 backdrop-blur-md border-b border-[#e2e9e4] px-4 md:px-6 py-3 flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+        <div className="flex items-center justify-between lg:justify-start gap-3 w-full lg:w-auto">
           <button 
             onClick={() => router.push('/dashboard')}
             className="flex items-center gap-2 px-3 py-1.5 rounded-lg hover:bg-gray-100 transition-colors text-sm font-semibold text-[#1F7D3E]"
@@ -1043,33 +1072,90 @@ export default function MatrixEditor({ id }: { id?: string }) {
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
             Volver
           </button>
-          <div className="w-[1px] h-6 bg-[#e2e9e4]" />
+          <div className="w-[1px] h-6 bg-[#e2e9e4] hidden sm:block" />
           <img src="/matriz-riesgos/csm_logo_long.png" alt="CSM" className="h-7 object-contain" />
         </div>
 
-        <div className="flex-1 flex items-center gap-4 px-8">
-            <div className="flex-1 flex flex-col">
+        <div className="flex-1 grid grid-cols-1 sm:grid-cols-3 gap-3 w-full px-0 lg:px-6">
+            <div className="flex flex-col">
               <label className="text-[10px] font-bold text-[#8aa08f] uppercase tracking-widest ml-1 mb-0.5">Área / Proceso</label>
-              <Input className="h-9 rounded-xl border-[#d1e2d6] bg-[#f0f9f1] text-[#1F7D3E] font-bold focus:ring-[#1F7D3E]/20" value={matrix.area} onChange={(e:any)=> updateMatrix((m:any)=>{ m.area = e.target.value; return m })} />
+              <Input className="h-9 w-full rounded-xl border-[#d1e2d6] bg-[#f0f9f1] text-[#1F7D3E] font-bold focus:ring-[#1F7D3E]/20" value={matrix.area} onChange={(e:any)=> updateMatrix((m:any)=>{ m.area = e.target.value; return m })} />
             </div>
-            <div className="flex-1 flex flex-col">
+            <div className="flex flex-col">
               <label className="text-[10px] font-bold text-[#8aa08f] uppercase tracking-widest ml-1 mb-0.5">Responsable</label>
-              <Input className="h-9 rounded-xl border-[#d1e2d6] bg-[#f0f9f1] text-[#1F7D3E] font-bold focus:ring-[#1F7D3E]/20" value={matrix.responsable} onChange={(e:any)=> updateMatrix((m:any)=>{ m.responsable = e.target.value; return m })} />
+              <Input className="h-9 w-full rounded-xl border-[#d1e2d6] bg-[#f0f9f1] text-[#1F7D3E] font-bold focus:ring-[#1F7D3E]/20" value={matrix.responsable} onChange={(e:any)=> updateMatrix((m:any)=>{ m.responsable = e.target.value; return m })} />
             </div>
-            <div className="flex-none w-44 flex flex-col">
+            <div className="flex flex-col">
               <label className="text-[10px] font-bold text-[#8aa08f] uppercase tracking-widest ml-1 mb-0.5">Elaboración</label>
-              <Input type="date" className="h-9 rounded-xl border-[#d1e2d6] bg-[#f0f9f1] text-[#1F7D3E] text-[12px] focus:ring-[#1F7D3E]/20" value={matrix.fecha_elaboracion} onChange={(e:any)=> updateMatrix((m:any)=>{ m.fecha_elaboracion = e.target.value; return m })} />
+              <Input type="date" className="h-9 w-full rounded-xl border-[#d1e2d6] bg-[#f0f9f1] text-[#1F7D3E] text-[12px] focus:ring-[#1F7D3E]/20" value={matrix.fecha_elaboracion} onChange={(e:any)=> updateMatrix((m:any)=>{ m.fecha_elaboracion = e.target.value; return m })} />
             </div>
         </div>
 
-        <div className="flex items-center gap-3">
-          <Button onClick={handleExportMatrix} variant="outline" className="border-[#1F7D3E] text-[#1F7D3E] hover:bg-[#f0f9f1] font-bold rounded-xl shadow-sm">Exportar</Button>
-          <Button className="bg-[#1F7D3E] hover:bg-[#186331] font-bold rounded-xl shadow-md shadow-[#1F7D3E]/20" onClick={saveMatrix}>Guardar Matriz</Button>
+        <div className="flex items-center justify-end gap-3 w-full lg:w-auto">
+          <Button onClick={handleExportMatrix} variant="outline" className="border-[#1F7D3E] text-[#1F7D3E] hover:bg-[#f0f9f1] font-bold rounded-xl shadow-sm flex-1 lg:flex-none">Exportar</Button>
+          <Button className="bg-[#1F7D3E] hover:bg-[#186331] font-bold rounded-xl shadow-md shadow-[#1F7D3E]/20 flex-1 lg:flex-none" onClick={saveMatrix}>Guardar Matriz</Button>
         </div>
       </header>
 
-                <div className="p-6 flex items-start gap-8">
-                  <aside className="w-80 flex-none sticky top-24 h-[calc(100vh-120px)] overflow-y-auto">
+                <div className="p-4 md:p-6 flex flex-col lg:flex-row items-stretch lg:items-start gap-6 lg:gap-8">
+                  {/* Mobile Navigation Toggle and Search */}
+                  <div className="w-full lg:hidden space-y-3">
+                    <div className="flex items-center justify-between bg-white border border-[#e2e9e4] p-3 rounded-xl shadow-sm">
+                      <Button 
+                        variant="outline" 
+                        className="flex items-center gap-2 text-[#1F7D3E] border-[#1F7D3E] font-bold h-9 text-xs" 
+                        onClick={() => setMobileSidebarOpen(true)}
+                      >
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
+                        📂 Estructura Organizacional
+                      </Button>
+                      {currentActividad && (
+                        <span className="text-[11px] font-bold text-[#1F7D3E] truncate max-w-[45vw]">
+                          {currentProceso?.nombre} › {currentZona?.nombre} › {currentActividad?.nombre}
+                        </span>
+                      )}
+                    </div>
+
+                    <div>
+                      <Input
+                        placeholder="Buscar actividad, cargo, peligro..."
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                        className="h-9 text-xs rounded-xl border-[#d1e2d6] focus:ring-[#1F7D3E]/20 bg-white shadow-sm"
+                      />
+                    </div>
+
+                    {searchTerm.trim() && (
+                      <div className="bg-white border border-[#e2e9e4] rounded-2xl p-4 shadow-md space-y-2">
+                        <div className="text-[10px] font-black text-slate-400 uppercase tracking-wider">Resultados de búsqueda:</div>
+                        {searchResults.length === 0 ? (
+                          <div className="text-xs text-slate-500 py-1">No se encontraron actividades matching "{searchTerm}".</div>
+                        ) : (
+                          <div className="space-y-1.5 max-h-52 overflow-y-auto pr-1">
+                            {searchResults.map((res, i) => (
+                              <div
+                                key={i}
+                                onClick={() => {
+                                  setSelected({ procesoId: res.proceso.id, zonaId: res.zona.id, actividadId: res.actividad.id })
+                                  setSearchTerm('')
+                                }}
+                                className="p-2 hover:bg-[#f0f9f1] rounded-lg border border-[#e2e9e4] cursor-pointer transition-colors"
+                              >
+                                <div className="text-xs font-bold text-[#1F7D3E] truncate">
+                                  {res.actividad.nombre}: {res.actividad.descripcion || 'Sin descripción'}
+                                </div>
+                                <div className="text-[10px] text-slate-500 truncate mt-0.5">
+                                  {res.proceso.nombre} › {res.zona.nombre}
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+
+                  <aside className="w-full lg:w-80 flex-none sticky top-24 h-auto lg:h-[calc(100vh-120px)] overflow-y-auto lg:block hidden">
                     <div className="overflow-hidden rounded-2xl border border-[#e2e9e4] bg-white shadow-xl shadow-[#111827]/5">
                       <div className="flex items-center justify-between px-5 py-4 bg-[#1F7D3E] text-white">
                         <div className="font-black text-xs uppercase tracking-[0.15em]">Estructura Organizacional</div>
@@ -1742,6 +1828,145 @@ export default function MatrixEditor({ id }: { id?: string }) {
         </main>
 
         </div>
+
+      {/* Mobile Sidebar Slide-out Drawer */}
+      {mobileSidebarOpen && (
+        <div className="fixed inset-0 z-50 lg:hidden flex">
+          {/* Backdrop */}
+          <div 
+            className="fixed inset-0 bg-black/50 transition-opacity" 
+            onClick={() => setMobileSidebarOpen(false)}
+          />
+          {/* Drawer Content */}
+          <div className="relative flex-1 flex flex-col max-w-[320px] w-full bg-[#f8faf9] h-full shadow-2xl animate-in slide-in-from-left duration-200 z-50">
+            <div className="flex items-center justify-between px-5 py-4 bg-[#1F7D3E] text-white">
+              <div className="font-black text-xs uppercase tracking-[0.15em]">Estructura</div>
+              <div className="flex items-center gap-1">
+                <Button size="sm" variant="secondary" className="bg-white/10 border border-white/20 text-white hover:bg-white/20 h-7 px-2" onClick={addProceso}>+ Proceso</Button>
+                <button 
+                  onClick={() => setMobileSidebarOpen(false)} 
+                  className="text-white hover:text-green-200 p-1.5 rounded-lg ml-1"
+                  aria-label="Cerrar menú"
+                >
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M18 6L6 18M6 6l12 12"/></svg>
+                </button>
+              </div>
+            </div>
+            <div className="p-3 border-b border-[#e2e9e4] bg-white">
+              <Input
+                placeholder="Buscar actividad, cargo, peligro..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="h-8 text-xs rounded-lg border-[#d1e2d6] focus:ring-[#1F7D3E]/20 bg-[#f8faf9]"
+              />
+            </div>
+            <div className="flex-1 overflow-y-auto p-4 space-y-3">
+              { (filteredProcesos || []).map((p: any) => (
+                <div key={p.id} className="border border-[#e1ebe1] rounded-lg p-2 bg-[#fbfdfb]">
+                  <div className="flex items-center justify-between bg-[#1F7D3E] text-white p-2 rounded-lg">
+                    <div className="font-bold tracking-wide text-xs truncate max-w-[140px]" title={p.nombre}>{p.nombre}</div>
+                    <div className="flex items-center gap-1.5 bg-black/10 px-2 py-1 rounded">
+                      <button onClick={(e:any)=>{ e.stopPropagation(); addZona(p.id) }} className="text-white hover:text-green-200 text-[10px] font-bold px-1.5 py-0.5 rounded border border-white/20 hover:border-white/40 transition-colors" title="Agregar Zona / Lugar">+ Zona</button>
+                      <button onClick={(e:any)=>{ e.stopPropagation(); editProceso(p) }} className="text-white/80 hover:text-white transition-colors" aria-label="Editar proceso"><PencilIcon size={12} /></button>
+                      <button onClick={(e:any)=>{ e.stopPropagation(); removeProceso(p.id) }} className="text-red-200 hover:text-red-400 transition-colors" aria-label="Eliminar proceso"><TrashIcon size={12} /></button>
+                    </div>
+                  </div>
+
+                  <div className="mt-2 space-y-1">
+                    {(p.zonas||[]).map((z: any) => {
+                      const worst = (z.peligros||[]).reduce((acc:number, r:any) => Math.max(acc, Number(r.evaluacion?.nr||0)), 0)
+                      const pill = interpNivelRiesgo(worst)
+                      const expanded = !!(expandedZonaIds[z.id] || (searchTerm && z._searchMatch))
+                      return (
+                        <div key={z.id} className={`border rounded ${selected.zonaId===z.id? 'bg-[#edf5ed] border-[#bdd8c0]':'border-[#e4ece4]'}`}>
+                          <div className={`flex items-center justify-between p-2 cursor-pointer ${selected.zonaId===z.id? 'bg-[#e5f1e7]':''}`} onClick={() => setSelected({ procesoId: p.id, zonaId: z.id })}>
+                            <div
+                              className="w-full flex items-center justify-between text-xs bg-[#1F7D3E] text-white px-2 py-1.5 rounded cursor-pointer font-medium hover:bg-[#1a6b35] transition-colors"
+                              onClick={(e:any) => { e.stopPropagation(); setExpandedZonaIds(s=>({...s, [z.id]: !expanded})); setSelected({ procesoId: p.id, zonaId: z.id }) }}
+                              title={expanded ? 'Ocultar actividades' : 'Mostrar actividades'}
+                            >
+                              <span className="truncate max-w-[140px]">{z.nombre}</span>
+                              <div className="flex items-center gap-1.5 bg-black/10 px-1.5 py-0.5 rounded ml-2">
+                                <button onClick={(e:any)=>{ e.stopPropagation(); editZonaItem(p.id, z) }} className="text-white/80 hover:text-white transition-colors" title="Editar Zona / Lugar">
+                                  <PencilIcon size={11} />
+                                </button>
+                                <button onClick={(e:any)=>{ e.stopPropagation(); removeZona(p.id, z.id) }} className="text-red-200 hover:text-red-400 transition-colors" title="Eliminar Zona / Lugar">
+                                  <TrashIcon size={11} />
+                                </button>
+                              </div>
+                            </div>
+                          </div>
+                          {expanded && (
+                            <div className="pl-4 pr-2 pb-2">
+                              <div className="space-y-1" onDragOver={(e)=> onActividadDragOver(e, null)} onDrop={(e)=> onActividadDrop(e, p.id, z.id, null)}>
+                                {(z.actividades||[]).map((a: any, actIdx: number) => (
+                                  <div
+                                    key={a.id}
+                                    className={`flex items-center justify-between p-2 rounded cursor-pointer ${selected.actividadId===a.id? 'bg-[#e8f2ea] border-l-2 border-l-[#1F7D3E]':''} ${dragOverActividadId===a.id? 'bg-[#dcebdd]' : ''} ${dragOverActividadId===a.id && dragOverActividadEdge==='before' ? 'border-t-2 border-t-[#2d7a40]' : ''} ${dragOverActividadId===a.id && dragOverActividadEdge==='after' ? 'border-b-2 border-b-[#2d7a40]' : ''}`}
+                                    onDragStart={(e) => e.stopPropagation()}
+                                    onClick={() => {
+                                      if (isDraggingRef.current) { isDraggingRef.current = false; return }
+                                      setSelected({ procesoId: p.id, zonaId: z.id, actividadId: a.id })
+                                      setMobileSidebarOpen(false)
+                                    }}
+                                    onDragOver={(e) => { e.stopPropagation(); onActividadDragOver(e, a.id) }}
+                                    onDragLeave={() => onActividadDragLeave()}
+                                    onDrop={(e) => { e.stopPropagation(); onActividadDrop(e, p.id, z.id, a.id) }}
+                                  >
+                                    <div className="flex items-center gap-1.5 flex-1 min-w-0">
+                                      <div
+                                        className="p-0.5 cursor-move rounded hover:bg-slate-200 flex-none"
+                                        draggable
+                                        onDragStart={(e) => onActividadDragStart(e, p.id, z.id, a.id)}
+                                        onDragEnd={() => {
+                                          setDragOverActividadId(null)
+                                          setDragOverActividadEdge(null)
+                                          actividadDragSourceRef.current = null
+                                          setTimeout(() => { isDraggingRef.current = false }, 0)
+                                        }}
+                                        onClick={(e:any) => e.stopPropagation()}
+                                        onMouseDown={(e:any) => e.stopPropagation()}
+                                        title="Reordenar actividad"
+                                      >
+                                        <svg xmlns="http://www.w3.org/2000/svg" className="w-3.5 h-3.5 text-slate-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                          <path d="M4 7h16"></path>
+                                          <path d="M4 12h16"></path>
+                                          <path d="M4 17h16"></path>
+                                        </svg>
+                                      </div>
+                                      <div className="text-xs truncate" title={a.descripcion ? `${a.nombre}: ${a.descripcion}` : a.nombre}>
+                                        {getStableActividadLabel(a, actIdx)}
+                                      </div>
+                                    </div>
+                                    <div className="flex items-center gap-1.5 flex-none ml-2">
+                                      <button aria-label="Editar actividad" className="text-slate-500 hover:text-slate-700" onClick={(e:any)=>{ e.stopPropagation(); editActividad(p.id, z.id, a) }}>
+                                        <svg xmlns="http://www.w3.org/2000/svg" className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                          <path d="M12 20h9"></path>
+                                          <path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5z"></path>
+                                        </svg>
+                                      </button>
+                                      <button aria-label="Eliminar actividad" className="text-red-400 hover:text-red-600 ml-1" onClick={(e:any)=>{ e.stopPropagation(); removeActividad(p.id, z.id, a.id) }}>
+                                        <TrashIcon size={12} />
+                                      </button>
+                                    </div>
+                                  </div>
+                                ))}
+                                <div className="pt-1">
+                                  <button className="w-full text-center text-xs text-[#1F7D3E] py-1.5 rounded-md border border-dashed border-[#d6e6d8] bg-white hover:bg-[#f4faf4] font-semibold" onClick={(e:any)=>{ e.stopPropagation(); openAddActividadModal(p.id, z.id) }}>+ Agregar actividad</button>
+                                </div>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      )
+                    })}
+                  </div>
+                </div>
+              )) }
+            </div>
+          </div>
+        </div>
+      )}
 
       <Dialog open={showProcesoModal} onOpenChange={setShowProcesoModal}>
         <DialogContent>
