@@ -57,10 +57,10 @@ async function fetchDataFromDb() {
               id: counter++,
               proceso: p.nombre || '',
               tipo_proceso: tipo_proceso || 'ASISTENCIAL',
-              zona: z.nombre || '',
+              zona: a.cargo || '',
               actividad: a.nombre || '',
               tarea: a.tareas || '',
-              cargo: (a as any).cargo || (z as any).cargo || '',
+              cargo: z.nombre || '',
               rutinario: !!a.rutinario,
               clasificacion: pel.clasificacion || '',
               peligro_desc: pel.descripcion || '',
@@ -179,14 +179,16 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     }
 
     // Group rows by `proceso` inside each sheet and add a process header row
+    const procKeys: string[] = []
     const procGroups: Record<string, any[]> = {}
     for (const r of rows) {
       const p = (r.proceso || 'Sin proceso').toString()
-      procGroups[p] = procGroups[p] || []
+      if (!procGroups[p]) {
+        procGroups[p] = []
+        procKeys.push(p)
+      }
       procGroups[p].push(r)
     }
-
-    const procKeys = Object.keys(procGroups).sort((a, b) => a.localeCompare(b, 'es', { sensitivity: 'base' }))
 
     for (const procKey of procKeys) {
       // add a merged row as process header

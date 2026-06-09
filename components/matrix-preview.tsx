@@ -273,10 +273,10 @@ export function MatrixPreview({ matrizId, onClose }: MatrixPreviewProps) {
 
                   rows.push({
                     proceso: p.nombre || '',
-                    zona: z.nombre || '',
+                    zona: a.cargo || '',
                     actividad: a.descripcion || a.nombre || '',
                     tareas: a.tareas || '',
-                    cargo: a.cargo || '',
+                    cargo: z.nombre || '',
                     rutinario: a.rutinario ? 'Sí' : 'No',
                     peligro: pel.descripcion || '',
                     clasificacion: pel.clasificacion || '',

@@ -75,7 +75,13 @@ function shortFileName(n: string, maxBase = 12) {
 }
 
 function getStablePeligroLabel(peligro: any, fallbackIndex: number) {
-  return peligro?._ui?.stableLabel || `Peligro ${fallbackIndex + 1}`
+  const baseLabel = peligro?._ui?.stableLabel || `Peligro ${fallbackIndex + 1}`
+  if (peligro?.descripcion) {
+    const desc = peligro.descripcion.trim()
+    const truncated = desc.length > 50 ? desc.slice(0, 50) + '...' : desc
+    return `${baseLabel}: ${truncated}`
+  }
+  return baseLabel
 }
 
 export default function MatrixEditor({ id }: { id?: string }) {
@@ -203,6 +209,7 @@ export default function MatrixEditor({ id }: { id?: string }) {
     }
   }, [matrix, peligroIdParam, id])
 
+  const [searchTerm, setSearchTerm] = useState('')
   const [showProcesoModal, setShowProcesoModal] = useState(false)
   const [editingProceso, setEditingProceso] = useState<any>(null)
   const [showActividadModal, setShowActividadModal] = useState(false)
@@ -270,11 +277,11 @@ export default function MatrixEditor({ id }: { id?: string }) {
   function editProceso(p: any) { setEditingProceso(p); setShowProcesoModal(true) }
 
   function addZona(procesoId: string) {
-    // open Zona creation modal so user can fill name, cargo and add actividades
+    // open Cargo creation modal so user can fill name, cargo and add actividades
     const p = matrix?.procesos?.find((x: any) => x.id === procesoId)
     setEditingZona(null)
     setZonaParentProcesoId(procesoId)
-    setZonaModalName(`Zona ${ (p?.zonas?.length||0) + 1 }`)
+    setZonaModalName(`Cargo ${ (p?.zonas?.length||0) + 1 }`)
     setZonaModalCargo('')
     setZonaModalRutinario(false)
     setZonaModalActivities([])
@@ -323,7 +330,7 @@ export default function MatrixEditor({ id }: { id?: string }) {
     const actividadIds = (zonaModalActivities||[]).map(a => ({ id: makeId('a-'), nombre: a.nombre, tareas: a.tareas || '' }))
     updateMatrix((m: any) => {
       const p = m.procesos.find((x: any) => x.id === zonaParentProcesoId)
-      const newZona = { id: newZonaId, nombre: zonaModalName || `Zona ${ (p?.zonas?.length||0) + 1 }`, cargo: zonaModalCargo || '', actividades: actividadIds.map(a => ({ id: a.id, nombre: a.nombre, tareas: a.tareas || '', cargo: '', rutinario: false, peligros: [] })), rutinario: !!zonaModalRutinario }
+      const newZona = { id: newZonaId, nombre: zonaModalName || `Cargo ${ (p?.zonas?.length||0) + 1 }`, cargo: zonaModalCargo || '', actividades: actividadIds.map(a => ({ id: a.id, nombre: a.nombre, tareas: a.tareas || '', cargo: '', rutinario: false, peligros: [] })), rutinario: !!zonaModalRutinario }
       p.zonas.push(newZona)
       return m
     })
@@ -353,8 +360,8 @@ export default function MatrixEditor({ id }: { id?: string }) {
   }
 
   function removeZona(procesoId: string, zonaId: string) {
-    setConfirmDeleteTitle('Eliminar zona')
-    setConfirmDeleteMessage('¿Estás seguro de que deseas eliminar esta zona? Se eliminarán también sus actividades y peligros asociados.')
+    setConfirmDeleteTitle('Eliminar cargo')
+    setConfirmDeleteMessage('¿Estás seguro de que deseas eliminar este cargo? Se eliminarán también sus actividades y peligros asociados.')
     setPendingDeleteAction(() => () => {
       updateMatrix((m: any) => {
         const p = m.procesos.find((x: any) => x.id === procesoId)
@@ -731,6 +738,85 @@ export default function MatrixEditor({ id }: { id?: string }) {
     return { zonas, peligros }
   }, [matrix])
 
+  const filteredProcesos = useMemo(() => {
+    if (!searchTerm.trim()) return matrix?.procesos || []
+    const term = searchTerm.toLowerCase().trim()
+
+    const mapped = (matrix?.procesos || []).map((p: any) => {
+      const pMatches = p.nombre.toLowerCase().includes(term)
+
+      const filteredZonas = (p.zonas || []).map((z: any) => {
+        const zMatches = z.nombre.toLowerCase().includes(term)
+
+        const filteredActividades = (z.actividades || []).filter((a: any) => {
+          const aMatches =
+            a.nombre.toLowerCase().includes(term) ||
+            (a.descripcion || '').toLowerCase().includes(term) ||
+            (a.tareas || '').toLowerCase().includes(term) ||
+            (a.cargo || '').toLowerCase().includes(term)
+
+          const dangerMatches = (a.peligros || []).some((pel: any) =>
+            (pel.descripcion || '').toLowerCase().includes(term) ||
+            (pel.clasificacion || '').toLowerCase().includes(term)
+          )
+
+          return aMatches || dangerMatches
+        })
+
+        // Sort activities so that those directly matching the term appear first
+        const sortedActividades = [...filteredActividades].sort((a: any, b: any) => {
+          const aDirect = (
+            a.nombre.toLowerCase().includes(term) ||
+            (a.descripcion || '').toLowerCase().includes(term) ||
+            (a.tareas || '').toLowerCase().includes(term) ||
+            (a.cargo || '').toLowerCase().includes(term)
+          ) ? 1 : 0
+          const bDirect = (
+            b.nombre.toLowerCase().includes(term) ||
+            (b.descripcion || '').toLowerCase().includes(term) ||
+            (b.tareas || '').toLowerCase().includes(term) ||
+            (b.cargo || '').toLowerCase().includes(term)
+          ) ? 1 : 0
+          return bDirect - aDirect
+        })
+
+        if (zMatches || filteredActividades.length > 0) {
+          return {
+            ...z,
+            actividades: zMatches ? z.actividades : sortedActividades,
+            _searchMatch: true
+          }
+        }
+        return null
+      }).filter(Boolean)
+
+      // Sort matching Zonas/Cargos to the top
+      filteredZonas.sort((a: any, b: any) => {
+        const aDirect = a.nombre.toLowerCase().includes(term) ? 1 : 0
+        const bDirect = b.nombre.toLowerCase().includes(term) ? 1 : 0
+        return bDirect - aDirect
+      })
+
+      if (pMatches || filteredZonas.length > 0) {
+        return {
+          ...p,
+          zonas: pMatches ? p.zonas.map((z: any) => ({ ...z, _searchMatch: true })) : filteredZonas,
+          _searchMatch: true
+        }
+      }
+      return null
+    }).filter(Boolean)
+
+    // Sort matching procesos to the top
+    mapped.sort((a: any, b: any) => {
+      const aDirect = a.nombre.toLowerCase().includes(term) ? 1 : 0
+      const bDirect = b.nombre.toLowerCase().includes(term) ? 1 : 0
+      return bDirect - aDirect
+    })
+
+    return mapped
+  }, [matrix?.procesos, searchTerm])
+
   async function saveMatrix() {
     try {
       let currentMatrix = { ...matrix }
@@ -979,15 +1065,23 @@ export default function MatrixEditor({ id }: { id?: string }) {
                         <div className="font-black text-xs uppercase tracking-[0.15em]">Estructura Organizacional</div>
                         <Button size="sm" variant="secondary" className="bg-white/10 border border-white/20 text-white hover:bg-white/20 h-7 px-2" onClick={addProceso}>+ Proceso</Button>
                       </div>
+                      <div className="p-3 border-b border-[#e2e9e4] bg-[#f8faf9]">
+                        <Input
+                          placeholder="Buscar actividad, cargo, peligro..."
+                          value={searchTerm}
+                          onChange={(e) => setSearchTerm(e.target.value)}
+                          className="h-8 text-xs rounded-lg border-[#d1e2d6] focus:ring-[#1F7D3E]/20 bg-white"
+                        />
+                      </div>
                       <div className="p-4 space-y-3">
-                    { (matrix.procesos || []).map((p: any) => (
+                    { (filteredProcesos || []).map((p: any) => (
                       <div key={p.id} className="border border-[#e1ebe1] rounded-lg p-2 bg-[#fbfdfb]">
-                        <div className="flex items-center justify-between">
-                          <div className="font-medium bg-[#1F7D3E] text-white px-2 py-1 rounded tracking-wide">{p.nombre}</div>
-                          <div className="flex items-center gap-2">
-                            <Button size="sm" variant="ghost" onClick={()=>addZona(p.id)}>+ Zona</Button>
-                            <button onClick={()=>editProceso(p)} className="text-slate-500 hover:text-slate-700" aria-label="Editar proceso"><PencilIcon size={14} /></button>
-                            <button onClick={()=>removeProceso(p.id)} className="text-red-400 hover:text-red-700" aria-label="Eliminar proceso"><TrashIcon size={14} /></button>
+                        <div className="flex items-center justify-between bg-[#1F7D3E] text-white p-2 rounded-lg">
+                          <div className="font-bold tracking-wide text-xs truncate max-w-[140px]" title={p.nombre}>{p.nombre}</div>
+                          <div className="flex items-center gap-1.5 bg-black/10 px-2 py-1 rounded">
+                            <button onClick={(e:any)=>{ e.stopPropagation(); addZona(p.id) }} className="text-white hover:text-green-200 text-[10px] font-bold px-1.5 py-0.5 rounded border border-white/20 hover:border-white/40 transition-colors" title="Agregar cargo">+ Cargo</button>
+                            <button onClick={(e:any)=>{ e.stopPropagation(); editProceso(p) }} className="text-white/80 hover:text-white transition-colors" aria-label="Editar proceso"><PencilIcon size={12} /></button>
+                            <button onClick={(e:any)=>{ e.stopPropagation(); removeProceso(p.id) }} className="text-red-200 hover:text-red-400 transition-colors" aria-label="Eliminar proceso"><TrashIcon size={12} /></button>
                           </div>
                         </div>
 
@@ -995,33 +1089,33 @@ export default function MatrixEditor({ id }: { id?: string }) {
                           {(p.zonas||[]).map((z: any) => {
                             const worst = (z.peligros||[]).reduce((acc:number, r:any) => Math.max(acc, Number(r.evaluacion?.nr||0)), 0)
                             const pill = interpNivelRiesgo(worst)
-                            const expanded = !!expandedZonaIds[z.id]
+                            const expanded = !!(expandedZonaIds[z.id] || (searchTerm && z._searchMatch))
                             return (
                               <div key={z.id} className={`border rounded ${selected.zonaId===z.id? 'bg-[#edf5ed] border-[#bdd8c0]':'border-[#e4ece4]'}`}>
                                 <div className={`flex items-center justify-between p-2 cursor-pointer ${selected.zonaId===z.id? 'bg-[#e5f1e7]':''}`} onClick={() => setSelected({ procesoId: p.id, zonaId: z.id })}>
-                                    <div className="flex items-center gap-2">
-                                      <div
-                                        className="text-sm bg-[#1F7D3E] text-white px-2 py-1 rounded cursor-pointer font-medium"
-                                        onClick={(e:any) => { e.stopPropagation(); setExpandedZonaIds(s=>({...s, [z.id]: !expanded})); setSelected({ procesoId: p.id, zonaId: z.id }) }}
-                                        title={expanded ? 'Ocultar actividades' : 'Mostrar actividades'}
-                                      >
-                                        {z.nombre}
-                                      </div>
-                                      <button onClick={(e:any)=>{ e.stopPropagation(); editZonaItem(p.id, z) }} className="text-slate-400 hover:text-slate-700 ml-1" title="Editar zona">
-                                        <PencilIcon size={12} />
+                                  <div
+                                    className="w-full flex items-center justify-between text-xs bg-[#1F7D3E] text-white px-2 py-1.5 rounded cursor-pointer font-medium hover:bg-[#1a6b35] transition-colors"
+                                    onClick={(e:any) => { e.stopPropagation(); setExpandedZonaIds(s=>({...s, [z.id]: !expanded})); setSelected({ procesoId: p.id, zonaId: z.id }) }}
+                                    title={expanded ? 'Ocultar actividades' : 'Mostrar actividades'}
+                                  >
+                                    <span className="truncate max-w-[140px]">{z.nombre}</span>
+                                    <div className="flex items-center gap-1.5 bg-black/10 px-1.5 py-0.5 rounded ml-2">
+                                      <button onClick={(e:any)=>{ e.stopPropagation(); editZonaItem(p.id, z) }} className="text-white/80 hover:text-white transition-colors" title="Editar cargo">
+                                        <PencilIcon size={11} />
                                       </button>
-                                      <button onClick={(e:any)=>{ e.stopPropagation(); removeZona(p.id, z.id) }} className="text-red-400 hover:text-red-700 ml-1" title="Eliminar zona">
-                                        <TrashIcon size={12} />
+                                      <button onClick={(e:any)=>{ e.stopPropagation(); removeZona(p.id, z.id) }} className="text-red-200 hover:text-red-400 transition-colors" title="Eliminar cargo">
+                                        <TrashIcon size={11} />
                                       </button>
                                     </div>
+                                  </div>
                                 </div>
                                 {expanded && (
-                                  <div className="pl-6 pr-2 pb-2">
+                                  <div className="pl-4 pr-2 pb-2">
                                     <div className="space-y-1" onDragOver={(e)=> onActividadDragOver(e, null)} onDrop={(e)=> onActividadDrop(e, p.id, z.id, null)}>
                                       {(z.actividades||[]).map((a: any) => (
                                         <div
                                           key={a.id}
-                                          className={`flex items-center justify-between p-2 rounded cursor-pointer ${selected.actividadId===a.id? 'bg-[#e8f2ea]':''} ${dragOverActividadId===a.id? 'bg-[#dcebdd]' : ''} ${dragOverActividadId===a.id && dragOverActividadEdge==='before' ? 'border-t-2 border-t-[#2d7a40]' : ''} ${dragOverActividadId===a.id && dragOverActividadEdge==='after' ? 'border-b-2 border-b-[#2d7a40]' : ''}`}
+                                          className={`flex items-center justify-between p-2 rounded cursor-pointer ${selected.actividadId===a.id? 'bg-[#e8f2ea] border-l-2 border-l-[#1F7D3E]':''} ${dragOverActividadId===a.id? 'bg-[#dcebdd]' : ''} ${dragOverActividadId===a.id && dragOverActividadEdge==='before' ? 'border-t-2 border-t-[#2d7a40]' : ''} ${dragOverActividadId===a.id && dragOverActividadEdge==='after' ? 'border-b-2 border-b-[#2d7a40]' : ''}`}
                                           onDragStart={(e) => e.stopPropagation()}
                                           onClick={() => {
                                             if (isDraggingRef.current) { isDraggingRef.current = false; return }
@@ -1031,9 +1125,9 @@ export default function MatrixEditor({ id }: { id?: string }) {
                                           onDragLeave={() => onActividadDragLeave()}
                                           onDrop={(e) => { e.stopPropagation(); onActividadDrop(e, p.id, z.id, a.id) }}
                                         >
-                                          <div className="flex items-center gap-2">
+                                          <div className="flex items-center gap-1.5 flex-1 min-w-0">
                                             <div
-                                              className="mr-2 p-1 cursor-move rounded hover:bg-slate-100"
+                                              className="p-0.5 cursor-move rounded hover:bg-slate-200 flex-none"
                                               draggable
                                               onDragStart={(e) => onActividadDragStart(e, p.id, z.id, a.id)}
                                               onDragEnd={() => {
@@ -1046,29 +1140,29 @@ export default function MatrixEditor({ id }: { id?: string }) {
                                               onMouseDown={(e:any) => e.stopPropagation()}
                                               title="Reordenar actividad"
                                             >
-                                              <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4 text-slate-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                              <svg xmlns="http://www.w3.org/2000/svg" className="w-3.5 h-3.5 text-slate-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                                                 <path d="M4 7h16"></path>
                                                 <path d="M4 12h16"></path>
                                                 <path d="M4 17h16"></path>
                                               </svg>
                                             </div>
-                                            <div className="text-sm">{a.nombre}</div>
+                                            <div className="text-xs truncate" title={a.nombre}>{a.nombre}</div>
                                           </div>
-                                          <div className="flex items-center gap-2">
-                                            <button aria-label="Editar actividad" className="text-slate-500 text-sm" onClick={(e:any)=>{ e.stopPropagation(); editActividad(p.id, z.id, a) }}>
+                                          <div className="flex items-center gap-1.5 flex-none ml-2">
+                                            <button aria-label="Editar actividad" className="text-slate-500 hover:text-slate-700" onClick={(e:any)=>{ e.stopPropagation(); editActividad(p.id, z.id, a) }}>
                                               <svg xmlns="http://www.w3.org/2000/svg" className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                                                 <path d="M12 20h9"></path>
                                                 <path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5z"></path>
                                               </svg>
                                             </button>
-                                            <button aria-label="Eliminar actividad" className="text-red-400 hover:text-red-600 text-sm ml-1" onClick={(e:any)=>{ e.stopPropagation(); removeActividad(p.id, z.id, a.id) }}>
-                                              <TrashIcon size={14} />
+                                            <button aria-label="Eliminar actividad" className="text-red-400 hover:text-red-600 ml-1" onClick={(e:any)=>{ e.stopPropagation(); removeActividad(p.id, z.id, a.id) }}>
+                                              <TrashIcon size={12} />
                                             </button>
                                           </div>
                                         </div>
                                       ))}
                                       <div className="pt-1">
-                                        <button className="w-full text-left text-sm text-slate-700 p-2 rounded-md border border-[#d6e6d8] bg-white hover:bg-[#f4faf4]" onClick={(e:any)=>{ e.stopPropagation(); openAddActividadModal(p.id, z.id) }}>+ Agregar actividad</button>
+                                        <button className="w-full text-center text-xs text-[#1F7D3E] py-1.5 rounded-md border border-dashed border-[#d6e6d8] bg-white hover:bg-[#f4faf4] font-semibold" onClick={(e:any)=>{ e.stopPropagation(); openAddActividadModal(p.id, z.id) }}>+ Agregar actividad</button>
                                       </div>
                                     </div>
                                   </div>
@@ -1146,7 +1240,7 @@ export default function MatrixEditor({ id }: { id?: string }) {
                       <Textarea rows={2} value={currentActividad.tareas||''}  onInput={(e:any) => { e.currentTarget.style.height = 'auto'; e.currentTarget.style.height = e.currentTarget.scrollHeight + 'px'; }} onChange={(e:any)=> updateMatrix((m:any)=>{ const a = m.procesos.find((p:any)=>p.id===currentProceso.id).zonas.find((zz:any)=>zz.id===currentZona.id).actividades.find((aa:any)=>aa.id===currentActividad.id); if (a) a.tareas = e.target.value; return m })} />
                     </div>
                     <div>
-                      <div style={{ color: '#2d7a40', fontSize: '11px', fontWeight: 500, textTransform: 'uppercase', letterSpacing: '0.04em' }} className="mb-1">Cargo</div>
+                      <div style={{ color: '#2d7a40', fontSize: '11px', fontWeight: 500, textTransform: 'uppercase', letterSpacing: '0.04em' }} className="mb-1">Zona / Lugar</div>
                       <Input value={currentActividad.cargo||''} onChange={(e:any)=> updateMatrix((m:any)=>{ const a = m.procesos.find((p:any)=>p.id===currentProceso.id).zonas.find((zz:any)=>zz.id===currentZona.id).actividades.find((aa:any)=>aa.id===currentActividad.id); if (a) a.cargo = e.target.value; return m })} />
                     </div>
                     <div className="flex flex-col items-start justify-center">
@@ -1670,11 +1764,11 @@ export default function MatrixEditor({ id }: { id?: string }) {
       <Dialog open={showZonaModal} onOpenChange={(open) => { setShowZonaModal(open); if(!open) setEditingZona(null); }}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>{editingZona ? 'Editar Zona / Lugar' : 'Nueva Zona / Lugar'}</DialogTitle>
+            <DialogTitle>{editingZona ? 'Editar Cargo' : 'Nuevo Cargo'}</DialogTitle>
           </DialogHeader>
           <div className="p-2">
             <div>
-              <div className="text-xs">Nombre de la zona</div>
+              <div className="text-xs">Nombre del cargo</div>
               <Input value={zonaModalName} onChange={(e:any)=> setZonaModalName(e.target.value)} />
             </div>
 

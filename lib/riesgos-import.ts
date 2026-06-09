@@ -623,6 +623,7 @@ export async function parseImportWorkbook(buffer: Buffer): Promise<{
 
   let currentProceso = ''
   let currentZona = ''
+  let currentCargo = ''
   let currentActivity: ParsedImport['procesos'][number]['zonas'][number]['actividades'][number] | null = null
   let currentActivityDescripcion = ''
   let activityCounter = 0
@@ -696,12 +697,16 @@ export async function parseImportWorkbook(buffer: Buffer): Promise<{
       if (raw.proceso && raw.proceso !== currentProceso) {
         currentProceso = raw.proceso
         currentZona = ''
+        currentCargo = ''
         currentActivity = null
         currentActivityDescripcion = ''
         activityCounter = 0
       }
       if (raw.zona && raw.zona !== currentZona) {
         currentZona = raw.zona
+      }
+      if (raw.cargo && raw.cargo !== currentCargo) {
+        currentCargo = raw.cargo
         currentActivity = null
         currentActivityDescripcion = ''
         activityCounter = 0
@@ -718,12 +723,16 @@ export async function parseImportWorkbook(buffer: Buffer): Promise<{
     if (raw.proceso && raw.proceso !== currentProceso) {
       currentProceso = raw.proceso
       currentZona = ''
+      currentCargo = ''
       currentActivity = null
       currentActivityDescripcion = ''
       activityCounter = 0
     }
     if (raw.zona && raw.zona !== currentZona) {
       currentZona = raw.zona
+    }
+    if (raw.cargo && raw.cargo !== currentCargo) {
+      currentCargo = raw.cargo
       currentActivity = null
       currentActivityDescripcion = ''
       activityCounter = 0
@@ -736,6 +745,7 @@ export async function parseImportWorkbook(buffer: Buffer): Promise<{
 
     const procesoValue = currentProceso
     const zonaValue = currentZona
+    const cargoValue = currentCargo
     const actividadName = currentActivity?.nombre || `Actividad ${Math.max(activityCounter, 1)}`
     const actividadDescripcion = currentActivity?.descripcion || currentActivityDescripcion || raw.actividadDescripcion
 
@@ -811,12 +821,12 @@ export async function parseImportWorkbook(buffer: Buffer): Promise<{
     }
 
     const proceso = ensureProceso(parsed, procesoValue)
-    const zona = ensureZona(proceso, zonaValue || 'Sin zona')
+    const zona = ensureZona(proceso, cargoValue || 'Sin cargo')
     const activityRow = {
       nombre: actividadName,
       descripcion: actividadDescripcion,
       tareas: raw.tareas,
-      cargo: raw.cargo,
+      cargo: zonaValue,
       rutinario: rutinarioParsed.value,
     }
 
@@ -831,7 +841,7 @@ export async function parseImportWorkbook(buffer: Buffer): Promise<{
         actividad: actividadName,
         descripcionActividad: actividadDescripcion,
         tareas: raw.tareas,
-        cargo: raw.cargo,
+        cargo: cargoValue,
         rutinario: raw.rutinario,
         peligro: raw.peligro,
         clasificacion: raw.clasificacion,
