@@ -192,7 +192,7 @@ model EvaluacionPost {
 }
 
 model LoginLog {
-  id        String   @id @default(uuid())
+  id        String   @id @default(uuid()) @db.Text
   email     String
   status    String
   ipAddress String?  @map("ip_address")
@@ -219,7 +219,7 @@ model Notification {
 }
 
 model ActivityLog {
-  id        String   @id @default(uuid())
+  id        String   @id @default(uuid()) @db.Text
   timestamp DateTime @default(now()) @map("created_at")
   userEmail String   @map("user_email")
   userName  String?  @map("user_name")
