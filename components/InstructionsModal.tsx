@@ -184,10 +184,10 @@ export function InstructionsModal({ open, onClose }: InstructionsModalProps) {
   ]
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
-      <div className="bg-white w-full max-w-[1400px] h-[90vh] rounded-2xl shadow-2xl overflow-hidden flex flex-col animate-in zoom-in-95 duration-200 border border-[#e2e9e4]">
+    <div className="fixed inset-0 z-[100] flex items-center justify-center p-0 sm:p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
+      <div className="bg-white w-full max-w-[1400px] h-full sm:h-[90vh] rounded-none sm:rounded-2xl shadow-2xl overflow-hidden flex flex-col animate-in zoom-in-95 duration-200 border border-[#e2e9e4]">
         {/* Header */}
-        <div className="px-8 py-5 border-b border-[#e2e9e4] flex items-center justify-between bg-white sticky top-0 z-10">
+        <div className="px-4 sm:px-8 py-4 sm:py-5 border-b border-[#e2e9e4] flex items-center justify-between bg-white sticky top-0 z-10">
           <div className="flex items-center gap-4">
             <div className="w-10 h-10 rounded-xl bg-[#f0f9f1] flex items-center justify-center text-[#1F7D3E] shadow-sm">
               <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
@@ -205,7 +205,7 @@ export function InstructionsModal({ open, onClose }: InstructionsModalProps) {
         </div>
 
         {/* Tabs */}
-        <div className="px-8 bg-[#f8faf9] border-b border-[#e2e9e4] flex gap-8 overflow-x-auto no-scrollbar shadow-inner">
+        <div className="px-4 sm:px-8 bg-[#f8faf9] border-b border-[#e2e9e4] flex gap-8 overflow-x-auto no-scrollbar shadow-inner">
           {tabs.map(tab => (
             <button
               key={tab.id}
@@ -224,7 +224,7 @@ export function InstructionsModal({ open, onClose }: InstructionsModalProps) {
         {/* Content */}
         <div className="flex-1 overflow-auto bg-white scroll-smooth">
           {activeTab === 'instructivo' && (
-            <div className="p-8 space-y-12 animate-in fade-in slide-in-from-bottom-4 duration-300">
+            <div className="p-4 sm:p-8 space-y-12 animate-in fade-in slide-in-from-bottom-4 duration-300">
               {/* Indications Top Header */}
               <div className="border-2 border-black rounded-lg overflow-hidden">
                 <div className="bg-[#ccc] p-2 text-center border-b-2 border-black font-bold uppercase text-xs tracking-wider">
@@ -262,11 +262,12 @@ export function InstructionsModal({ open, onClose }: InstructionsModalProps) {
                         {section.subtitle}
                       </div>
                     )}
-                    <table className="w-full border-collapse">
+                    <div className="overflow-x-auto">
+                    <table className="w-full border-collapse min-w-[580px]">
                       <thead>
                         <tr className="bg-[#f3f3f3] text-[10px] uppercase font-black tracking-widest border-b-2 border-black">
                           <th className="w-[60px] p-2 border-r-2 border-black">Item</th>
-                          <th className="w-[200px] p-2 border-r-2 border-black">Casilla</th>
+                          <th className="w-[80px] sm:w-[200px] p-2 border-r-2 border-black">Casilla</th>
                           <th className="p-2 text-left">Diligenciamiento</th>
                         </tr>
                       </thead>
@@ -280,6 +281,7 @@ export function InstructionsModal({ open, onClose }: InstructionsModalProps) {
                         ))}
                       </tbody>
                     </table>
+                    </div>
                   </div>
                 ))}
               </div>
@@ -392,11 +394,12 @@ export function InstructionsModal({ open, onClose }: InstructionsModalProps) {
             </div>
           )}
           {activeTab === 'valoracion' && (
-            <div className="p-8 space-y-12 animate-in fade-in slide-in-from-bottom-4 duration-300 overflow-x-auto">
+            <div className="p-4 sm:p-8 space-y-12 animate-in fade-in slide-in-from-bottom-4 duration-300">
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
                 {/* Table 1 */}
                 <div className="space-y-4">
-                  <table className="w-full border-2 border-black text-[10px] text-center">
+                  <div className="overflow-x-auto">
+                  <table className="w-full border-2 border-black text-[10px] text-center min-w-[500px]">
                     <tr className="bg-[#d9d9d9] font-bold border-b-2 border-black">
                       <td colSpan={3} className="p-2 uppercase italic">Tabla No. 1 Determinación del nivel de deficiencia (ND)</td>
                     </tr>
@@ -426,11 +429,13 @@ export function InstructionsModal({ open, onClose }: InstructionsModalProps) {
                       <td className="p-2 text-center">No se ha detectado consecuencia alguna, o la eficacia del conjunto de medidas preventivas existentes es alta, o ambas. El riesgo está controlado.</td>
                     </tr>
                   </table>
+                  </div>
                 </div>
 
                 {/* Table 2 */}
                 <div className="space-y-4">
-                  <table className="w-full border-2 border-black text-[10px] text-center">
+                  <div className="overflow-x-auto">
+                  <table className="w-full border-2 border-black text-[10px] text-center min-w-[500px]">
                     <tr className="bg-[#d9d9d9] font-bold border-b-2 border-black">
                       <td colSpan={3} className="p-2 uppercase italic">Tabla No. 2 Determinación del nivel de exposición (NE)</td>
                     </tr>
@@ -460,12 +465,14 @@ export function InstructionsModal({ open, onClose }: InstructionsModalProps) {
                       <td className="p-2 text-center">La situación de exposición se presenta de manera eventual</td>
                     </tr>
                   </table>
+                  </div>
                 </div>
               </div>
 
               {/* Table 3 */}
               <div className="space-y-4">
-                <table className="w-full border-2 border-black text-[10px] text-center border-collapse">
+                <div className="overflow-x-auto">
+                <table className="w-full border-2 border-black text-[10px] text-center border-collapse min-w-[600px]">
                   <tr className="bg-[#d9d9d9] font-bold border-b-2 border-black">
                     <td colSpan={6} className="p-2 uppercase italic">Tabla No. 3 Determinación del nivel de probabilidad</td>
                   </tr>
@@ -502,12 +509,14 @@ export function InstructionsModal({ open, onClose }: InstructionsModalProps) {
                     <td className="p-2 bg-[#718f3f] text-white font-bold">B-2</td>
                   </tr>
                 </table>
+                </div>
               </div>
 
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
                 {/* Table 4 */}
                 <div className="space-y-4">
-                  <table className="w-full border-2 border-black text-[10px] text-center">
+                  <div className="overflow-x-auto">
+                  <table className="w-full border-2 border-black text-[10px] text-center min-w-[550px]">
                     <tr className="bg-[#d9d9d9] font-bold border-b-2 border-black">
                       <td colSpan={3} className="p-2 uppercase italic">Tabla No. 4 Significado de los diferentes niveles de probabilidad</td>
                     </tr>
@@ -537,11 +546,13 @@ export function InstructionsModal({ open, onClose }: InstructionsModalProps) {
                       <td className="p-2 text-center">Situación mejorable con exposición ocasional o esporádica, o situacion sin anomalía destacable con cualquier nivel de exposición. No es esperable que se materialice el riesgo, aunque puede ser concebible.</td>
                     </tr>
                   </table>
+                  </div>
                 </div>
 
                 {/* Table 5 */}
                 <div className="space-y-4">
-                  <table className="w-full border-2 border-black text-[10px] text-center">
+                  <div className="overflow-x-auto">
+                  <table className="w-full border-2 border-black text-[10px] text-center min-w-[550px]">
                     <tr className="bg-[#d9d9d9] font-bold border-b-2 border-black">
                       <td colSpan={3} className="p-2 uppercase italic">Tabla No. 5 Determinación del nivel de consecuencia</td>
                     </tr>
@@ -571,12 +582,14 @@ export function InstructionsModal({ open, onClose }: InstructionsModalProps) {
                       <td className="p-2 text-center">Lesiones o enfermedades que no requieren incapacidad.</td>
                     </tr>
                   </table>
+                  </div>
                 </div>
               </div>
 
               {/* Table 6 */}
               <div className="space-y-4">
-                <table className="w-full border-2 border-black text-[10px] text-center border-collapse">
+                <div className="overflow-x-auto">
+                <table className="w-full border-2 border-black text-[10px] text-center border-collapse min-w-[650px]">
                   <tr className="bg-[#d9d9d9] font-bold border-b-2 border-black">
                     <td colSpan={6} className="p-2 uppercase italic">Tabla No. 6 Determinación del nivel de riesgo</td>
                   </tr>
@@ -644,12 +657,14 @@ export function InstructionsModal({ open, onClose }: InstructionsModalProps) {
                     </td>
                   </tr>
                 </table>
+                </div>
               </div>
 
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
                 {/* Table 7 */}
                 <div className="space-y-4">
-                  <table className="w-full border-2 border-black text-[10px] text-center">
+                  <div className="overflow-x-auto">
+                  <table className="w-full border-2 border-black text-[10px] text-center min-w-[500px]">
                     <tr className="bg-[#d9d9d9] font-bold border-b-2 border-black">
                       <td colSpan={3} className="p-2 uppercase italic">Tabla No. 7 Significado del nivel de riesgo</td>
                     </tr>
@@ -679,11 +694,13 @@ export function InstructionsModal({ open, onClose }: InstructionsModalProps) {
                       <td className="p-2 text-center">Mantener las medidas de control existentes, pero se deberían considerar soluciones o mejoras y se deben hacer comprobaciones periódicas para asegurar que el riesgo aún es aceptable.</td>
                     </tr>
                   </table>
+                  </div>
                 </div>
 
                 {/* Table 8 */}
                 <div className="space-y-4">
-                  <table className="w-full border-2 border-black text-[10px] text-center">
+                  <div className="overflow-x-auto">
+                  <table className="w-full border-2 border-black text-[10px] text-center min-w-[400px]">
                     <tr className="bg-[#d9d9d9] font-bold border-b-2 border-black">
                       <td colSpan={2} className="p-2 uppercase italic">Tabla No. 8 Aceptabilidad del riesgo</td>
                     </tr>
@@ -708,6 +725,7 @@ export function InstructionsModal({ open, onClose }: InstructionsModalProps) {
                       <td className="p-2 font-bold">Aceptable</td>
                     </tr>
                   </table>
+                  </div>
                 </div>
               </div>
             </div>
@@ -798,7 +816,7 @@ export function InstructionsModal({ open, onClose }: InstructionsModalProps) {
         </div>
 
         {/* Footer */}
-        <div className="px-8 py-4 bg-[#f8faf9] border-t border-[#e2e9e4] flex items-center justify-between">
+        <div className="px-4 sm:px-8 py-4 bg-[#f8faf9] border-t border-[#e2e9e4] flex flex-wrap items-center justify-between gap-3">
           <div className="flex gap-4">
             <span className="text-[9px] text-[#8aa08f] uppercase font-bold tracking-widest bg-white px-3 py-1 rounded-full border">Referencia: GTC 45:2012</span>
           </div>

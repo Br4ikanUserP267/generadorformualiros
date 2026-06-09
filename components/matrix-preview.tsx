@@ -331,7 +331,7 @@ export function MatrixPreview({ matrizId, onClose }: MatrixPreviewProps) {
   return (
     <div className="fixed inset-0 w-full h-full bg-white z-[9999] flex flex-col overflow-hidden animate-in fade-in zoom-in duration-300">
       {/* Top Header */}
-      <div className="flex items-center justify-between px-6 py-4 border-b border-[#e2e9e4] bg-[#f8faf9]/50 backdrop-blur-sm sticky top-0 z-50">
+      <div className="flex items-center justify-between px-4 sm:px-6 py-3 sm:py-4 border-b border-[#e2e9e4] bg-[#f8faf9]/50 backdrop-blur-sm sticky top-0 z-50">
         <div className="flex items-center gap-6">
           <button 
             onClick={onClose}
@@ -353,7 +353,7 @@ export function MatrixPreview({ matrizId, onClose }: MatrixPreviewProps) {
       </div>
 
       {/* Metadata Fields Section */}
-      <div className="px-8 py-6 bg-white border-b border-[#e2e9e4] grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div className="px-4 sm:px-8 py-4 sm:py-6 bg-white border-b border-[#e2e9e4] grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-6">
         <div className="space-y-1.5">
           <label className="text-[10px] font-extrabold text-[#8aa08f] uppercase tracking-wider block">Área / Proceso</label>
           <div className="bg-[#f0f9f1] border border-[#d1e2d6] rounded-xl px-4 py-2.5 text-sm font-bold text-[#1F7D3E]">
@@ -377,7 +377,7 @@ export function MatrixPreview({ matrizId, onClose }: MatrixPreviewProps) {
 
 
       {/* Main Table Content */}
-      <div className="flex-1 min-h-0 bg-[#f8faf9] px-8 pb-8 flex flex-col">
+      <div className="flex-1 min-h-0 bg-[#f8faf9] px-4 sm:px-8 pb-4 sm:pb-8 flex flex-col">
         <div className="bg-white rounded-2xl border border-[#e2e9e4] shadow-xl shadow-gray-200/50 flex-1 overflow-hidden mt-4 flex flex-col">
           <div 
             ref={tableContainerRef}

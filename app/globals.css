@@ -104,6 +104,7 @@
 }
 
 @theme {
+  --breakpoint-xs: 480px;
   --font-sans: 'Geist', 'Geist Fallback';
   --font-mono: 'Geist Mono', 'Geist Mono Fallback';
   --color-background: var(--background);

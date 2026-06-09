@@ -1416,7 +1416,7 @@ export default function MatrixEditor({ id }: { id?: string }) {
 
                           {r._ui?.expanded && (
                             <div className="p-3 border-t">
-                              <div className="flex gap-2 mb-3">
+                              <div className="flex flex-wrap gap-1.5 mb-3">
                                 {['Descripción & Controles','Evaluación','Criterios','Intervención'].map((t, i) => (
                                   <button key={t} onClick={()=> updatePeligroField(currentProceso.id, currentZona.id, currentActividad.id, r.id, ['_ui','activeTab'], i)} className={`px-3 py-1.5 rounded-md text-sm transition-colors ${r._ui?.activeTab===i? 'bg-[#1f6f36] text-white shadow-sm':'bg-white border border-[#d6e5d7] text-slate-700 hover:bg-[#f4faf4]'}`}>{t}</button>
                                 ))}

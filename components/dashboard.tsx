@@ -325,24 +325,26 @@ export function Dashboard() {
         <div className="flex flex-wrap items-center justify-center sm:justify-end gap-2 sm:gap-3 w-full md:w-auto">
           <button 
             onClick={() => setInstructionsOpen(true)}
-            className="text-sm font-bold text-[#5e6b62] hover:text-[#1F7D3E] flex items-center gap-2 px-4 py-2 bg-white border border-[#e2e9e4] rounded-xl shadow-sm transition-all hover:bg-[#f0f9f1] hover:border-[#d1e2d6]"
+            className="text-xs sm:text-sm font-bold text-[#5e6b62] hover:text-[#1F7D3E] flex items-center gap-1.5 sm:gap-2 px-2 py-1.5 sm:px-4 sm:py-2 bg-white border border-[#e2e9e4] rounded-xl shadow-sm transition-all hover:bg-[#f0f9f1] hover:border-[#d1e2d6]"
           >
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
-            Instrucciones
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+            <span className="hidden xs:inline sm:inline">Instrucciones</span>
           </button>
 
           <button 
             onClick={() => router.push('/dashboard/priorizacion')}
-            className="text-sm font-bold text-[#1F7D3E] hover:underline px-4 py-2 bg-[#f0f9f1] border border-[#d1e2d6] rounded-xl shadow-sm transition-all hover:bg-white"
+            className="text-xs sm:text-sm font-bold text-[#1F7D3E] hover:underline px-2 py-1.5 sm:px-4 sm:py-2 bg-[#f0f9f1] border border-[#d1e2d6] rounded-xl shadow-sm transition-all hover:bg-white whitespace-nowrap"
           >
-            Priorización de Riesgos
+            <span className="sm:hidden">Priorización</span>
+            <span className="hidden sm:inline">Priorización de Riesgos</span>
           </button>
 
           <button 
             onClick={() => router.push('/dashboard/reporte')}
-            className="text-sm font-bold text-[#1F7D3E] hover:underline px-4 py-2 bg-[#f0f9f1] border border-[#d1e2d6] rounded-xl shadow-sm transition-all hover:bg-white"
+            className="text-xs sm:text-sm font-bold text-[#1F7D3E] hover:underline px-2 py-1.5 sm:px-4 sm:py-2 bg-[#f0f9f1] border border-[#d1e2d6] rounded-xl shadow-sm transition-all hover:bg-white whitespace-nowrap"
           >
-            Reporte de Peligros
+            <span className="sm:hidden">Reporte</span>
+            <span className="hidden sm:inline">Reporte de Peligros</span>
           </button>
 
           <div className="flex items-center gap-3 bg-white px-3 py-1.5 rounded-full border border-[#e2e9e4] shadow-sm">
@@ -358,7 +360,7 @@ export function Dashboard() {
         </div>
       </header>
 
-      <main className="max-w-[1400px] mx-auto p-6 space-y-6">
+      <main className="max-w-[1400px] mx-auto p-3 sm:p-6 space-y-4 sm:space-y-6">
         {/* Stats Grid */}
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
           {[
@@ -369,7 +371,7 @@ export function Dashboard() {
             { label: 'Medio', val: stats.me, color: '#EAB308', bg: 'bg-[#fff3e0]' },
             { label: 'Bajo', val: stats.ba, color: '#198754', bg: 'bg-[#e8f5e9]' }
           ].map((s, i) => (
-            <div key={i} className="bg-white border border-[#e2e9e4] rounded-2xl p-5 shadow-sm space-y-2">
+            <div key={i} className="bg-white border border-[#e2e9e4] rounded-2xl p-3 sm:p-5 shadow-sm space-y-2">
               <span className="text-3xl font-bold block leading-none" style={{ color: s.color }}>{s.val}</span>
               <span className="text-[10px] font-bold text-[#5e6b62] uppercase tracking-wider leading-tight whitespace-normal">{s.label}</span>
               <div className={`h-1.5 w-full rounded-full ${s.bg}`} style={{ background: i > 1 ? s.color : undefined }} />
@@ -378,9 +380,9 @@ export function Dashboard() {
         </div>
 
         {/* Filters Bar */}
-        <div className="bg-white border border-[#e2e9e4] rounded-2xl p-5 shadow-sm">
-          <div className="flex flex-wrap items-center gap-4">
-            <div className="flex-1 min-w-[280px] relative">
+        <div className="bg-white border border-[#e2e9e4] rounded-2xl p-4 sm:p-5 shadow-sm">
+          <div className="flex flex-col sm:flex-row flex-wrap items-stretch sm:items-center gap-3 sm:gap-4">
+            <div className="w-full sm:flex-1 sm:min-w-[280px] relative">
               <input 
                 type="text" 
                 placeholder="Buscar por Área, Proceso, Zona..." 
@@ -390,21 +392,21 @@ export function Dashboard() {
               />
             </div>
             
-            <div className="flex items-center gap-3">
-              <div className="flex items-center gap-2">
-                <span className="text-xs font-bold text-[#5e6b62] uppercase">Desde</span>
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-3">
+              <div className="flex items-center gap-2 w-full sm:w-auto">
+                <span className="text-xs font-bold text-[#5e6b62] uppercase whitespace-nowrap">Desde</span>
                 <input 
                   type="date" 
-                  className="px-3 py-2 rounded-xl border border-[#e2e9e4] bg-[#f8faf9] text-sm font-medium focus:outline-none focus:border-[#1F7D3E]"
+                  className="flex-1 sm:flex-none px-3 py-2 rounded-xl border border-[#e2e9e4] bg-[#f8faf9] text-sm font-medium focus:outline-none focus:border-[#1F7D3E] w-full sm:w-auto"
                   value={dateDesde} 
                   onChange={e=>setDateDesde(e.target.value)} 
                 />
               </div>
-              <div className="flex items-center gap-2">
-                <span className="text-xs font-bold text-[#5e6b62] uppercase">Hasta</span>
+              <div className="flex items-center gap-2 w-full sm:w-auto">
+                <span className="text-xs font-bold text-[#5e6b62] uppercase whitespace-nowrap">Hasta</span>
                 <input 
                   type="date" 
-                  className="px-3 py-2 rounded-xl border border-[#e2e9e4] bg-[#f8faf9] text-sm font-medium focus:outline-none focus:border-[#1F7D3E]"
+                  className="flex-1 sm:flex-none px-3 py-2 rounded-xl border border-[#e2e9e4] bg-[#f8faf9] text-sm font-medium focus:outline-none focus:border-[#1F7D3E] w-full sm:w-auto"
                   value={dateHasta} 
                   onChange={e=>setDateHasta(e.target.value)} 
                 />
@@ -412,7 +414,7 @@ export function Dashboard() {
             </div>
 
             <select 
-              className="px-4 py-2.5 rounded-xl border border-[#e2e9e4] bg-[#f8faf9] text-sm font-medium text-[#2c3630] cursor-pointer focus:outline-none focus:border-[#1F7D3E]"
+              className="w-full sm:w-auto px-4 py-2.5 rounded-xl border border-[#e2e9e4] bg-[#f8faf9] text-sm font-medium text-[#2c3630] cursor-pointer focus:outline-none focus:border-[#1F7D3E]"
               value={tipoFilter} 
               onChange={e=>setTipoFilter(e.target.value)}
             >
@@ -422,16 +424,16 @@ export function Dashboard() {
               ))}
             </select>
 
-            <div className="flex items-center gap-2 ml-auto">
+            <div className="flex items-center gap-2 sm:ml-auto">
               <button 
-                className="px-5 py-2.5 rounded-xl border border-[#e2e9e4] text-sm font-bold text-[#5e6b62] hover:bg-gray-50 transition-colors"
+                className="flex-1 sm:flex-none px-4 py-2.5 rounded-xl border border-[#e2e9e4] text-sm font-bold text-[#5e6b62] hover:bg-gray-50 transition-colors"
                 onClick={() => { setSearch(''); setDateDesde(''); setDateHasta(''); setTipoFilter(''); setCurrentPage(1) }}
               >
                 Limpiar
               </button>
               
-              <div className="relative group">
-                <button className="px-6 py-2.5 rounded-xl bg-[#1F7D3E] text-white text-sm font-bold shadow-lg shadow-[#1F7D3E]/20 hover:bg-[#186331] transition-all flex items-center gap-2">
+              <div className="relative group flex-1 sm:flex-none">
+                <button className="w-full sm:w-auto px-4 sm:px-6 py-2.5 rounded-xl bg-[#1F7D3E] text-white text-sm font-bold shadow-lg shadow-[#1F7D3E]/20 hover:bg-[#186331] transition-all flex items-center justify-center gap-2">
                   <span>+</span> Nueva Matriz
                 </button>
                 <div className="absolute right-0 top-full mt-2 w-64 bg-white border border-[#e2e9e4] rounded-xl shadow-xl py-2 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-40">
@@ -457,12 +459,12 @@ export function Dashboard() {
           {matrices.map(m => (
             <div 
               key={m.id} 
-              className="group relative bg-white border border-[#e2e9e4] rounded-2xl p-5 flex items-center gap-6 cursor-pointer hover:border-[#1F7D3E] hover:shadow-xl hover:-translate-y-0.5 transition-all"
+              className="group relative bg-white border border-[#e2e9e4] rounded-2xl p-4 sm:p-5 flex flex-col md:flex-row md:items-center gap-3 md:gap-6 cursor-pointer hover:border-[#1F7D3E] hover:shadow-xl hover:-translate-y-0.5 transition-all"
               onClick={() => router.push('/matriz/' + m.id)}
             >
-              <div className="flex-1 space-y-3">
+              <div className="flex-1 space-y-2 sm:space-y-3 min-w-0">
                 <div className="space-y-0.5">
-                  <h3 className="text-base font-bold text-[#0f2b1a] group-hover:text-[#1F7D3E] transition-colors line-clamp-1">
+                  <h3 className="text-base font-bold text-[#0f2b1a] group-hover:text-[#1F7D3E] transition-colors line-clamp-2 md:line-clamp-1">
                     {m.area || m.responsable || 'Matriz sin área'}
                   </h3>
                   <p className="text-xs font-semibold text-[#8aa08f] uppercase tracking-wide">{m.date}</p>
@@ -483,8 +485,8 @@ export function Dashboard() {
                 </div>
               </div>
 
-              <div className="flex items-center gap-2 sm:gap-4 md:gap-8">
-                <div className="flex gap-2 mr-4 hidden sm:flex">
+              <div className="flex items-center justify-between md:justify-end gap-2 md:gap-8 w-full md:w-auto shrink-0">
+                <div className="hidden md:flex gap-2 mr-2">
                   {m.counts.map((c: number, idx: number) => (
                     <div key={idx} className="flex flex-col items-center justify-center w-14 h-14 rounded-xl border border-transparent transition-all" style={{ background: COLORS[idx].bg + '80' }}>
                       <span className="text-lg font-bold" style={{ color: COLORS[idx].txt }}>{c}</span>
@@ -493,7 +495,7 @@ export function Dashboard() {
                   ))}
                 </div>
 
-                <div className="flex items-center gap-1" onClick={e => e.stopPropagation()}>
+                <div className="flex items-center gap-1 flex-wrap" onClick={e => e.stopPropagation()}>
                   {[
                     { title: 'Vista Previa', icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M2.062 12.348a1 1 0 0 1 0-.696 10.75 10.75 0 0 1 19.876 0 1 1 0 0 1 0 .696 10.75 10.75 0 0 1-19.876 0z"/><circle cx="12" cy="12" r="3"/></svg>, action: () => setPreviewMatrixId(m.id) },
                     { title: 'Descargar Excel', icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>, action: () => handleDownloadMatrix(m.id) },
@@ -505,7 +507,7 @@ export function Dashboard() {
                       key={idx}
                       title={btn.title}
                       onClick={btn.action}
-                      className={`p-2.5 rounded-xl border border-transparent transition-all ${btn.color || 'text-[#5e6b62] hover:bg-[#f0f9f1] hover:border-[#d1e2d6] hover:text-[#1F7D3E]'}`}
+                      className={`p-2 sm:p-2.5 rounded-xl border border-transparent transition-all ${btn.color || 'text-[#5e6b62] hover:bg-[#f0f9f1] hover:border-[#d1e2d6] hover:text-[#1F7D3E]'}`}
                     >
                       {btn.icon}
                     </button>
@@ -536,34 +538,34 @@ export function Dashboard() {
 
         {/* Pagination */}
         {totalMatrices > 0 && (
-          <div className="flex items-center justify-between pt-4 border-t border-[#e2e9e4]">
-            <p className="text-xs font-semibold text-[#5e6b62] uppercase tracking-wider">
-              Página {currentPage} de {totalPages} <span className="mx-2 opacity-30">|</span> {totalMatrices} totales
+          <div className="flex flex-wrap items-center justify-between gap-2 pt-4 border-t border-[#e2e9e4]">
+            <p className="text-[10px] sm:text-xs font-semibold text-[#5e6b62] uppercase tracking-wider">
+              Pág. {currentPage}/{totalPages} <span className="mx-1 sm:mx-2 opacity-30">|</span> {totalMatrices} totales
             </p>
-            <div className="flex items-center gap-2">
+            <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
               <button 
-                className="px-4 py-2 rounded-xl border border-[#e2e9e4] bg-white text-xs font-bold text-[#2c3630] disabled:opacity-30 disabled:cursor-not-allowed hover:bg-gray-50 transition-colors"
+                className="px-3 sm:px-4 py-1.5 sm:py-2 rounded-xl border border-[#e2e9e4] bg-white text-xs font-bold text-[#2c3630] disabled:opacity-30 disabled:cursor-not-allowed hover:bg-gray-50 transition-colors"
                 disabled={currentPage <= 1} 
                 onClick={() => setCurrentPage(1)}
               >
                 Primera
               </button>
               <button 
-                className="px-4 py-2 rounded-xl border border-[#e2e9e4] bg-white text-xs font-bold text-[#2c3630] disabled:opacity-30 disabled:cursor-not-allowed hover:bg-gray-50 transition-colors"
+                className="px-3 sm:px-4 py-1.5 sm:py-2 rounded-xl border border-[#e2e9e4] bg-white text-xs font-bold text-[#2c3630] disabled:opacity-30 disabled:cursor-not-allowed hover:bg-gray-50 transition-colors"
                 disabled={currentPage <= 1} 
                 onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
               >
                 Anterior
               </button>
               <button 
-                className="px-4 py-2 rounded-xl border border-[#e2e9e4] bg-white text-xs font-bold text-[#2c3630] disabled:opacity-30 disabled:cursor-not-allowed hover:bg-gray-50 transition-colors"
+                className="px-3 sm:px-4 py-1.5 sm:py-2 rounded-xl border border-[#e2e9e4] bg-white text-xs font-bold text-[#2c3630] disabled:opacity-30 disabled:cursor-not-allowed hover:bg-gray-50 transition-colors"
                 disabled={currentPage >= totalPages} 
                 onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
               >
                 Siguiente
               </button>
               <button 
-                className="px-4 py-2 rounded-xl border border-[#e2e9e4] bg-white text-xs font-bold text-[#2c3630] disabled:opacity-30 disabled:cursor-not-allowed hover:bg-gray-50 transition-colors"
+                className="px-3 sm:px-4 py-1.5 sm:py-2 rounded-xl border border-[#e2e9e4] bg-white text-xs font-bold text-[#2c3630] disabled:opacity-30 disabled:cursor-not-allowed hover:bg-gray-50 transition-colors"
                 disabled={currentPage >= totalPages} 
                 onClick={() => setCurrentPage(totalPages)}
               >

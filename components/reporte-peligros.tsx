@@ -145,27 +145,27 @@ export function ReportePeligros() {
   return (
     <div className="min-h-screen bg-[#f8faf9] text-[#2c3630]">
       {/* Topbar */}
-      <header className="sticky top-0 z-30 bg-white/80 backdrop-blur-md border-b border-[#e2e9e4] px-6 py-4 flex items-center justify-between">
-        <div className="flex items-center gap-4">
-          <div className="flex items-center gap-3">
+      <header className="sticky top-0 z-30 bg-white/80 backdrop-blur-md border-b border-[#e2e9e4] px-4 md:px-6 py-3 flex flex-col md:flex-row items-center justify-between gap-3">
+        <div className="flex items-center gap-4 justify-between w-full md:w-auto">
+          <div className="flex items-center gap-2 sm:gap-3">
             <button 
               onClick={() => router.push('/dashboard')}
-              className="flex items-center gap-2 px-3 py-1.5 rounded-lg hover:bg-gray-100 transition-colors text-sm font-semibold text-[#1F7D3E]"
+              className="flex items-center gap-1.5 sm:gap-2 px-2 sm:px-3 py-1.5 rounded-lg hover:bg-gray-100 transition-colors text-sm font-semibold text-[#1F7D3E]"
             >
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
-              Volver
+              <span>Volver</span>
             </button>
             <div className="w-[1px] h-6 bg-[#e2e9e4]" />
-            <img src="/matriz-riesgos/csm_logo_long.png" alt="CSM" className="h-6 object-contain" />
+            <img src="/matriz-riesgos/csm_logo_long.png" alt="CSM" className="h-5 sm:h-6 object-contain" />
           </div>
         </div>
 
-        <div className="flex items-center gap-6">
+        <div className="flex items-center justify-between md:justify-end gap-3 w-full md:w-auto min-w-0">
           <button 
             onClick={() => router.push('/dashboard')}
-            className="text-sm font-bold text-[#1F7D3E] hover:underline px-4 py-2 bg-white border border-[#e2e9e4] rounded-xl shadow-sm transition-all hover:bg-[#f0f9f1]"
+            className="text-xs sm:text-sm font-bold text-[#1F7D3E] hover:underline px-3 py-1.5 sm:px-4 sm:py-2 bg-white border border-[#e2e9e4] rounded-xl shadow-sm transition-all hover:bg-[#f0f9f1] whitespace-nowrap"
           >
-            Matriz de Riesgos
+            <span>Matriz de Riesgos</span>
           </button>
 
           <div className="hidden sm:flex flex-col items-end">
@@ -175,14 +175,14 @@ export function ReportePeligros() {
           
           <button 
             onClick={() => { logout(); router.push('/') }}
-            className="text-sm font-medium text-red-600 hover:text-red-700 hover:underline"
+            className="text-xs sm:text-sm font-medium text-red-600 hover:text-red-700 hover:underline whitespace-nowrap"
           >
             Cerrar Sesión
           </button>
         </div>
       </header>
 
-      <main className="max-w-[1400px] mx-auto p-6 space-y-6">
+      <main className="max-w-[1400px] mx-auto p-3 sm:p-6 space-y-4 sm:space-y-6">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
             <h1 className="text-2xl font-black text-[#1F7D3E] tracking-tight">Reporte General de Riesgos</h1>
@@ -192,7 +192,7 @@ export function ReportePeligros() {
         </div>
 
         {/* Stats Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
           {ACEPTABILIDAD_LEVELS.map((card) => {
             const selected = selectedAceptabilidad === card.key
             const count =
@@ -205,7 +205,7 @@ export function ReportePeligros() {
               <div 
                 key={card.key}
                 onClick={() => toggleAceptabilidad(card.key)}
-                className={`bg-white border transition-all cursor-pointer rounded-2xl p-5 shadow-sm space-y-3 ${selected ? 'ring-2 ring-[#1F7D3E] border-[#1F7D3E]' : 'border-[#e2e9e4] hover:shadow-md'}`}
+                className={`bg-white border transition-all cursor-pointer rounded-2xl p-3 sm:p-5 shadow-sm space-y-3 ${selected ? 'ring-2 ring-[#1F7D3E] border-[#1F7D3E]' : 'border-[#e2e9e4] hover:shadow-md'}`}
               >
                 <div className="flex items-center justify-between">
                   <span className="text-3xl font-bold block leading-none" style={{ color: card.color }}>{count}</span>
@@ -229,8 +229,8 @@ export function ReportePeligros() {
 
         {/* Table & Controls Section */}
         <div className="bg-white border border-[#e2e9e4] rounded-2xl overflow-hidden shadow-sm">
-          <div className="p-4 border-b border-[#e2e9e4] flex flex-wrap items-center gap-4 bg-[#f8faf9]/30">
-            <div className="flex-1 min-w-[300px] relative">
+          <div className="p-3 sm:p-4 border-b border-[#e2e9e4] flex flex-wrap items-center gap-3 sm:gap-4 bg-[#f8faf9]/30">
+            <div className="w-full sm:flex-1 sm:min-w-0 relative">
               <input 
                 type="text" 
                 placeholder="Buscar por descripción de peligro..." 
@@ -243,7 +243,7 @@ export function ReportePeligros() {
           </div>
 
           <div className="overflow-x-auto min-h-[400px]">
-            <table className="w-full border-collapse text-[13px]">
+            <table className="w-full min-w-[700px] border-collapse text-[13px]">
               <thead className="bg-[#f8faf9] sticky top-0 z-10 border-b border-[#e2e9e4]">
                 <tr>
                   <th className="px-6 py-4 text-left font-bold text-[#5e6b62] uppercase tracking-wider">Peligro</th>
@@ -313,8 +313,8 @@ export function ReportePeligros() {
           </div>
 
           {/* Pagination */}
-          <div className="px-6 py-4 border-t border-[#e2e9e4] flex items-center justify-between bg-[#f8faf9]/30">
-             <div className="text-[11px] font-bold text-[#8aa08f] uppercase tracking-widest">
+          <div className="px-3 sm:px-6 py-3 sm:py-4 border-t border-[#e2e9e4] flex flex-col sm:flex-row items-center justify-between gap-2 bg-[#f8faf9]/30">
+            <div className="text-[11px] font-bold text-[#8aa08f] uppercase tracking-widest">
               Página {Math.min(page + 1, totalPages)} de {totalPages}
             </div>
             <div className="flex items-center gap-2">

@@ -210,28 +210,30 @@ export function PriorizacionRiesgos() {
   return (
     <div className="min-h-screen bg-[#f8faf9] text-[#2c3630]">
       {/* Topbar */}
-      <header className="sticky top-0 z-30 bg-white/80 backdrop-blur-md border-b border-[#e2e9e4] px-6 py-4 flex items-center justify-between">
-        <div className="flex items-center gap-4">
-          <button 
-            onClick={() => router.push('/dashboard')}
-            className="flex items-center gap-2 px-3 py-1.5 rounded-lg hover:bg-gray-100 transition-colors text-sm font-semibold text-[#1F7D3E]"
-          >
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
-            Volver
-          </button>
-          <div className="w-[1px] h-6 bg-[#e2e9e4]" />
-          <h1 className="text-lg font-bold text-[#1F7D3E]">Priorización de Riesgos</h1>
+      <header className="sticky top-0 z-30 bg-white/80 backdrop-blur-md border-b border-[#e2e9e4] px-4 md:px-6 py-3 flex flex-col md:flex-row items-center justify-between gap-3">
+        <div className="flex items-center gap-4 justify-between w-full md:w-auto">
+          <div className="flex items-center gap-2 sm:gap-3">
+            <button 
+              onClick={() => router.push('/dashboard')}
+              className="flex items-center gap-2 px-3 py-1.5 rounded-lg hover:bg-gray-100 transition-colors text-sm font-semibold text-[#1F7D3E] shrink-0"
+            >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+              Volver
+            </button>
+            <div className="w-[1px] h-6 bg-[#e2e9e4] shrink-0" />
+            <h1 className="text-base sm:text-lg font-bold text-[#1F7D3E] truncate">Priorización de Riesgos</h1>
+          </div>
         </div>
         
-        <div className="flex items-center gap-4">
-          <div className="text-right hidden sm:block">
+        <div className="flex items-center gap-4 justify-end w-full md:w-auto shrink-0">
+          <div className="text-right">
             <p className="text-sm font-bold text-[#5e6b62] leading-tight">{user?.nombre}</p>
             <p className="text-[10px] font-bold text-[#8aa08f] uppercase tracking-wider">Gestión de Intervenciones</p>
           </div>
         </div>
       </header>
 
-      <main className="max-w-[1400px] mx-auto p-6 space-y-6">
+      <main className="max-w-[1400px] mx-auto p-3 sm:p-6 space-y-6">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
             <h2 className="text-2xl font-black text-[#1F7D3E] tracking-tight">Riesgos por Intervenir</h2>
@@ -252,7 +254,7 @@ export function PriorizacionRiesgos() {
         ) : (
           <div className="bg-white border border-[#e2e9e4] rounded-2xl overflow-hidden shadow-sm">
             <div className="overflow-x-auto">
-              <table className="w-full border-collapse text-[13px]">
+              <table className="w-full border-collapse text-[13px] min-w-[700px]">
                 <thead className="bg-[#f8faf9] border-b border-[#e2e9e4]">
                   <tr>
                     <th className="px-6 py-4 text-left font-bold text-[#5e6b62] uppercase tracking-wider">Peligro / Descripción</th>
@@ -398,7 +400,7 @@ export function PriorizacionRiesgos() {
       </main>
 
       <Dialog open={showModal} onOpenChange={setShowModal}>
-        <DialogContent className="w-[95vw] sm:max-w-5xl md:max-w-7xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="w-[95vw] max-w-[95vw] sm:max-w-5xl md:max-w-7xl max-h-[90vh] overflow-y-auto p-3 sm:p-6">
           <DialogHeader>
             <DialogTitle className="text-xl font-bold text-[#1F7D3E]">Intervención de Riesgo</DialogTitle>
           </DialogHeader>
@@ -416,7 +418,7 @@ export function PriorizacionRiesgos() {
               </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               {/* Intervention Actions */}
               <div className="space-y-5">
                 <h4 className="text-base font-black text-[#1F7D3E] flex items-center gap-2.5 border-b border-[#e2e9e4] pb-2">
