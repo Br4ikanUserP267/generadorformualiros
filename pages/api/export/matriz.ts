@@ -456,10 +456,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
             const rowData = [
               '', // A: empty
               pName, // B
-              aCargo, // C
+              zName, // C
               aDesc || aName, // D
               aTareas, // E
-              zName, // F
+              aCargo, // F
               aRut, // G
               pel.descripcion || '', // H
               pel.clasificacion || '', // I

@@ -277,11 +277,11 @@ export default function MatrixEditor({ id }: { id?: string }) {
   function editProceso(p: any) { setEditingProceso(p); setShowProcesoModal(true) }
 
   function addZona(procesoId: string) {
-    // open Cargo creation modal so user can fill name, cargo and add actividades
+    // open Zona / Lugar creation modal so user can fill name and add actividades
     const p = matrix?.procesos?.find((x: any) => x.id === procesoId)
     setEditingZona(null)
     setZonaParentProcesoId(procesoId)
-    setZonaModalName(`Cargo ${ (p?.zonas?.length||0) + 1 }`)
+    setZonaModalName(`Zona / Lugar ${ (p?.zonas?.length||0) + 1 }`)
     setZonaModalCargo('')
     setZonaModalRutinario(false)
     setZonaModalActivities([])
@@ -330,7 +330,7 @@ export default function MatrixEditor({ id }: { id?: string }) {
     const actividadIds = (zonaModalActivities||[]).map(a => ({ id: makeId('a-'), nombre: a.nombre, tareas: a.tareas || '' }))
     updateMatrix((m: any) => {
       const p = m.procesos.find((x: any) => x.id === zonaParentProcesoId)
-      const newZona = { id: newZonaId, nombre: zonaModalName || `Cargo ${ (p?.zonas?.length||0) + 1 }`, cargo: zonaModalCargo || '', actividades: actividadIds.map(a => ({ id: a.id, nombre: a.nombre, tareas: a.tareas || '', cargo: '', rutinario: false, peligros: [] })), rutinario: !!zonaModalRutinario }
+      const newZona = { id: newZonaId, nombre: zonaModalName || `Zona / Lugar ${ (p?.zonas?.length||0) + 1 }`, cargo: zonaModalCargo || '', actividades: actividadIds.map(a => ({ id: a.id, nombre: a.nombre, tareas: a.tareas || '', cargo: '', rutinario: false, peligros: [] })), rutinario: !!zonaModalRutinario }
       p.zonas.push(newZona)
       return m
     })
@@ -360,8 +360,8 @@ export default function MatrixEditor({ id }: { id?: string }) {
   }
 
   function removeZona(procesoId: string, zonaId: string) {
-    setConfirmDeleteTitle('Eliminar cargo')
-    setConfirmDeleteMessage('¿Estás seguro de que deseas eliminar este cargo? Se eliminarán también sus actividades y peligros asociados.')
+    setConfirmDeleteTitle('Eliminar zona')
+    setConfirmDeleteMessage('¿Estás seguro de que deseas eliminar esta zona / lugar? Se eliminarán también sus actividades y peligros asociados.')
     setPendingDeleteAction(() => () => {
       updateMatrix((m: any) => {
         const p = m.procesos.find((x: any) => x.id === procesoId)
@@ -1079,7 +1079,7 @@ export default function MatrixEditor({ id }: { id?: string }) {
                         <div className="flex items-center justify-between bg-[#1F7D3E] text-white p-2 rounded-lg">
                           <div className="font-bold tracking-wide text-xs truncate max-w-[140px]" title={p.nombre}>{p.nombre}</div>
                           <div className="flex items-center gap-1.5 bg-black/10 px-2 py-1 rounded">
-                            <button onClick={(e:any)=>{ e.stopPropagation(); addZona(p.id) }} className="text-white hover:text-green-200 text-[10px] font-bold px-1.5 py-0.5 rounded border border-white/20 hover:border-white/40 transition-colors" title="Agregar cargo">+ Cargo</button>
+                            <button onClick={(e:any)=>{ e.stopPropagation(); addZona(p.id) }} className="text-white hover:text-green-200 text-[10px] font-bold px-1.5 py-0.5 rounded border border-white/20 hover:border-white/40 transition-colors" title="Agregar Zona / Lugar">+ Zona</button>
                             <button onClick={(e:any)=>{ e.stopPropagation(); editProceso(p) }} className="text-white/80 hover:text-white transition-colors" aria-label="Editar proceso"><PencilIcon size={12} /></button>
                             <button onClick={(e:any)=>{ e.stopPropagation(); removeProceso(p.id) }} className="text-red-200 hover:text-red-400 transition-colors" aria-label="Eliminar proceso"><TrashIcon size={12} /></button>
                           </div>
@@ -1100,10 +1100,10 @@ export default function MatrixEditor({ id }: { id?: string }) {
                                   >
                                     <span className="truncate max-w-[140px]">{z.nombre}</span>
                                     <div className="flex items-center gap-1.5 bg-black/10 px-1.5 py-0.5 rounded ml-2">
-                                      <button onClick={(e:any)=>{ e.stopPropagation(); editZonaItem(p.id, z) }} className="text-white/80 hover:text-white transition-colors" title="Editar cargo">
+                                      <button onClick={(e:any)=>{ e.stopPropagation(); editZonaItem(p.id, z) }} className="text-white/80 hover:text-white transition-colors" title="Editar Zona / Lugar">
                                         <PencilIcon size={11} />
                                       </button>
-                                      <button onClick={(e:any)=>{ e.stopPropagation(); removeZona(p.id, z.id) }} className="text-red-200 hover:text-red-400 transition-colors" title="Eliminar cargo">
+                                      <button onClick={(e:any)=>{ e.stopPropagation(); removeZona(p.id, z.id) }} className="text-red-200 hover:text-red-400 transition-colors" title="Eliminar Zona / Lugar">
                                         <TrashIcon size={11} />
                                       </button>
                                     </div>
@@ -1240,7 +1240,7 @@ export default function MatrixEditor({ id }: { id?: string }) {
                       <Textarea rows={2} value={currentActividad.tareas||''}  onInput={(e:any) => { e.currentTarget.style.height = 'auto'; e.currentTarget.style.height = e.currentTarget.scrollHeight + 'px'; }} onChange={(e:any)=> updateMatrix((m:any)=>{ const a = m.procesos.find((p:any)=>p.id===currentProceso.id).zonas.find((zz:any)=>zz.id===currentZona.id).actividades.find((aa:any)=>aa.id===currentActividad.id); if (a) a.tareas = e.target.value; return m })} />
                     </div>
                     <div>
-                      <div style={{ color: '#2d7a40', fontSize: '11px', fontWeight: 500, textTransform: 'uppercase', letterSpacing: '0.04em' }} className="mb-1">Zona / Lugar</div>
+                      <div style={{ color: '#2d7a40', fontSize: '11px', fontWeight: 500, textTransform: 'uppercase', letterSpacing: '0.04em' }} className="mb-1">Cargo</div>
                       <Input value={currentActividad.cargo||''} onChange={(e:any)=> updateMatrix((m:any)=>{ const a = m.procesos.find((p:any)=>p.id===currentProceso.id).zonas.find((zz:any)=>zz.id===currentZona.id).actividades.find((aa:any)=>aa.id===currentActividad.id); if (a) a.cargo = e.target.value; return m })} />
                     </div>
                     <div className="flex flex-col items-start justify-center">
@@ -1764,11 +1764,11 @@ export default function MatrixEditor({ id }: { id?: string }) {
       <Dialog open={showZonaModal} onOpenChange={(open) => { setShowZonaModal(open); if(!open) setEditingZona(null); }}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>{editingZona ? 'Editar Cargo' : 'Nuevo Cargo'}</DialogTitle>
+            <DialogTitle>{editingZona ? 'Editar Zona / Lugar' : 'Nueva Zona / Lugar'}</DialogTitle>
           </DialogHeader>
           <div className="p-2">
             <div>
-              <div className="text-xs">Nombre del cargo</div>
+              <div className="text-xs">Nombre de la zona / lugar</div>
               <Input value={zonaModalName} onChange={(e:any)=> setZonaModalName(e.target.value)} />
             </div>
 

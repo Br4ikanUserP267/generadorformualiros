@@ -89,8 +89,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       area: d.actividad.zona.proceso.matriz.area,
       matrizId: d.actividad.zona.proceso.matriz.id,
       proceso: d.actividad.zona.proceso.nombre,
-      zona: d.actividad.cargo || '',
-      cargo: d.actividad.zona.nombre || '',
+      zona: d.actividad.zona.nombre || '',
+      cargo: d.actividad.cargo || '',
       actividad: d.actividad.nombre,
       evaluacion: {
         nd: d.evaluacion?.nivelDeficiencia,
