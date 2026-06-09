@@ -191,4 +191,45 @@ model EvaluacionPost {
   @@map("evaluaciones_post")
 }
 
-// Keep schema clean - Archivo model is the final model
+model LoginLog {
+  id        String   @id @default(uuid())
+  email     String
+  status    String
+  ipAddress String?  @map("ip_address")
+  userAgent String?  @map("user_agent")
+  timestamp DateTime @default(now())
+
+  @@map("login_logs")
+}
+
+model Notification {
+  id            String   @id @default(uuid())
+  message       String
+  recipientRole String?
+  recipientArea String?
+  fromUserName  String?
+  fromUserRole  String?
+  module        String?
+  action        String?
+  isRead        Boolean  @default(false)
+  type          String   @default("CHANGE")
+  createdAt     DateTime @default(now()) @map("created_at")
+
+  @@map("notifications")
+}
+
+model ActivityLog {
+  id        String   @id @default(uuid())
+  timestamp DateTime @default(now()) @map("created_at")
+  userEmail String   @map("user_email")
+  userName  String?  @map("user_name")
+  action    String
+  model     String
+  recordId  String?  @map("record_id")
+  changes   String   @db.Text
+  before    String?  @db.Text
+  ipAddress String?  @map("ip_address")
+
+  @@map("activity_logs")
+}
+

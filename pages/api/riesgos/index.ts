@@ -56,8 +56,9 @@ export const config = {
 }
 
 import { getAuthUser } from '@/lib/auth-server'
+import { withLogging } from '@/lib/with-logging'
 
-export default async function handler(req: NextApiRequest, res: NextApiResponse) {
+async function handler(req: NextApiRequest, res: NextApiResponse) {
   const user = await getAuthUser(req)
   if (!user) {
     return res.status(401).json({ error: 'Unauthorized' })
@@ -302,3 +303,5 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     res.status(500).json({ error: 'Internal server error' })
   }
 }
+
+export default withLogging(handler)

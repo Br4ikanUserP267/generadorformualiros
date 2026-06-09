@@ -1,9 +1,8 @@
 import { NextApiRequest, NextApiResponse } from 'next'
-import { PrismaClient } from '@prisma/client'
+import prisma from '@/lib/prisma'
+import { withLogging } from '@/lib/with-logging'
 
-const prisma = new PrismaClient()
-
-export default async function handler(req: NextApiRequest, res: NextApiResponse) {
+async function handler(req: NextApiRequest, res: NextApiResponse) {
   const { key } = req.query
 
   if (!key || typeof key !== 'string') {
@@ -37,3 +36,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
   return res.status(405).json({ error: 'Method not allowed' })
 }
+
+export default withLogging(handler)
+
