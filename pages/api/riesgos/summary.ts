@@ -256,7 +256,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         take: pageSize,
         skip,
       }),
-      (prisma.matriz.findMany as any)({
+      search ? Promise.resolve(null) : (prisma.matriz.findMany as any)({
         where: whereBase,
         select: {
           procesos: {
@@ -293,7 +293,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     const totalPages = Math.max(1, Math.ceil(total / pageSize))
     const safePage = Math.min(page, totalPages)
-    const totals = computeTotalsFromMatrices(totalsSource)
+    const totals = totalsSource ? computeTotalsFromMatrices(totalsSource) : null
 
     const items: SummaryMatrixRow[] = matrices.map((matrix: any) => {
       const computed = computeCountsFromSummary(matrix)

@@ -121,7 +121,7 @@ export function Dashboard() {
   const [currentPage, setCurrentPage] = useState(1)
   const [totalMatrices, setTotalMatrices] = useState(0)
   const [totalPages, setTotalPages] = useState(1)
-  const [totals, setTotals] = useState({ totP: 0, ma: 0, al: 0, me: 0, ba: 0 })
+  const [totals, setTotals] = useState({ totM: 0, totP: 0, ma: 0, al: 0, me: 0, ba: 0 })
   const [isLoading, setIsLoading] = useState(false)
   const [facetTipos, setFacetTipos] = useState<string[]>([])
   const summariesCacheRef = useRef<Record<string, any>>({})
@@ -143,13 +143,18 @@ export function Dashboard() {
     setMatrices(Array.isArray(body?.items) ? body.items : [])
     setTotalMatrices(Number(body?.total || 0))
     setTotalPages(Math.max(1, Number(body?.totalPages || 1)))
-    setTotals({
-      totP: Number(body?.totals?.totalPeligros || 0),
-      ma: Number(body?.totals?.counts?.[0] || 0),
-      al: Number(body?.totals?.counts?.[1] || 0),
-      me: Number(body?.totals?.counts?.[2] || 0),
-      ba: Number(body?.totals?.counts?.[3] || 0),
-    })
+    
+    if (body.totals) {
+      setTotals({
+        totP: Number(body.totals.totalPeligros || 0),
+        ma: Number(body.totals.counts?.[0] || 0),
+        al: Number(body.totals.counts?.[1] || 0),
+        me: Number(body.totals.counts?.[2] || 0),
+        ba: Number(body.totals.counts?.[3] || 0),
+        totM: Number(body.totals.totalMatrices || 0),
+      })
+    }
+    
     if (Number(body?.page) && Number(body.page) !== requestedPage) setCurrentPage(Number(body.page))
   }
 
@@ -228,14 +233,14 @@ export function Dashboard() {
 
   const stats = useMemo(() => {
     return {
-      totM: totalMatrices,
+      totM: totals.totM,
       totP: totals.totP,
       ma: totals.ma,
       al: totals.al,
       me: totals.me,
       ba: totals.ba,
     }
-  }, [totalMatrices, totals])
+  }, [totals])
 
   const handleNew = () => {
     router.push('/matriz/nuevo')
