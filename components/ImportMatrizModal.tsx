@@ -263,7 +263,7 @@ export function ImportMatrizModal({ open, onOpenChange }: { open: boolean; onOpe
               </div>
             )}
 
-            <div className="overflow-auto border rounded max-h-[42vh]">
+            <div className="overflow-x-auto border rounded">
               <table className="w-full text-sm">
                 <thead className="bg-slate-100">
                   <tr>
@@ -303,7 +303,7 @@ export function ImportMatrizModal({ open, onOpenChange }: { open: boolean; onOpe
                 Errores por fila ({previewData.errors.length})
               </button>
               {showErrors && (
-                <div className="max-h-40 overflow-auto p-3 text-sm">
+                <div className="p-3 text-sm">
                   {previewData.errors.length === 0 ? (
                     <div className="text-slate-500">Sin errores.</div>
                   ) : (
