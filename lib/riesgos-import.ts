@@ -761,7 +761,7 @@ export async function parseImportWorkbook(buffer: Buffer): Promise<{
 
     if (rowErrors.length > 0) {
       errors.push(...rowErrors)
-      continue
+      // Allow the row to be imported with empty/null fields
     }
 
     validRows += 1
@@ -798,7 +798,7 @@ export async function parseImportWorkbook(buffer: Buffer): Promise<{
       criterio: {
         numExpuestos: parseNumber(raw.numExpuestos).value,
         peorConsecuencia: raw.peorConsecuencia,
-        requisitoLegal: !!requisitoParsed.value,
+        requisitoLegal: requisitoParsed.value ?? false,
       },
       intervencion: {
         eliminacion: raw.eliminacion,

@@ -259,7 +259,7 @@ export function ImportMatrizModal({ open, onOpenChange }: { open: boolean; onOpe
 
             {hasErrors && (
               <div className="text-sm p-3 rounded border border-amber-300 bg-amber-50 text-amber-800">
-                Se detectaron errores en algunas filas. Solo se importarán las filas válidas.
+                Se detectaron errores en algunas filas. Las filas se importarán pero los campos con errores se dejarán vacíos.
               </div>
             )}
 

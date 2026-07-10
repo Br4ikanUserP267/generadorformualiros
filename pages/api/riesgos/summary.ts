@@ -147,29 +147,18 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const dateHasta = parseDate(req.query.dateHasta)
 
     const isUserAdmin = user.role === 'SUPER_ADMIN' || user.role === 'ADMIN';
-    const andConditions: Prisma.MatrizWhereInput[] = [
+    const baseConditions: Prisma.MatrizWhereInput[] = [
       { deletedAt: null }
     ]
 
-    if (search) {
-      andConditions.push({
-        OR: [
-          { area: { contains: search, mode: 'insensitive' } },
-          { responsable: { contains: search, mode: 'insensitive' } },
-          { procesos: { some: { nombre: { contains: search, mode: 'insensitive' } } } },
-          { procesos: { some: { zonas: { some: { nombre: { contains: search, mode: 'insensitive' } } } } } },
-        ],
-      })
-    }
-
     if (tipo) {
-      andConditions.push({
+      baseConditions.push({
         procesos: { some: { nombre: { equals: tipo, mode: 'insensitive' } } },
       })
     }
 
     if (clasificacion) {
-      andConditions.push({
+      baseConditions.push({
         procesos: {
           some: {
             zonas: {
@@ -191,7 +180,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     }
 
     if (dateDesde || dateHasta) {
-      andConditions.push({
+      baseConditions.push({
         fechaElaboracion: {
           ...(dateDesde ? { gte: dateDesde } : {}),
           ...(dateHasta ? { lte: dateHasta } : {}),
@@ -199,7 +188,25 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       })
     }
 
-    const where: Prisma.MatrizWhereInput = andConditions.length > 1 ? { AND: andConditions } : { deletedAt: null }
+    const searchConditions: Prisma.MatrizWhereInput[] = []
+    if (search) {
+      const searchTerms = search.split(/\s+/).filter(Boolean)
+      for (const term of searchTerms) {
+        searchConditions.push({
+          OR: [
+            { area: { contains: term, mode: 'insensitive' } },
+            { responsable: { contains: term, mode: 'insensitive' } },
+            { procesos: { some: { nombre: { contains: term, mode: 'insensitive' } } } },
+            { procesos: { some: { zonas: { some: { nombre: { contains: term, mode: 'insensitive' } } } } } },
+          ],
+        })
+      }
+    }
+
+    const whereBase: Prisma.MatrizWhereInput = baseConditions.length > 1 ? { AND: baseConditions } : { deletedAt: null }
+    
+    const queryConditions = [...baseConditions, ...searchConditions]
+    const where: Prisma.MatrizWhereInput = queryConditions.length > 1 ? { AND: queryConditions } : { deletedAt: null }
 
     const [total, matrices, totalsSource] = await Promise.all([
       prisma.matriz.count({ where }),
@@ -250,7 +257,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         skip,
       }),
       (prisma.matriz.findMany as any)({
-        where,
+        where: whereBase,
         select: {
           procesos: {
             select: {
