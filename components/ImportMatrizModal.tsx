@@ -203,137 +203,153 @@ export function ImportMatrizModal({ open, onOpenChange }: { open: boolean; onOpe
         if (!next) resetState()
       }}
     >
-      <DialogContent className="w-[95vw] max-w-[95vw] sm:max-w-5xl max-h-[92vh] overflow-hidden p-0">
-        <div className="p-6 overflow-y-auto max-h-[92vh]">
-        <DialogHeader>
-          <DialogTitle>Importar matriz desde Excel</DialogTitle>
-        </DialogHeader>
+      <DialogContent className="w-[95vw] max-w-[95vw] sm:max-w-5xl max-h-[92vh] flex flex-col p-0 overflow-hidden bg-white">
+        <div className="px-6 py-4 border-b shrink-0 bg-white">
+          <DialogHeader>
+            <DialogTitle>Importar matriz desde Excel</DialogTitle>
+          </DialogHeader>
+        </div>
 
-        {step === 'upload' && (
-          <div className="space-y-4">
-            <div
-              className="border-2 border-dashed rounded-lg p-8 text-center bg-slate-50"
-              onDragOver={(e) => e.preventDefault()}
-              onDrop={(e) => {
-                e.preventDefault()
-                const file = e.dataTransfer.files?.[0]
-                if (file) uploadFile(file)
-              }}
-            >
-              <div className="text-sm text-slate-600">Arrastra y suelta tu archivo .xlsx/.xls aquí</div>
-              <div className="text-xs text-slate-500 mt-1">o selecciónalo desde tu equipo</div>
-              <div className="mt-4 flex justify-center">
-                <label className="inline-flex items-center">
-                  <Input
-                    type="file"
-                    className="hidden"
-                    accept=".xlsx,.xls"
-                    onChange={(e) => {
-                      const file = e.target.files?.[0]
-                      if (file) uploadFile(file)
-                    }}
-                  />
-                  <span className="px-4 py-2 rounded-md bg-[#2d7a40] text-white cursor-pointer">Seleccionar archivo</span>
-                </label>
-              </div>
-
-              {isLoading && <div className="mt-4 text-sm text-slate-600">Cargando y validando archivo...</div>}
-              {error && <div className="mt-4 text-sm text-red-600">{error}</div>}
-            </div>
-
-          </div>
-        )}
-
-        {step === 'preview' && previewData && (
-          <div className="space-y-4">
-            <div className="text-sm text-slate-700">
-              {previewData.totalRows} filas encontradas, {previewData.errors.length} errores. Mostrando primeras {previewRows.length} filas con todas las columnas.
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm border rounded p-3 bg-slate-50">
-              <div><span className="font-medium">Área / Proceso:</span> {previewData.metadata?.area || '—'}</div>
-              <div><span className="font-medium">Responsable:</span> {previewData.metadata?.responsable || '—'}</div>
-              <div><span className="font-medium">Fecha Elaboración:</span> {previewData.metadata?.fechaElaboracion || '—'}</div>
-              <div><span className="font-medium">Fecha Actualización:</span> {previewData.metadata?.fechaActualizacion || '—'}</div>
-            </div>
-
-            {hasErrors && (
-              <div className="text-sm p-3 rounded border border-amber-300 bg-amber-50 text-amber-800">
-                Se detectaron errores en algunas filas. Las filas se importarán pero los campos con errores se dejarán vacíos.
-              </div>
-            )}
-
-            <div className="overflow-x-auto border rounded">
-              <table className="w-full text-sm">
-                <thead className="bg-slate-100">
-                  <tr>
-                    {PREVIEW_COLUMNS.map((column) => (
-                      <th key={column.key} className="text-left p-2 whitespace-nowrap">{column.label}</th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody>
-                  {previewRows.map((row, idx) => (
-                    <tr key={idx} className="border-t">
-                      {PREVIEW_COLUMNS.map((column) => {
-                        const value = row[column.key]
-                        const full = value === null || value === undefined ? '' : String(value)
-                        return (
-                          <td key={column.key} className="p-2 whitespace-nowrap" title={full}>
-                            {compactPreviewValue(value)}
-                          </td>
-                        )
-                      })}
-                    </tr>
-                  ))}
-                  {previewRows.length === 0 && (
-                    <tr>
-                      <td colSpan={PREVIEW_COLUMNS.length} className="p-4 text-center text-slate-500">No hay filas válidas para previsualizar.</td>
-                    </tr>
-                  )}
-                </tbody>
-              </table>
-            </div>
-
-            <div className="border rounded">
-              <button
-                className="w-full text-left px-3 py-2 text-sm bg-slate-50"
-                onClick={() => setShowErrors((s) => !s)}
+        <div className="p-6 overflow-y-auto flex-1 min-h-0">
+          {step === 'upload' && (
+            <div className="space-y-4">
+              <div
+                className="border-2 border-dashed rounded-lg p-8 text-center bg-slate-50"
+                onDragOver={(e) => e.preventDefault()}
+                onDrop={(e) => {
+                  e.preventDefault()
+                  const file = e.dataTransfer.files?.[0]
+                  if (file) uploadFile(file)
+                }}
               >
-                Errores por fila ({previewData.errors.length})
-              </button>
-              {showErrors && (
-                <div className="p-3 text-sm">
-                  {previewData.errors.length === 0 ? (
-                    <div className="text-slate-500">Sin errores.</div>
-                  ) : (
-                    <ul className="space-y-1">
-                      {previewData.errors.map((e, idx) => (
-                        <li key={`${e.row}-${e.field}-${idx}`}>
-                          Fila {e.row}: {e.message} ({e.field})
-                        </li>
-                      ))}
-                    </ul>
-                  )}
+                <div className="text-sm text-slate-600">Arrastra y suelta tu archivo .xlsx/.xls aquí</div>
+                <div className="text-xs text-slate-500 mt-1">o selecciónalo desde tu equipo</div>
+                <div className="mt-4 flex justify-center">
+                  <label className="inline-flex items-center">
+                    <Input
+                      type="file"
+                      className="hidden"
+                      accept=".xlsx,.xls"
+                      onChange={(e) => {
+                        const file = e.target.files?.[0]
+                        if (file) uploadFile(file)
+                      }}
+                    />
+                    <span className="px-4 py-2 rounded-md bg-[#2d7a40] text-white cursor-pointer">Seleccionar archivo</span>
+                  </label>
+                </div>
+
+                {isLoading && <div className="mt-4 text-sm text-slate-600">Cargando y validando archivo...</div>}
+                {error && <div className="mt-4 text-sm text-red-600">{error}</div>}
+              </div>
+            </div>
+          )}
+
+          {step === 'preview' && previewData && (
+            <div className="space-y-4">
+              <div className="text-sm text-slate-700">
+                {previewData.totalRows} filas encontradas, {previewData.errors.length} errores. Mostrando primeras {previewRows.length} filas con todas las columnas.
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm border rounded p-3 bg-slate-50">
+                <div><span className="font-medium">Área / Proceso:</span> {previewData.metadata?.area || '—'}</div>
+                <div><span className="font-medium">Responsable:</span> {previewData.metadata?.responsable || '—'}</div>
+                <div><span className="font-medium">Fecha Elaboración:</span> {previewData.metadata?.fechaElaboracion || '—'}</div>
+                <div><span className="font-medium">Fecha Actualización:</span> {previewData.metadata?.fechaActualizacion || '—'}</div>
+              </div>
+
+              {hasErrors && (
+                <div className="text-sm p-3 rounded border border-amber-300 bg-amber-50 text-amber-800">
+                  Se detectaron errores en algunas filas. Las filas se importarán pero los campos con errores se dejarán vacíos.
                 </div>
               )}
-            </div>
 
-            <div className="flex justify-end gap-2">
+              <div className="overflow-auto border rounded max-h-[42vh]">
+                <table className="w-full text-sm">
+                  <thead className="bg-slate-100">
+                    <tr>
+                      {PREVIEW_COLUMNS.map((column) => (
+                        <th key={column.key} className="text-left p-2 whitespace-nowrap">{column.label}</th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {previewRows.map((row, idx) => (
+                      <tr key={idx} className="border-t">
+                        {PREVIEW_COLUMNS.map((column) => {
+                          const value = row[column.key]
+                          const full = value === null || value === undefined ? '' : String(value)
+                          return (
+                            <td key={column.key} className="p-2 whitespace-nowrap" title={full}>
+                              {compactPreviewValue(value)}
+                            </td>
+                          )
+                        })}
+                      </tr>
+                    ))}
+                    {previewRows.length === 0 && (
+                      <tr>
+                        <td colSpan={PREVIEW_COLUMNS.length} className="p-4 text-center text-slate-500">No hay filas válidas para previsualizar.</td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+
+              <div className="border rounded">
+                <button
+                  className="w-full text-left px-3 py-2 text-sm bg-slate-50 font-medium"
+                  onClick={() => setShowErrors((s) => !s)}
+                >
+                  Errores por fila ({previewData.errors.length})
+                </button>
+                {showErrors && (
+                  <div className="p-3 text-sm max-h-40 overflow-y-auto">
+                    {previewData.errors.length === 0 ? (
+                      <div className="text-slate-500">Sin errores.</div>
+                    ) : (
+                      <ul className="space-y-1">
+                        {previewData.errors.map((e, idx) => (
+                          <li key={`${e.row}-${e.field}-${idx}`}>
+                            Fila {e.row}: {e.message} ({e.field})
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
+          {step === 'result' && (
+            <div className="space-y-4">
+              {!resultError && createdMatrizId ? (
+                <div className="text-sm text-green-700">Matriz importada correctamente.</div>
+              ) : (
+                <div className="text-sm text-red-600">{resultError || 'Ocurrió un error durante la importación.'}</div>
+              )}
+            </div>
+          )}
+        </div>
+
+        {/* Footer */}
+        <div className="px-6 py-4 border-t bg-slate-50 shrink-0 flex justify-end gap-2">
+          {step === 'upload' && (
+            <Button variant="outline" onClick={() => onOpenChange(false)}>Cancelar</Button>
+          )}
+          {step === 'preview' && previewData && (
+            <>
               <Button variant="outline" onClick={resetState}>Cancelar</Button>
               <Button onClick={confirmImport} disabled={isLoading || previewData.validRows === 0}>
                 {isLoading ? 'Importando...' : 'Confirmar importación'}
               </Button>
-            </div>
-          </div>
-        )}
-
-        {step === 'result' && (
-          <div className="space-y-4">
-            {!resultError && createdMatrizId ? (
-              <>
-                <div className="text-sm text-green-700">Matriz importada correctamente.</div>
-                <div className="flex justify-end gap-2">
+            </>
+          )}
+          {step === 'result' && (
+            <>
+              {!resultError && createdMatrizId ? (
+                <>
                   <Button variant="outline" onClick={resetState}>Cerrar</Button>
                   <Button
                     onClick={() => {
@@ -344,18 +360,12 @@ export function ImportMatrizModal({ open, onOpenChange }: { open: boolean; onOpe
                   >
                     Ver matriz
                   </Button>
-                </div>
-              </>
-            ) : (
-              <>
-                <div className="text-sm text-red-600">{resultError || 'Ocurrió un error durante la importación.'}</div>
-                <div className="flex justify-end gap-2">
-                  <Button variant="outline" onClick={resetState}>Volver</Button>
-                </div>
-              </>
-            )}
-          </div>
-        )}
+                </>
+              ) : (
+                <Button variant="outline" onClick={resetState}>Volver</Button>
+              )}
+            </>
+          )}
         </div>
       </DialogContent>
     </Dialog>
