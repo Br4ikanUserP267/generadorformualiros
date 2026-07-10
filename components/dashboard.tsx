@@ -126,6 +126,7 @@ export function Dashboard() {
   const [facetTipos, setFacetTipos] = useState<string[]>([])
   const summariesCacheRef = useRef<Record<string, any>>({})
   const prefetchTokenRef = useRef(0)
+  const fetchTokenRef = useRef(0)
   const [pageSize, setPageSize] = useState(10)
 
   const buildSummaryParams = (page: number) => {
@@ -177,30 +178,33 @@ export function Dashboard() {
 
   const loadSummaries = async (page = 1) => {
     setIsLoading(true)
+    const currentToken = ++fetchTokenRef.current
     try {
       const params = buildSummaryParams(page)
       const key = params.toString()
       const cached = summariesCacheRef.current[key]
       if (cached) {
-        applySummaryPayload(cached, page)
+        if (currentToken === fetchTokenRef.current) applySummaryPayload(cached, page)
       } else {
         const res = await apiFetch(`/api/riesgos/summary?${key}`)
         if (!res.ok) throw new Error('No se pudo cargar el resumen')
         const body = await res.json()
         summariesCacheRef.current[key] = body
-        applySummaryPayload(body, page)
+        if (currentToken === fetchTokenRef.current) applySummaryPayload(body, page)
       }
 
-      const currentBody = summariesCacheRef.current[key]
-      const maxPage = Number(currentBody?.totalPages || 1)
-      if (page === 1 && maxPage > 1) {
-        const token = ++prefetchTokenRef.current
-        void prefetchRemainingPages(2, maxPage, token)
+      if (currentToken === fetchTokenRef.current) {
+        const currentBody = summariesCacheRef.current[key]
+        const maxPage = Number(currentBody?.totalPages || 1)
+        if (page === 1 && maxPage > 1) {
+          const token = ++prefetchTokenRef.current
+          void prefetchRemainingPages(2, maxPage, token)
+        }
       }
     } catch (error) {
       console.error('Error loading matrix summaries:', error)
     } finally {
-      setIsLoading(false)
+      if (currentToken === fetchTokenRef.current) setIsLoading(false)
     }
   }
 
