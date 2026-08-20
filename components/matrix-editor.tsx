@@ -17,6 +17,54 @@ import { apiFetch } from '@/lib/utils'
 
 function makeId(prefix = '') { return prefix + Math.random().toString(36).slice(2,9) }
 
+function getTodayDate() {
+  const today = new Date()
+  const year = today.getFullYear()
+  const month = String(today.getMonth() + 1).padStart(2, '0')
+  const day = String(today.getDate()).padStart(2, '0')
+  return `${year}-${month}-${day}`
+}
+
+function formatDateDisplay(value: string) {
+  const match = String(value || '').match(/^(\d{4})-(\d{2})-(\d{2})$/)
+  return match ? `${match[3]}/${match[2]}/${match[1]}` : ''
+}
+
+function parseDateDisplay(value: string) {
+  const match = value.trim().match(/^(\d{2})\/(\d{2})\/(\d{4})$/)
+  if (!match) return ''
+  const [, day, month, year] = match
+  const date = new Date(Number(year), Number(month) - 1, Number(day))
+  if (date.getFullYear() !== Number(year) || date.getMonth() !== Number(month) - 1 || date.getDate() !== Number(day)) return ''
+  return `${year}-${month}-${day}`
+}
+
+function DisplayDateInput({ value, onChange, className }: { value: string; onChange: (value: string) => void; className: string }) {
+  const [displayValue, setDisplayValue] = useState(() => formatDateDisplay(value))
+
+  useEffect(() => {
+    setDisplayValue(formatDateDisplay(value))
+  }, [value])
+
+  return (
+    <Input
+      type="text"
+      inputMode="numeric"
+      placeholder="DD/MM/AAAA"
+      aria-label="Fecha en formato día/mes/año"
+      className={className}
+      value={displayValue}
+      onChange={(event) => {
+        const nextValue = event.target.value.replace(/[^\d/]/g, '').slice(0, 10)
+        setDisplayValue(nextValue)
+        const parsedValue = parseDateDisplay(nextValue)
+        if (parsedValue) onChange(parsedValue)
+      }}
+      onBlur={() => setDisplayValue(formatDateDisplay(value))}
+    />
+  )
+}
+
 // risk interpretation helpers (GTC-45 rules)
 function interpProbabilidad(np: number) {
   if (!np) return { label: '', color: '#9CA3AF' }
@@ -124,7 +172,7 @@ export default function MatrixEditor({ id }: { id?: string }) {
                 })
               })
             })
-            setMatrix(withStableLabels)
+            setMatrix({ ...withStableLabels, fecha_actualizacion: withStableLabels.fecha_actualizacion || getTodayDate() })
             const p = withStableLabels.procesos?.[0]
             const z = p?.zonas?.[0]
             const a = z?.actividades?.[0]
@@ -140,8 +188,8 @@ export default function MatrixEditor({ id }: { id?: string }) {
         id: makeId('m-'),
         area: '',
         responsable: '',
-        fecha_elaboracion: new Date().toISOString().split('T')[0],
-        fecha_actualizacion: '',
+        fecha_elaboracion: getTodayDate(),
+        fecha_actualizacion: getTodayDate(),
         procesos: []
       })
     }
@@ -859,6 +907,7 @@ export default function MatrixEditor({ id }: { id?: string }) {
   async function saveMatrix() {
     try {
       let currentMatrix = { ...matrix }
+      currentMatrix.fecha_actualizacion = getTodayDate()
       
       // Step 1: Pre-upload base64 files to decouple them from the main save payload
       if (currentMatrix.files && currentMatrix.files.length > 0) {
@@ -945,8 +994,12 @@ export default function MatrixEditor({ id }: { id?: string }) {
         throw new Error(details || 'Error al guardar en el servidor')
       }
 
+      const saved = await res.json().catch(() => ({}))
+      setMatrix(currentMatrix)
       toast({ title: 'Éxito', description: 'La matriz se ha guardado correctamente en la base de datos.' })
-      router.push('/dashboard')
+      if (isNew && saved.id) {
+        router.push(`/matriz/${saved.id}`)
+      }
     } catch (err: any) {
       console.error(err)
       toast({ title: 'Error', variant: 'destructive', description: err.message || 'No se pudo guardar la matriz' })
@@ -1076,7 +1129,7 @@ export default function MatrixEditor({ id }: { id?: string }) {
           <img src="/matriz-riesgos/csm_logo_long.png" alt="CSM" className="h-7 object-contain" />
         </div>
 
-        <div className="flex-1 grid grid-cols-1 sm:grid-cols-3 gap-3 w-full px-0 lg:px-6">
+        <div className="flex-1 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 w-full px-0 lg:px-6">
             <div className="flex flex-col">
               <label className="text-[10px] font-bold text-[#8aa08f] uppercase tracking-widest ml-1 mb-0.5">Área / Proceso</label>
               <Input className="h-9 w-full rounded-xl border-[#d1e2d6] bg-[#f0f9f1] text-[#1F7D3E] font-bold focus:ring-[#1F7D3E]/20" value={matrix.area} onChange={(e:any)=> updateMatrix((m:any)=>{ m.area = e.target.value; return m })} />
@@ -1087,7 +1140,11 @@ export default function MatrixEditor({ id }: { id?: string }) {
             </div>
             <div className="flex flex-col">
               <label className="text-[10px] font-bold text-[#8aa08f] uppercase tracking-widest ml-1 mb-0.5">Elaboración</label>
-              <Input type="date" className="h-9 w-full rounded-xl border-[#d1e2d6] bg-[#f0f9f1] text-[#1F7D3E] text-[12px] focus:ring-[#1F7D3E]/20" value={matrix.fecha_elaboracion} onChange={(e:any)=> updateMatrix((m:any)=>{ m.fecha_elaboracion = e.target.value; return m })} />
+              <DisplayDateInput className="h-9 w-full rounded-xl border-[#d1e2d6] bg-[#f0f9f1] text-[#1F7D3E] text-[12px] focus:ring-[#1F7D3E]/20" value={matrix.fecha_elaboracion} onChange={(value)=> updateMatrix((m:any)=>{ m.fecha_elaboracion = value; return m })} />
+            </div>
+            <div className="flex flex-col">
+              <label className="text-[10px] font-bold text-[#8aa08f] uppercase tracking-widest ml-1 mb-0.5">Fecha actualización</label>
+              <DisplayDateInput className="h-9 w-full rounded-xl border-[#d1e2d6] bg-[#f0f9f1] text-[#1F7D3E] text-[12px] focus:ring-[#1F7D3E]/20" value={matrix.fecha_actualizacion || ''} onChange={(value)=> updateMatrix((m:any)=>{ m.fecha_actualizacion = value; return m })} />
             </div>
         </div>
 

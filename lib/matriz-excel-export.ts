@@ -142,6 +142,8 @@ function colNumberToLetter(n: number): string {
 
 function formatDate(dateStr?: string): string {
   if (!dateStr) return ''
+  const isoDate = String(dateStr).match(/^(\d{4})-(\d{2})-(\d{2})$/)
+  if (isoDate) return `${isoDate[3]}/${isoDate[2]}/${isoDate[1]}`
   try {
     const d = new Date(dateStr)
     if (isNaN(d.getTime())) return ''
