@@ -190,6 +190,19 @@ export function MatrixPreview({ matrizId, onClose }: MatrixPreviewProps) {
   }, [matrizId])
 
   useEffect(() => {
+    const previousBodyOverflow = document.body.style.overflow
+    const previousHtmlOverflow = document.documentElement.style.overflow
+
+    document.body.style.overflow = 'hidden'
+    document.documentElement.style.overflow = 'hidden'
+
+    return () => {
+      document.body.style.overflow = previousBodyOverflow
+      document.documentElement.style.overflow = previousHtmlOverflow
+    }
+  }, [])
+
+  useEffect(() => {
     const handleMouseMove = (e: MouseEvent) => {
       if (!resizingColumn) return
       const diff = e.clientX - resizeStartX
@@ -328,32 +341,90 @@ export function MatrixPreview({ matrizId, onClose }: MatrixPreviewProps) {
     }
   }
 
+  const totalProcesos = matrizData.procesos?.length || 0
+  const totalZonas = (matrizData.procesos || []).reduce((acc: number, proceso: any) => acc + (proceso.zonas?.length || 0), 0)
+  const totalActividades = (matrizData.procesos || []).reduce((acc: number, proceso: any) => (
+    acc + (proceso.zonas || []).reduce((zonaAcc: number, zona: any) => zonaAcc + (zona.actividades?.length || 0), 0)
+  ), 0)
+  const totalPeligros = rows.length
+  const riesgoBuckets = rows.reduce((acc: { alto: number; medio: number; bajo: number }, row: any) => {
+    const np = Number(row.np || 0)
+    if (np >= 10) acc.alto += 1
+    else if (np >= 6) acc.medio += 1
+    else acc.bajo += 1
+    return acc
+  }, { alto: 0, medio: 0, bajo: 0 })
+
   return (
-    <div className="fixed inset-0 w-full h-full bg-white z-[9999] flex flex-col overflow-hidden animate-in fade-in zoom-in duration-300">
+    <div className="fixed inset-0 w-full h-full bg-[linear-gradient(180deg,#f4f8f4_0%,#edf4ef_100%)] z-[9999] flex flex-col overflow-hidden overscroll-none animate-in fade-in zoom-in duration-300">
       {/* Top Header */}
-      <div className="flex items-center justify-between px-4 sm:px-6 py-3 sm:py-4 border-b border-[#e2e9e4] bg-[#f8faf9]/50 backdrop-blur-sm sticky top-0 z-50">
-        <div className="flex items-center gap-6">
+      <div className="flex items-center justify-between px-4 sm:px-6 py-4 border-b border-[#dbe8de] bg-white/90 backdrop-blur-md sticky top-0 z-50 shadow-sm">
+        <div className="flex items-center gap-4 sm:gap-6 min-w-0">
           <button 
             onClick={onClose}
-            className="flex items-center justify-center p-2 rounded-full hover:bg-gray-100 transition-colors text-[#5e6b62]"
+            className="flex items-center justify-center w-11 h-11 rounded-2xl border border-[#dbe8de] bg-[#f8fbf8] hover:bg-white transition-colors text-[#355244] shadow-sm shrink-0"
             title="Volver"
           >
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
           </button>
           
-          <div className="flex items-center gap-4">
-            <img src="/matriz-riesgos/csm_logo_long.png" alt="Logo" className="h-8 object-contain" />
-            <div className="w-[1px] h-6 bg-[#e2e9e4]" />
-            <div>
-              <h2 className="text-sm font-bold text-[#1F7D3E] uppercase tracking-wide">Vista Previa de Matriz</h2>
-              <p className="text-[10px] font-bold text-[#8aa08f] uppercase tracking-widest">{matrizData.area || 'Matriz de Riesgos'}</p>
+          <div className="flex items-center gap-4 min-w-0">
+            <div className="hidden sm:flex h-12 w-12 items-center justify-center rounded-2xl bg-[radial-gradient(circle_at_top_left,#1F7D3E_0%,#0e4d24_100%)] text-white shadow-lg shadow-[#1F7D3E]/20">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 7h18"/><path d="M8 3v8"/><path d="M16 3v8"/><path d="M5 12h14v7a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2z"/></svg>
+            </div>
+            <div className="min-w-0">
+              <div className="flex items-center gap-3 flex-wrap">
+                <span className="inline-flex items-center rounded-full bg-[#eef7f0] px-3 py-1 text-[10px] font-black uppercase tracking-[0.18em] text-[#1F7D3E]">
+                  Preview
+                </span>
+                <span className="text-[10px] font-bold uppercase tracking-[0.18em] text-[#8aa08f]">
+                  Matriz de Riesgos
+                </span>
+              </div>
+              <h2 className="mt-1 text-lg sm:text-xl font-black text-[#163522] truncate">Vista Previa de Matriz</h2>
+              <p className="text-[11px] sm:text-xs font-bold text-[#7e9586] uppercase tracking-[0.16em] truncate">{matrizData.area || 'Matriz de Riesgos'}</p>
             </div>
           </div>
         </div>
       </div>
 
+      <div className="flex-1 overflow-y-auto overflow-x-hidden">
       {/* Metadata Fields Section */}
-      <div className="px-4 sm:px-8 py-4 sm:py-6 bg-white border-b border-[#e2e9e4] grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-6">
+      <div className="px-4 sm:px-8 py-5 sm:py-6 border-b border-[#dbe8de] bg-[linear-gradient(180deg,rgba(255,255,255,0.94)_0%,rgba(247,251,248,0.96)_100%)] space-y-5">
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4 sm:gap-5">
+          {[
+            { label: 'Area / Proceso', value: matrizData.area || '—', accent: 'bg-[#edf8ef] border-[#cae4cf] text-[#1F7D3E]' },
+            { label: 'Fecha de Actualizacion', value: matrizData.fecha_actualizacion || '—', accent: 'bg-white border-[#dfe9e2] text-[#163522]' },
+            { label: 'Fecha de Elaboracion', value: matrizData.fecha_elaboracion || '—', accent: 'bg-white border-[#dfe9e2] text-[#163522]' },
+            { label: 'Responsable', value: matrizData.responsable || '—', accent: 'bg-white border-[#dfe9e2] text-[#163522]' },
+          ].map((item) => (
+            <div key={item.label} className="rounded-2xl border border-[#e4ede6] bg-white p-4 shadow-[0_8px_24px_rgba(17,24,39,0.04)]">
+              <div className="text-[10px] font-black uppercase tracking-[0.16em] text-[#8aa08f]">{item.label}</div>
+              <div className={`mt-3 rounded-2xl border px-4 py-3.5 text-sm font-bold ${item.accent}`}>
+                {item.value}
+              </div>
+            </div>
+          ))}
+        </div>
+
+        <div className="grid grid-cols-2 md:grid-cols-4 xl:grid-cols-7 gap-3">
+          {[
+            { label: 'Procesos', value: totalProcesos, tone: 'text-[#1F7D3E] bg-[#eef7f0] border-[#d6eadb]' },
+            { label: 'Zonas', value: totalZonas, tone: 'text-[#22577a] bg-[#edf7fb] border-[#d7ebf5]' },
+            { label: 'Actividades', value: totalActividades, tone: 'text-[#7c5c00] bg-[#fff8e6] border-[#f1e3b1]' },
+            { label: 'Peligros', value: totalPeligros, tone: 'text-[#7a1f1f] bg-[#fff1f1] border-[#f2d0d0]' },
+            { label: 'Riesgo Alto', value: riesgoBuckets.alto, tone: 'text-[#b42318] bg-[#fff0ef] border-[#f4c7c3]' },
+            { label: 'Riesgo Medio', value: riesgoBuckets.medio, tone: 'text-[#b26b00] bg-[#fff7e8] border-[#f0d5a6]' },
+            { label: 'Riesgo Bajo', value: riesgoBuckets.bajo, tone: 'text-[#166534] bg-[#ecfdf3] border-[#cdebd7]' },
+          ].map((card) => (
+            <div key={card.label} className={`rounded-2xl border px-4 py-3 shadow-sm ${card.tone}`}>
+              <div className="text-[10px] font-black uppercase tracking-[0.14em] opacity-70">{card.label}</div>
+              <div className="mt-2 text-2xl font-black leading-none">{card.value}</div>
+            </div>
+          ))}
+        </div>
+      </div>
+      <div className="hidden px-4 sm:px-8 py-4 sm:py-6 bg-white border-b border-[#e2e9e4] grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4 sm:gap-6">
         <div className="space-y-1.5">
           <label className="text-[10px] font-extrabold text-[#8aa08f] uppercase tracking-wider block">Área / Proceso</label>
           <div className="bg-[#f0f9f1] border border-[#d1e2d6] rounded-xl px-4 py-2.5 text-sm font-bold text-[#1F7D3E]">
@@ -363,7 +434,13 @@ export function MatrixPreview({ matrizId, onClose }: MatrixPreviewProps) {
         <div className="space-y-1.5">
           <label className="text-[10px] font-extrabold text-[#8aa08f] uppercase tracking-wider block">Fecha de Actualización</label>
           <div className="bg-white border border-[#e2e9e4] rounded-xl px-4 py-2.5 text-sm font-medium text-[#2c3630]">
-            {matrizData.fecha_elaboracion || '—'}
+            {matrizData.fecha_actualizacion || '—'}
+          </div>
+        </div>
+        <div className="space-y-1.5">
+          <label className="text-[10px] font-extrabold text-[#8aa08f] uppercase tracking-wider block">Fecha de Elaboracion</label>
+          <div className="bg-white border border-[#e2e9e4] rounded-xl px-4 py-2.5 text-sm font-medium text-[#2c3630]">
+            {matrizData.fecha_elaboracion || 'â€”'}
           </div>
         </div>
         <div className="space-y-1.5">
@@ -377,11 +454,26 @@ export function MatrixPreview({ matrizId, onClose }: MatrixPreviewProps) {
 
 
       {/* Main Table Content */}
-      <div className="flex-1 min-h-0 bg-[#f8faf9] px-4 sm:px-8 pb-4 sm:pb-8 flex flex-col">
-        <div className="bg-white rounded-2xl border border-[#e2e9e4] shadow-xl shadow-gray-200/50 flex-1 overflow-hidden mt-4 flex flex-col">
+      <div className="px-4 sm:px-8 pb-4 sm:pb-8 pt-5">
+        <div className="rounded-[28px] border border-[#dbe8de] bg-white shadow-[0_18px_60px_rgba(23,40,28,0.08)] overflow-hidden flex flex-col min-h-[62vh]">
+          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3 px-5 sm:px-6 py-4 border-b border-[#e4ede6] bg-[linear-gradient(180deg,#fbfdfb_0%,#f4f8f5_100%)]">
+            <div>
+              <div className="text-[10px] font-black uppercase tracking-[0.18em] text-[#8aa08f]">Detalle Completo</div>
+              <h3 className="mt-1 text-base sm:text-lg font-black text-[#163522]">Tabla consolidada de peligros y controles</h3>
+              <p className="mt-1 text-xs text-[#6c8374]">Scroll horizontally to review all fields. Column headers can still be renamed and resized.</p>
+            </div>
+            <div className="flex items-center gap-2 flex-wrap">
+              <span className="inline-flex items-center rounded-full border border-[#dbe8de] bg-white px-3 py-1.5 text-[11px] font-bold text-[#355244]">
+                {columns.length} columnas
+              </span>
+              <span className="inline-flex items-center rounded-full border border-[#dbe8de] bg-white px-3 py-1.5 text-[11px] font-bold text-[#355244]">
+                {rows.length} registros
+              </span>
+            </div>
+          </div>
           <div 
             ref={tableContainerRef}
-            className="flex-1 overflow-auto"
+            className="overflow-auto bg-[linear-gradient(180deg,#ffffff_0%,#fcfdfc_100%)] max-h-[72vh]"
           >
             <table className="w-full border-collapse table-fixed text-[11px] font-sans">
               <thead className="sticky top-0 z-10">
@@ -406,7 +498,7 @@ export function MatrixPreview({ matrizId, onClose }: MatrixPreviewProps) {
               <tbody className="divide-y divide-[#e2e9e4]/50">
                 {rows.length === 0 ? (
                   <tr>
-                    <td colSpan={columns.length} className="px-8 py-20 text-center text-[#5e6b62] font-medium italic bg-gray-50/50">
+                    <td colSpan={columns.length} className="px-8 py-20 text-center text-[#5e6b62] font-medium italic bg-[#fbfdfb]">
                       No se encontraron registros en esta matriz
                     </td>
                   </tr>
@@ -422,7 +514,7 @@ export function MatrixPreview({ matrizId, onClose }: MatrixPreviewProps) {
                       if (isCollapsed) {
                         elements.push(
                           <tr key={`zona-c-${i}`} className="group cursor-pointer hover:bg-[#f0f9f1] transition-colors" onClick={() => toggleZona(zonaName)}>
-                            <td colSpan={columns.length} className="px-6 py-3 bg-[#f8faf9] border-r border-[#e2e9e4] last:border-r-0 font-bold text-[#1F7D3E] flex items-center gap-2">
+                            <td colSpan={columns.length} className="px-6 py-3 bg-[#f7fbf8] border-r border-[#e2e4e4] last:border-r-0 font-bold text-[#1F7D3E] flex items-center gap-2">
                               <span className="text-xs">▶</span> {zonaName} <span className="text-[9px] font-normal text-[#8aa08f]">(Expandir)</span>
                             </td>
                           </tr>
@@ -435,7 +527,7 @@ export function MatrixPreview({ matrizId, onClose }: MatrixPreviewProps) {
                       for (let r = i; r < end; r++) {
                         const row = rows[r]
                         elements.push(
-                          <tr key={`row-${r}`} className="hover:bg-gray-50/50 transition-colors">
+                          <tr key={`row-${r}`} className={`${r % 2 === 0 ? 'bg-white' : 'bg-[#fbfdfb]'} hover:bg-[#f5faf6] transition-colors`}>
                             {columns.map((col, colIdx) => {
                               const value = row[col.key as keyof typeof row]
                               const isNumeric = ['nd', 'ne', 'np', 'nc', 'nr', 'numExpuestos'].includes(col.key)
@@ -450,7 +542,7 @@ export function MatrixPreview({ matrizId, onClose }: MatrixPreviewProps) {
                                   <td 
                                     key={col.key} 
                                     rowSpan={span} 
-                                    className={`px-4 py-3 border-r border-[#e2e9e4] last:border-r-0 align-top text-[#2c3630] leading-relaxed ${isEvaluationField ? 'whitespace-nowrap' : 'break-words font-medium'} ${col.key === 'zona' ? 'cursor-pointer hover:bg-gray-100 transition-colors' : ''} ${isNumeric ? 'text-center' : 'text-left'}`}
+                                    className={`px-4 py-3.5 border-r border-[#e2e9e4] last:border-r-0 align-top text-[#2c3630] leading-relaxed ${isEvaluationField ? 'whitespace-nowrap' : 'break-words font-medium'} ${col.key === 'zona' ? 'cursor-pointer hover:bg-[#eef7f0] transition-colors' : ''} ${isNumeric ? 'text-center' : 'text-left'}`}
                                     style={evalStyle}
                                     onClick={col.key === 'zona' ? () => toggleZona(zonaName) : undefined}
                                   >
@@ -464,7 +556,7 @@ export function MatrixPreview({ matrizId, onClose }: MatrixPreviewProps) {
                               return (
                                 <td 
                                   key={col.key} 
-                                  className={`px-4 py-3 border-r border-[#e2e9e4] last:border-r-0 align-top text-[#2c3630] leading-relaxed ${isEvaluationField ? 'whitespace-nowrap' : 'break-words font-medium'} ${isNumeric ? 'text-center' : 'text-left'}`}
+                                  className={`px-4 py-3.5 border-r border-[#e2e9e4] last:border-r-0 align-top text-[#2c3630] leading-relaxed ${isEvaluationField ? 'whitespace-nowrap' : 'break-words font-medium'} ${isNumeric ? 'text-center' : 'text-left'}`}
                                   style={bgStyle}
                                 >
                                   {col.key === 'requisitoLegal' || col.key === 'cumple' ? (
@@ -487,6 +579,7 @@ export function MatrixPreview({ matrizId, onClose }: MatrixPreviewProps) {
             </table>
           </div>
         </div>
+      </div>
       </div>
     </div>
   )
@@ -533,8 +626,8 @@ const HeaderCell = ({
       style={{
         border: '1px solid #e2e9e4',
         padding: '0',
-        backgroundColor: '#f8faf9',
-        color: '#5e6b62',
+        background: 'linear-gradient(180deg, #f8fbf8 0%, #eff6f1 100%)',
+        color: '#355244',
         fontWeight: 'bold',
         textAlign: 'center',
         position: 'relative',
@@ -549,14 +642,14 @@ const HeaderCell = ({
           onChange={(e) => setLocalLabel(e.target.value)}
           onBlur={commit}
           onKeyDown={handleKeyDown}
-          className="bg-transparent border-none text-center w-full focus:bg-white/50 outline-none px-4 py-3 m-0 transition-colors"
+          className="bg-transparent border-none text-center w-full focus:bg-white/70 outline-none px-4 py-3.5 m-0 transition-colors"
           style={{ 
             fontSize: '10px', 
-            fontWeight: 'bold',
-            color: '#5e6b62', 
+            fontWeight: '900',
+            color: '#355244', 
             textAlign: 'center', 
             textTransform: 'uppercase',
-            letterSpacing: '0.05em',
+            letterSpacing: '0.12em',
             fontFamily: 'inherit',
             cursor: 'text'
           }}

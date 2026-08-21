@@ -1,7 +1,7 @@
 "use client"
 
 import React from 'react'
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
 
 export default function ConfirmModal({ open, title, message, confirmLabel = 'Eliminar', cancelLabel = 'Cancelar', onConfirm, onCancel }: {
@@ -18,6 +18,7 @@ export default function ConfirmModal({ open, title, message, confirmLabel = 'Eli
       <DialogContent>
         <DialogHeader>
           <DialogTitle>{title || 'Confirmar'}</DialogTitle>
+          <DialogDescription>{message || 'Confirmación de acción.'}</DialogDescription>
         </DialogHeader>
         <div className="py-2">{message || '¿Estás seguro?'}</div>
         <DialogFooter>

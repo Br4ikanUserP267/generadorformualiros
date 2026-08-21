@@ -2,7 +2,7 @@
 
 import React, { useMemo, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { apiFetch } from '@/lib/utils'
@@ -207,6 +207,9 @@ export function ImportMatrizModal({ open, onOpenChange }: { open: boolean; onOpe
         <div className="px-6 py-4 border-b shrink-0 bg-white">
           <DialogHeader>
             <DialogTitle>Importar matriz desde Excel</DialogTitle>
+            <DialogDescription>
+              Carga un archivo de Excel para previsualizarlo, validarlo y crear una matriz nueva.
+            </DialogDescription>
           </DialogHeader>
         </div>
 

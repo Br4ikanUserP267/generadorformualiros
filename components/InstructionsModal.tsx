@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react'
 import { INITIAL_RIESGOS_DATA } from '@/lib/riesgos-data'
+import { apiFetch } from '@/lib/utils'
 
 function EditableCell({ value, onSave, className }: { value: string, onSave: (v: string) => void, className?: string }) {
   const [isEditing, setIsEditing] = useState(false)
@@ -54,7 +55,7 @@ export function InstructionsModal({ open, onClose }: InstructionsModalProps) {
   useEffect(() => {
     const loadData = async () => {
       try {
-        const res = await fetch('/api/configuracion?key=riesgos_data')
+        const res = await apiFetch('/api/configuracion?key=riesgos_data')
         if (res.ok) {
           const config = await res.json()
           if (config && config.valor) {
@@ -66,7 +67,7 @@ export function InstructionsModal({ open, onClose }: InstructionsModalProps) {
                if (initialNatural) {
                  loadedData[naturalIdx].categories = initialNatural.categories;
                  // Database will be updated on next user edit, or we can just use the merged state
-                 fetch('/api/configuracion?key=riesgos_data', {
+                 apiFetch('/api/configuracion?key=riesgos_data', {
                    method: 'POST',
                    headers: { 'Content-Type': 'application/json' },
                    body: JSON.stringify({ valor: loadedData })
@@ -86,7 +87,7 @@ export function InstructionsModal({ open, onClose }: InstructionsModalProps) {
   const handleSaveRiesgosData = async (newData: any) => {
     setRiesgosData(newData)
     try {
-      await fetch('/api/configuracion?key=riesgos_data', {
+      await apiFetch('/api/configuracion?key=riesgos_data', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ valor: newData })

@@ -7,7 +7,7 @@ import { Badge } from '@/components/ui/badge'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
 import { apiFetch } from '@/lib/utils'
 import { useAuth } from '@/lib/auth-context'
 import { toast } from '@/hooks/use-toast'
@@ -416,7 +416,7 @@ export function PriorizacionRiesgos() {
       </main>
 
       <Dialog open={showModal} onOpenChange={setShowModal}>
-        <DialogContent className="w-[95vw] max-w-[95vw] sm:max-w-5xl md:max-w-7xl max-h-[90vh] overflow-y-auto p-3 sm:p-6">
+        <DialogContent aria-describedby={undefined} className="w-[95vw] max-w-[95vw] sm:max-w-5xl md:max-w-7xl max-h-[90vh] overflow-y-auto p-3 sm:p-6">
           <DialogHeader>
             <DialogTitle className="text-xl font-bold text-[#1F7D3E]">Intervención de Riesgo</DialogTitle>
           </DialogHeader>

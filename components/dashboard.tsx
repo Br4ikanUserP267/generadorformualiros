@@ -10,6 +10,8 @@ import { exportMatrizToExcel } from '@/lib/matriz-excel-export'
 import type { Riesgo } from '@/lib/types'
 import { apiFetch } from '@/lib/utils'
 import { InstructionsModal } from './InstructionsModal'
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog'
+import { VersionMatrixDetailView } from '@/components/version-matrix-detail-view'
 
 const Icons = {
   asistencial: <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M6 2a2 2 0 100 4 2 2 0 000-4z" stroke="currentColor" strokeWidth="1.1"/><path d="M2 10c0-2.2 1.8-4 4-4s4 1.8 4 4" stroke="currentColor" strokeWidth="1.1" strokeLinecap="round"/></svg>,
@@ -102,6 +104,270 @@ const COLORS = [
   {bg:'#e8f5e9',txt:'#198754',lbl:'Bajo'},
 ]
 
+type MatrixVersionSummary = {
+  id: string
+  timestamp: string
+  userName: string
+  userEmail: string
+  action: string
+  title: string
+  lines: string[]
+}
+
+type MatrixVersionDetail = {
+  id: string
+  timestamp: string
+  userName: string
+  userEmail: string
+  action: string
+  changes: string
+  before: string
+}
+
+function safeParseJson(value: string) {
+  if (!value) return null
+  try {
+    return JSON.parse(value)
+  } catch {
+    return null
+  }
+}
+
+function unwrapCreateList(value: any): any[] {
+  if (Array.isArray(value)) return value
+  if (value && typeof value === 'object' && Array.isArray(value.create)) return value.create
+  return []
+}
+
+function unwrapVersionData(value: any) {
+  if (!value || typeof value !== 'object') return null
+  return value.data && typeof value.data === 'object' ? value.data : value
+}
+
+function countStructure(procesos: any[] = []) {
+  let procesosCount = 0
+  let zonasCount = 0
+  let actividadesCount = 0
+  let peligrosCount = 0
+
+  for (const proceso of unwrapCreateList(procesos)) {
+    procesosCount += 1
+    for (const zona of unwrapCreateList(proceso?.zonas)) {
+      zonasCount += 1
+      for (const actividad of unwrapCreateList(zona?.actividades)) {
+        actividadesCount += 1
+        peligrosCount += unwrapCreateList(actividad?.peligros).length
+      }
+    }
+  }
+
+  return { procesosCount, zonasCount, actividadesCount, peligrosCount }
+}
+
+function normalizeVersionMatrix(value: any) {
+  const data = unwrapVersionData(value)
+  if (!data || typeof data !== 'object') return null
+
+  return {
+    area: data.area || '',
+    responsable: data.responsable || '',
+    fechaElaboracion: data.fecha_elaboracion || data.fechaElaboracion || '',
+    fechaActualizacion: data.fecha_actualizacion || data.fechaActualizacion || '',
+    files: unwrapCreateList(data.archivos?.create).length > 0
+      ? unwrapCreateList(data.archivos?.create)
+      : Array.isArray(data.files)
+        ? data.files
+        : [],
+    procesos: unwrapCreateList(data.procesos).map((proceso: any) => ({
+      nombre: proceso?.nombre || '',
+      zonas: unwrapCreateList(proceso?.zonas).map((zona: any) => ({
+        nombre: zona?.nombre || '',
+        actividades: unwrapCreateList(zona?.actividades).map((actividad: any) => ({
+          nombre: actividad?.nombre || '',
+          descripcion: actividad?.descripcion || '',
+          tareas: actividad?.tareas || '',
+          cargo: actividad?.cargo || '',
+          rutinario: typeof actividad?.rutinario === 'boolean' ? actividad.rutinario : null,
+          peligros: unwrapCreateList(actividad?.peligros).map((peligro: any) => ({
+            descripcion: peligro?.descripcion || '',
+            clasificacion: peligro?.clasificacion || '',
+            efectos: peligro?.efectosPosibles || peligro?.efectos || '',
+            evaluacion: peligro?.evaluacion?.create || peligro?.evaluacion || null,
+            criterio: peligro?.criterio?.create || peligro?.criterios?.create || peligro?.criterio || peligro?.criterios || null,
+            intervencion: peligro?.intervencion?.create || peligro?.intervencion || null,
+            control: peligro?.control?.create || peligro?.controles?.create || peligro?.control || peligro?.controles || null,
+          })),
+        })),
+      })),
+    })),
+  }
+}
+
+function buildVersionDetail(entry: MatrixVersionDetail) {
+  const parsedChanges = safeParseJson(entry.changes)
+  return {
+    parsedChanges,
+    parsedBefore: safeParseJson(entry.before),
+    normalizedMatrix: normalizeVersionMatrix(parsedChanges),
+  }
+}
+
+function DetailRow({ label, value }: { label: string; value: React.ReactNode }) {
+  if (value === null || value === undefined || value === '') return null
+  return (
+    <div className="grid grid-cols-1 md:grid-cols-[140px_minmax(0,1fr)] gap-1 md:gap-3 text-sm">
+      <div className="text-[#8aa08f] font-bold uppercase tracking-wide text-[10px]">{label}</div>
+      <div className="text-[#163522] break-words">{value}</div>
+    </div>
+  )
+}
+
+function VersionMatrixView({ matrix }: { matrix: any }) {
+  const [expandedHazards, setExpandedHazards] = useState<Record<string, boolean>>({})
+
+  if (!matrix) {
+    return (
+      <div className="rounded-xl border border-[#e2e9e4] bg-[#fbfdfb] p-4 text-sm text-[#5e6b62]">
+        La información visual completa no está disponible para esta versión.
+      </div>
+    )
+  }
+
+  return (
+    <div className="space-y-4">
+      <div className="rounded-xl border border-[#e2e9e4] bg-[#fbfdfb] p-4 sm:p-5 space-y-3">
+        <div className="text-xs font-bold uppercase tracking-wide text-[#1F7D3E]">Datos de la matriz</div>
+        <DetailRow label="Área" value={matrix.area || 'Vacío'} />
+        <DetailRow label="Responsable" value={matrix.responsable || 'Vacío'} />
+        <DetailRow label="Fecha de elaboración" value={matrix.fechaElaboracion || 'Vacío'} />
+        <DetailRow label="Fecha de actualización" value={matrix.fechaActualizacion || 'Vacío'} />
+        <DetailRow label="Files" value={matrix.files.length || 0} />
+      </div>
+
+      <div className="space-y-3">
+        {matrix.procesos.map((proceso: any, procesoIndex: number) => (
+          <div key={`${proceso.nombre}-${procesoIndex}`} className="rounded-xl border border-[#dce8dc] overflow-hidden bg-white">
+            <div className="px-4 py-3 bg-[#eef7f0] border-b border-[#dce8dc]">
+              <div className="text-sm font-bold text-[#163522]">Proceso {procesoIndex + 1}: {proceso.nombre || 'Sin nombre'}</div>
+            </div>
+            <div className="p-4 sm:p-5 space-y-4">
+              {proceso.zonas.length === 0 ? (
+                <div className="text-sm text-[#5e6b62]">No hay zonas en esta versión.</div>
+              ) : (
+                proceso.zonas.map((zona: any, zonaIndex: number) => (
+                  <div key={`${zona.nombre}-${zonaIndex}`} className="rounded-xl border border-[#e2e9e4] bg-[#fcfdfc] p-4 sm:p-5 space-y-4">
+                    <div className="flex items-center justify-between gap-3 flex-wrap">
+                      <div className="text-sm font-bold text-[#1F7D3E]">Zona {zonaIndex + 1}: {zona.nombre || 'Sin nombre'}</div>
+                      <div className="text-xs font-semibold text-[#5e6b62]">{zona.actividades.length} actividades</div>
+                    </div>
+
+                    {zona.actividades.map((actividad: any, actividadIndex: number) => (
+                      <div key={`${actividad.nombre}-${actividadIndex}`} className="rounded-xl border border-[#e2e9e4] bg-white p-4 sm:p-5 space-y-3">
+                        <div className="flex items-center justify-between gap-3 flex-wrap">
+                          <div className="text-sm font-bold text-[#163522]">Actividad {actividadIndex + 1}: {actividad.nombre || 'Sin nombre'}</div>
+                          <div className="text-xs font-semibold text-[#5e6b62]">{actividad.peligros.length} peligros</div>
+                        </div>
+
+                        <DetailRow label="Descripción" value={actividad.descripcion || 'Vacío'} />
+                        <DetailRow label="Tareas" value={actividad.tareas || 'Vacío'} />
+                        <DetailRow label="Cargo" value={actividad.cargo || 'Vacío'} />
+                        <DetailRow label="Rutinario" value={actividad.rutinario === null ? 'Sin dato' : actividad.rutinario ? 'Sí' : 'No'} />
+
+                        <div className="space-y-3 pt-2 border-t border-[#edf2ed]">
+                          {actividad.peligros.map((peligro: any, peligroIndex: number) => (
+                            <div key={`${peligro.descripcion}-${peligroIndex}`} className="rounded-lg border border-[#e2e9e4] bg-[#fbfdfb] overflow-hidden">
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  const key = `${procesoIndex}-${zonaIndex}-${actividadIndex}-${peligroIndex}`
+                                  setExpandedHazards((current) => ({ ...current, [key]: !current[key] }))
+                                }}
+                                className="w-full flex items-center justify-between gap-3 px-4 py-3 text-left hover:bg-white transition-colors"
+                              >
+                                <div className="min-w-0">
+                                  <div className="text-sm font-bold text-[#163522]">Peligro {peligroIndex + 1}</div>
+                                  <div className="text-xs text-[#5e6b62] truncate">
+                                    {peligro.descripcion || 'Sin descripción'}
+                                  </div>
+                                </div>
+                                <div className="flex items-center gap-2 shrink-0">
+                                  {peligro.clasificacion && (
+                                    <span className="inline-flex items-center rounded-full border border-[#d1e2d6] bg-white px-2 py-1 text-[10px] font-bold uppercase text-[#1F7D3E]">
+                                      {peligro.clasificacion}
+                                    </span>
+                                  )}
+                                  <span className="text-[#5e6b62] text-xs font-bold">
+                                    {expandedHazards[`${procesoIndex}-${zonaIndex}-${actividadIndex}-${peligroIndex}`] ? 'Ocultar' : 'Ver detalle'}
+                                  </span>
+                                </div>
+                              </button>
+                              {expandedHazards[`${procesoIndex}-${zonaIndex}-${actividadIndex}-${peligroIndex}`] && (
+                                <div className="border-t border-[#e2e9e4] p-4 sm:p-5 space-y-3">
+                                  <div className="flex items-center justify-between gap-3 flex-wrap">
+                                    <div className="text-sm font-bold text-[#163522]">Detalle del peligro</div>
+                                  </div>
+                              <div className="space-y-3">
+                              <div className="flex items-center justify-between gap-3 flex-wrap">
+                                <div className="text-sm font-bold text-[#163522]">Peligro {peligroIndex + 1}</div>
+                                {peligro.clasificacion && (
+                                  <span className="inline-flex items-center rounded-full border border-[#d1e2d6] bg-white px-2 py-1 text-[10px] font-bold uppercase text-[#1F7D3E]">
+                                    {peligro.clasificacion}
+                                  </span>
+                                )}
+                              </div>
+                              <DetailRow label="Descripción" value={peligro.descripcion || 'Vacío'} />
+                              <DetailRow label="Efectos" value={peligro.efectos || 'Vacío'} />
+                              <DetailRow label="Control en la fuente" value={peligro.control?.fuente || 'Vacío'} />
+                              <DetailRow label="Control en el medio" value={peligro.control?.medio || 'Vacío'} />
+                              <DetailRow label="Control individual" value={peligro.control?.individuo || 'Vacío'} />
+                              <DetailRow label="Número de expuestos" value={peligro.criterio?.numExpuestos ?? peligro.criterio?.num_expuestos ?? 'Vacío'} />
+                              <DetailRow label="Peor consecuencia" value={peligro.criterio?.peorConsecuencia || peligro.criterio?.peor_consecuencia || 'Vacío'} />
+                              <DetailRow label="Requisito legal" value={
+                                typeof (peligro.criterio?.requisitoLegal ?? peligro.criterio?.requisito_legal) === 'boolean'
+                                  ? ((peligro.criterio?.requisitoLegal ?? peligro.criterio?.requisito_legal) ? 'Sí' : 'No')
+                                  : 'Vacío'
+                              } />
+                              <DetailRow label="ND / NE / NC" value={
+                                [peligro.evaluacion?.nivelDeficiencia, peligro.evaluacion?.nivelExposicion, peligro.evaluacion?.nivelConsecuencia]
+                                  .filter((v) => v !== null && v !== undefined && v !== '')
+                                  .join(' / ') || 'Vacío'
+                              } />
+                              <DetailRow label="NP / NR" value={
+                                [peligro.evaluacion?.nivelProbabilidad, peligro.evaluacion?.nivelRiesgo]
+                                  .filter((v) => v !== null && v !== undefined && v !== '')
+                                  .join(' / ') || 'Vacío'
+                              } />
+                              <DetailRow label="Interpretación" value={
+                                [peligro.evaluacion?.interpProbabilidad, peligro.evaluacion?.interpRiesgo, peligro.evaluacion?.aceptabilidad]
+                                  .filter(Boolean)
+                                  .join(' | ') || 'Vacío'
+                              } />
+                              <DetailRow label="Eliminación" value={peligro.intervencion?.eliminacion || 'Vacío'} />
+                              <DetailRow label="Sustitución" value={peligro.intervencion?.sustitucion || 'Vacío'} />
+                              <DetailRow label="Controles de ingeniería" value={peligro.intervencion?.controlesIngenieria || peligro.intervencion?.controles_ingenieria || 'Vacío'} />
+                              <DetailRow label="Controles administrativos" value={peligro.intervencion?.controlesAdministrativos || peligro.intervencion?.controles_administrativos || 'Vacío'} />
+                              <DetailRow label="EPP" value={peligro.intervencion?.epp || 'Vacío'} />
+                              <DetailRow label="Responsable" value={peligro.intervencion?.responsable || 'Vacío'} />
+                              <DetailRow label="Fecha de ejecución" value={peligro.intervencion?.fechaEjecucion || peligro.intervencion?.fecha_ejecucion || 'Vacío'} />
+                              </div>
+                                </div>
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
+
 export function Dashboard() {
   const { user, logout } = useAuth()
   const router = useRouter()
@@ -118,6 +384,16 @@ export function Dashboard() {
   const [previewMatrixId, setPreviewMatrixId] = useState<string|null>(null)
   const [importOpen, setImportOpen] = useState(false)
   const [instructionsOpen, setInstructionsOpen] = useState(false)
+  const [versionsOpen, setVersionsOpen] = useState(false)
+  const [versionsLoading, setVersionsLoading] = useState(false)
+  const [versionDetailLoading, setVersionDetailLoading] = useState(false)
+  const [versionsMatrixTitle, setVersionsMatrixTitle] = useState('')
+  const [versionsMatrixId, setVersionsMatrixId] = useState('')
+  const [versionEntries, setVersionEntries] = useState<MatrixVersionSummary[]>([])
+  const [selectedVersionId, setSelectedVersionId] = useState<string | null>(null)
+  const [selectedVersionDetail, setSelectedVersionDetail] = useState<MatrixVersionDetail | null>(null)
+  const versionsCacheRef = useRef<Record<string, { title: string; versions: MatrixVersionSummary[] }>>({})
+  const versionDetailCacheRef = useRef<Record<string, MatrixVersionDetail>>({})
   const [currentPage, setCurrentPage] = useState(1)
   const [totalMatrices, setTotalMatrices] = useState(0)
   const [totalPages, setTotalPages] = useState(1)
@@ -316,6 +592,146 @@ export function Dashboard() {
     }
   }
 
+  async function handleOpenVersions(matrizId: string, title: string) {
+    setVersionsOpen(true)
+    setVersionsMatrixId(matrizId)
+    setVersionsMatrixTitle(title)
+    setSelectedVersionId(null)
+    setSelectedVersionDetail(null)
+
+    const cached = versionsCacheRef.current[matrizId]
+    if (cached) {
+      setVersionEntries(cached.versions)
+      setVersionsMatrixTitle(cached.title || title)
+      setVersionsLoading(false)
+      if (cached.versions[0]?.id) {
+        void handleSelectVersion(matrizId, cached.versions[0].id)
+      }
+      return
+    }
+
+    setVersionsLoading(true)
+    setVersionEntries([])
+
+    try {
+      const res = await apiFetch(`/api/riesgos/${matrizId}/versions`)
+      if (!res.ok) throw new Error('Could not load matrix versions')
+      const body = await res.json()
+      const nextTitle = body?.matriz?.title || title
+      const nextVersions = Array.isArray(body?.versions) ? body.versions : []
+      versionsCacheRef.current[matrizId] = { title: nextTitle, versions: nextVersions }
+      setVersionsMatrixTitle(nextTitle)
+      setVersionEntries(nextVersions)
+      if (nextVersions[0]?.id) {
+        void handleSelectVersion(matrizId, nextVersions[0].id)
+      }
+    } catch (error) {
+      console.error('Error loading matrix versions:', error)
+      alert('Could not load matrix versions.')
+    } finally {
+      setVersionsLoading(false)
+    }
+  }
+
+  async function handleSelectVersion(matrizId: string, versionId: string) {
+    setSelectedVersionId(versionId)
+
+    const cached = versionDetailCacheRef.current[versionId]
+    if (cached) {
+      setSelectedVersionDetail(cached)
+      setVersionDetailLoading(false)
+      return
+    }
+
+    setVersionDetailLoading(true)
+    setSelectedVersionDetail(null)
+
+    try {
+      const res = await apiFetch(`/api/riesgos/${matrizId}/versions?versionId=${versionId}`)
+      if (!res.ok) throw new Error('Could not load version detail')
+      const body = await res.json()
+      const detail = body?.version || null
+      if (detail) {
+        versionDetailCacheRef.current[versionId] = detail
+      }
+      setSelectedVersionDetail(detail)
+    } catch (error) {
+      console.error('Error loading version detail:', error)
+      alert('Could not load version detail.')
+    } finally {
+      setVersionDetailLoading(false)
+    }
+  }
+
+  const selectedVersionSummary = selectedVersionId
+    ? versionEntries.find((item) => item.id === selectedVersionId) || null
+    : null
+
+  let versionDetailContent: React.ReactNode
+  if (!selectedVersionId || versionDetailLoading) {
+    versionDetailContent = (
+      <div className="rounded-3xl border border-[#dfe9e2] bg-[#fbfdfb] p-8 shadow-sm">
+        <div className="animate-pulse space-y-4">
+          <div className="h-6 w-48 rounded bg-[#e9f2eb]" />
+          <div className="h-4 w-64 rounded bg-[#eef5f0]" />
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+            <div className="h-24 rounded-2xl bg-[#eef5f0]" />
+            <div className="h-24 rounded-2xl bg-[#eef5f0]" />
+            <div className="h-24 rounded-2xl bg-[#eef5f0]" />
+          </div>
+          <div className="h-48 rounded-2xl bg-[#eef5f0]" />
+        </div>
+      </div>
+    )
+  } else if (selectedVersionDetail) {
+    const detail = buildVersionDetail(selectedVersionDetail)
+    versionDetailContent = (
+      <div className="space-y-5">
+        <div className="rounded-3xl border border-[#dfe9e2] bg-[linear-gradient(180deg,#fbfdfb_0%,#f4f8f5_100%)] p-5 shadow-sm">
+          <div className="flex flex-col xl:flex-row xl:items-start xl:justify-between gap-4">
+            <div>
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className="inline-flex items-center rounded-full bg-[#eef7f0] px-3 py-1 text-[10px] font-black uppercase tracking-[0.16em] text-[#1F7D3E]">
+                  {selectedVersionDetail.action}
+                </span>
+                <span className="text-sm font-bold text-[#163522]">
+                  {selectedVersionSummary?.title || 'Versión'}
+                </span>
+              </div>
+              <div className="mt-3 text-sm text-[#355244]">
+                {new Date(selectedVersionDetail.timestamp).toLocaleString('es-CO', {
+                  year: 'numeric',
+                  month: 'long',
+                  day: '2-digit',
+                  hour: '2-digit',
+                  minute: '2-digit',
+                })}
+              </div>
+              <div className="mt-1 text-sm text-[#5e6b62]">
+                Por {selectedVersionDetail.userName || user?.nombre || 'Usuario actual'}{selectedVersionDetail.userEmail ? ` (${selectedVersionDetail.userEmail})` : ''}
+              </div>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 xl:w-[520px]">
+              {(selectedVersionSummary?.lines || []).slice(0, 3).map((line, index) => (
+                <div key={index} className="rounded-2xl border border-[#dfe9e2] bg-white p-3 text-xs font-semibold text-[#355244]">
+                  {line}
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        <VersionMatrixDetailView matrix={detail.normalizedMatrix} />
+      </div>
+    )
+  } else {
+    versionDetailContent = (
+      <div className="rounded-3xl border border-dashed border-[#dfe9e2] bg-[#fbfdfb] p-8 text-sm text-[#5e6b62]">
+        Selecciona una versión para ver toda la información.
+      </div>
+    )
+  }
+
   return (
     <div className="min-h-screen bg-[#f8faf9] text-[#2c3630]">
       {/* Topbar */}
@@ -504,6 +920,14 @@ export function Dashboard() {
                 </div>
 
                 <div className="flex items-center gap-1 flex-wrap" onClick={e => e.stopPropagation()}>
+                  <button
+                    title="Versiones"
+                    onClick={() => handleOpenVersions(m.id, m.area || m.responsable || 'Untitled matrix')}
+                    className="inline-flex items-center gap-2 px-3 py-2 rounded-xl border border-[#d1e2d6] bg-[#f8faf9] text-[#1F7D3E] text-xs font-bold hover:bg-[#f0f9f1] hover:border-[#b9d2bf] transition-all"
+                  >
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 3v5h5"/><path d="M3.05 13A9 9 0 1 0 6 5.3L3 8"/><path d="M12 7v5l4 2"/></svg>
+                    <span>Versiones</span>
+                  </button>
                   {[
                     { title: 'Vista Previa', icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M2.062 12.348a1 1 0 0 1 0-.696 10.75 10.75 0 0 1 19.876 0 1 1 0 0 1 0 .696 10.75 10.75 0 0 1-19.876 0z"/><circle cx="12" cy="12" r="3"/></svg>, action: () => setPreviewMatrixId(m.id) },
                     { title: 'Descargar Excel', icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>, action: () => handleDownloadMatrix(m.id) },
@@ -625,6 +1049,90 @@ export function Dashboard() {
           onClose={() => setPreviewMatrixId(null)}
         />
       )}
+
+      <Dialog open={versionsOpen} onOpenChange={setVersionsOpen}>
+        <DialogContent className="w-screen max-w-none h-[100dvh] rounded-none overflow-hidden p-0 sm:w-[98vw] sm:max-w-[1900px] sm:h-[96vh] sm:rounded-2xl">
+          <DialogHeader className="px-6 py-5 border-b border-[#dbe8de] bg-[linear-gradient(180deg,#f8fbf8_0%,#f1f7f3_100%)] shrink-0">
+            <DialogTitle className="text-[#163522] flex items-center gap-3">
+              <span className="inline-flex h-10 w-10 items-center justify-center rounded-2xl bg-[#1F7D3E] text-white shadow-lg shadow-[#1F7D3E]/20">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 3v5h5"/><path d="M3.05 13A9 9 0 1 0 6 5.3L3 8"/><path d="M12 7v5l4 2"/></svg>
+              </span>
+              <span>Versiones: {versionsMatrixTitle}</span>
+            </DialogTitle>
+            <DialogDescription className="sr-only">
+              Historial de versiones de la matriz seleccionada con lista de cambios y detalle completo.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex-1 min-h-0 grid grid-cols-1 xl:grid-cols-[430px_minmax(0,1fr)]">
+            {versionsLoading ? (
+              <div className="lg:col-span-2 flex items-center justify-center p-10">
+                <div className="rounded-3xl border border-[#dbe8de] bg-white px-8 py-10 text-center shadow-sm min-w-[280px]">
+                  <div className="mx-auto h-12 w-12 rounded-2xl bg-[#eef7f0] animate-pulse" />
+                  <div className="mt-4 text-sm font-bold text-[#355244]">Cargando versiones...</div>
+                  <div className="mt-1 text-xs text-[#7e9586]">Preparando el historial de esta matriz.</div>
+                </div>
+              </div>
+            ) : versionEntries.length === 0 ? (
+              <div className="lg:col-span-2 flex items-center justify-center p-10">
+                <div className="rounded-3xl border border-dashed border-[#dbe8de] bg-white px-8 py-10 text-center shadow-sm min-w-[320px]">
+                  <div className="text-sm font-bold text-[#355244]">No se encontraron versiones guardadas para esta matriz.</div>
+                </div>
+              </div>
+            ) : (
+              <>
+                <div className="border-b xl:border-b-0 xl:border-r border-[#e2e9e4] bg-[#f8faf9] min-h-0 overflow-y-auto p-4 space-y-3 max-h-[36vh] xl:max-h-none">
+                  {versionEntries.map((entry, index) => (
+                    <button
+                      key={entry.id}
+                      onClick={() => handleSelectVersion(versionsMatrixId, entry.id)}
+                      className={`w-full text-left rounded-2xl border p-4 transition-all shadow-sm ${
+                        selectedVersionId === entry.id
+                          ? 'border-[#1F7D3E] bg-white shadow-md'
+                          : 'border-[#dfe9e2] bg-white/80 hover:bg-white hover:border-[#bfd7c5]'
+                      }`}
+                    >
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="flex items-center gap-3 min-w-0">
+                          <span className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-[#eef7f0] text-[#1F7D3E] text-xs font-black shrink-0">
+                            {versionEntries.length - index}
+                          </span>
+                          <div className="min-w-0">
+                            <div className="text-sm font-bold text-[#163522] truncate">{entry.title}</div>
+                            <div className="text-[11px] text-[#6d8174] mt-0.5">
+                              {new Date(entry.timestamp).toLocaleString('es-CO', {
+                                year: 'numeric',
+                                month: 'short',
+                                day: '2-digit',
+                                hour: '2-digit',
+                                minute: '2-digit',
+                              })}
+                            </div>
+                          </div>
+                        </div>
+                        <span className="inline-flex items-center rounded-full bg-[#f8faf9] border border-[#dfe9e2] px-2 py-0.5 text-[10px] font-bold text-[#5e6b62] uppercase tracking-wide shrink-0">
+                          {entry.action}
+                        </span>
+                      </div>
+                      <div className="mt-3 text-xs text-[#5e6b62]">
+                        Por {entry.userName || user?.nombre || 'Usuario actual'}{entry.userEmail ? ` (${entry.userEmail})` : ''}
+                      </div>
+                      <div className="mt-3 space-y-1">
+                        {entry.lines.slice(0, 2).map((line, lineIndex) => (
+                          <div key={lineIndex} className="text-xs text-[#355244] line-clamp-2">{line}</div>
+                        ))}
+                      </div>
+                    </button>
+                  ))}
+                </div>
+
+                <div className="min-h-0 overflow-y-auto bg-white p-4 sm:p-6 min-w-0">
+                  {versionDetailContent}
+                </div>
+              </>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
 
       <InstructionsModal 
         open={instructionsOpen} 
