@@ -37,7 +37,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
     const areaValue = String(area ?? savedMetadata.area ?? '').trim()
     const responsableValue = String(responsable ?? savedMetadata.responsable ?? '').trim()
 
-    const created = await prisma.$transaction(async (tx) => {
+    const created = await prisma.$transaction(async (tx: any) => {
       return tx.matriz.create({
         data: {
           usuarioId: user.id,

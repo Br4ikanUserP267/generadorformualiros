@@ -57,6 +57,41 @@ function parseDate(value: unknown) {
   return parsed
 }
 
+function classifyRiskLevelForCounts(evalObj: any): 0 | 1 | 2 | 3 {
+  if (!evalObj) return 3 // Bajo
+
+  // 1. Check NP text interpretation (interpretación NP)
+  const interpNp = String(evalObj.interpProbabilidad || evalObj.interp_np || '').toLowerCase().trim()
+  if (interpNp.includes('muy alto')) return 0
+  if (interpNp.includes('alto')) return 1
+  if (interpNp.includes('medio') || interpNp.includes('moderado')) return 2
+  if (interpNp.includes('bajo')) return 3
+
+  // 2. Check numeric NP (Nivel de Probabilidad GTC 45)
+  // GTC 45: Muy Alto = 24-40 | Alto = 10-20 | Medio = 6-8 | Bajo = 2-4
+  const np = Number(evalObj.nivelProbabilidad ?? evalObj.np ?? 0)
+  if (np >= 24) return 0 // Muy Alto
+  if (np >= 10) return 1 // Alto
+  if (np >= 6) return 2  // Medio (6 y 8)
+  if (np > 0) return 3   // Bajo (2 y 4)
+
+  // 3. Fallback to NR (Nivel de Riesgo) if NP is not provided
+  const nr = Number(evalObj.nivelRiesgo ?? evalObj.nr ?? 0)
+  if (nr > 500) return 0     // Nivel I (Muy Alto / Extremo)
+  if (nr > 120) return 1     // Nivel II (Alto)
+  if (nr > 20) return 2      // Nivel III (Medio / Moderado)
+  if (nr > 0) return 3       // Nivel IV (Bajo)
+
+  // 4. Fallback to NR text interpretation / aceptabilidad
+  const interpNr = String(evalObj.interpRiesgo || evalObj.interp_nr || evalObj.aceptabilidad || '').toLowerCase()
+  if (interpNr.includes('i') && !interpNr.includes('ii') && !interpNr.includes('iv')) return 0
+  if (interpNr.includes('ii') && !interpNr.includes('iii')) return 1
+  if (interpNr.includes('iii') || interpNr.includes('mejorable')) return 2
+  if (interpNr.includes('iv') || interpNr.includes('aceptable')) return 3
+
+  return 3 // Default to Bajo
+}
+
 function computeCountsFromSummary(summary: any) {
   const tipos = new Set<string>()
   let totalZonas = 0
@@ -74,12 +109,8 @@ function computeCountsFromSummary(summary: any) {
         totalPeligros += peligros.length
         for (const peligro of peligros) {
           const evalActual = peligro?.evaluacionPost || peligro?.evaluacion
-          const np = Number(evalActual?.nivelProbabilidad || 0)
-          if (!np || np === 0) counts[3] += 1
-          else if (np >= 24) counts[0] += 1 // Muy Alto
-          else if (np >= 10) counts[1] += 1 // Alto
-          else if (np >= 6) counts[2] += 1  // Medio
-          else counts[3] += 1              // Bajo
+          const lvlIdx = classifyRiskLevelForCounts(evalActual)
+          counts[lvlIdx] += 1
         }
       }
     }
@@ -235,12 +266,18 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
                             select: {
                               nivelRiesgo: true,
                               nivelProbabilidad: true,
+                              interpProbabilidad: true,
+                              interpRiesgo: true,
+                              aceptabilidad: true,
                             },
                           },
                           evaluacionPost: {
                             select: {
                               nivelRiesgo: true,
                               nivelProbabilidad: true,
+                              interpProbabilidad: true,
+                              interpRiesgo: true,
+                              aceptabilidad: true,
                             },
                           },
                         },
@@ -271,12 +308,18 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
                             select: {
                               nivelRiesgo: true,
                               nivelProbabilidad: true,
+                              interpProbabilidad: true,
+                              interpRiesgo: true,
+                              aceptabilidad: true,
                             },
                           },
                           evaluacionPost: {
                             select: {
                               nivelRiesgo: true,
                               nivelProbabilidad: true,
+                              interpProbabilidad: true,
+                              interpRiesgo: true,
+                              aceptabilidad: true,
                             },
                           },
                         },

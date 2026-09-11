@@ -38,8 +38,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     ])
 
     return res.status(200).json({
-      tipos: tipos.map((row) => row.value).filter((value): value is string => !!value),
-      clasificaciones: clasificaciones.map((row) => row.value).filter((value): value is string => !!value),
+      tipos: tipos.map((row: any) => row.value).filter((value: any): value is string => !!value),
+      clasificaciones: clasificaciones.map((row: any) => row.value).filter((value: any): value is string => !!value),
     })
   } catch (error) {
     console.error('Facets riesgos error:', error)

@@ -179,7 +179,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         id: matriz.id,
         title: matriz.area || matriz.responsable || 'Untitled matrix',
       },
-      versions: logs.map((log) => {
+      versions: logs.map((log: any) => {
         const actor = resolveActor(log, user)
         const parsedChanges = safeParseJson(log.changes || '')
         const summary = summarizeChanges(parsedChanges, log.action)

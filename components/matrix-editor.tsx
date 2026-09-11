@@ -4,18 +4,28 @@ import React, { useMemo, useState, useEffect, useRef } from "react"
 import { useRouter, useSearchParams } from 'next/navigation'
 import { toast } from '@/hooks/use-toast'
 import { exportMatrizToExcel } from '@/lib/matriz-excel-export'
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Textarea } from "@/components/ui/textarea"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Switch } from "@/components/ui/switch"
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
-import { Badge } from "@/components/ui/badge"
 import ConfirmModal from '@/components/confirm-modal'
-import { PencilIcon, TrashIcon, CopyIcon } from 'lucide-react'
 import { apiFetch } from '@/lib/utils'
+import { FolderTree } from 'lucide-react'
 
-function makeId(prefix = '') { return prefix + Math.random().toString(36).slice(2,9) }
+// Modular Matrix Editor Subcomponents
+import { MatrixGeneralInfoHeader } from './matrix-editor/matrix-general-info-header'
+import { MatrixInfoCard } from './matrix-editor/matrix-info-card'
+import { OrganizationalSidebar } from './matrix-editor/organizational-sidebar'
+import { ActivityHeader } from './matrix-editor/activity-header'
+import { ActivityDetailPanel } from './matrix-editor/activity-detail-panel'
+import { ActivityRiskSummary } from './matrix-editor/activity-risk-summary'
+import { HazardSection } from './matrix-editor/hazard-section'
+
+// Modals
+import { EditProcesoModal } from './matrix-editor/modals/edit-proceso-modal'
+import { EditZonaModal } from './matrix-editor/modals/edit-zona-modal'
+import { EditActividadModal } from './matrix-editor/modals/edit-actividad-modal'
+import { FilesModal } from './matrix-editor/modals/files-modal'
+
+function makeId(prefix = '') {
+  return prefix + Math.random().toString(36).slice(2, 9)
+}
 
 function getTodayDate() {
   const today = new Date()
@@ -25,162 +35,172 @@ function getTodayDate() {
   return `${year}-${month}-${day}`
 }
 
-function formatDateDisplay(value: string) {
-  const match = String(value || '').match(/^(\d{4})-(\d{2})-(\d{2})$/)
-  return match ? `${match[3]}/${match[2]}/${match[1]}` : ''
-}
-
-function parseDateDisplay(value: string) {
-  const match = value.trim().match(/^(\d{2})\/(\d{2})\/(\d{4})$/)
-  if (!match) return ''
-  const [, day, month, year] = match
-  const date = new Date(Number(year), Number(month) - 1, Number(day))
-  if (date.getFullYear() !== Number(year) || date.getMonth() !== Number(month) - 1 || date.getDate() !== Number(day)) return ''
-  return `${year}-${month}-${day}`
-}
-
-function DisplayDateInput({ value, onChange, className }: { value: string; onChange: (value: string) => void; className: string }) {
-  const [displayValue, setDisplayValue] = useState(() => formatDateDisplay(value))
-
-  useEffect(() => {
-    setDisplayValue(formatDateDisplay(value))
-  }, [value])
-
-  return (
-    <Input
-      type="text"
-      inputMode="numeric"
-      placeholder="DD/MM/AAAA"
-      aria-label="Fecha en formato día/mes/año"
-      className={className}
-      value={displayValue}
-      onChange={(event) => {
-        const nextValue = event.target.value.replace(/[^\d/]/g, '').slice(0, 10)
-        setDisplayValue(nextValue)
-        const parsedValue = parseDateDisplay(nextValue)
-        if (parsedValue) onChange(parsedValue)
-      }}
-      onBlur={() => setDisplayValue(formatDateDisplay(value))}
-    />
-  )
-}
-
-// risk interpretation helpers (GTC-45 rules)
 function interpProbabilidad(np: number) {
   if (!np) return { label: '', color: '#9CA3AF' }
-  if (np <= 4) return { label: 'Bajo', color: '#198754' }     // Green
-  if (np <= 8) return { label: 'Medio', color: '#EAB308' }    // Yellow
-  if (np <= 20) return { label: 'Alto', color: '#ef4444' }     // Red
-  return { label: 'Muy Alto', color: '#a50000' } // Deep Red
+  if (np <= 4) return { label: 'Bajo', color: '#16a34a' }
+  if (np <= 8) return { label: 'Medio', color: '#ca8a04' }
+  if (np <= 20) return { label: 'Alto', color: '#ea580c' }
+  return { label: 'Muy Alto', color: '#dc2626' }
 }
 
 function interpNivelRiesgo(nr: number) {
   if (!nr) return { label: '', color: '#9CA3AF' }
-  if (nr <= 20) return { label: 'IV', color: '#198754' }     // IV = Green
-  if (nr <= 120) return { label: 'III', color: '#198754' }    // III = Green
-  if (nr <= 500) return { label: 'II', color: '#EAB308' }    // II = Yellow
-  return { label: 'I', color: '#ef4444' }    // I = Red
-}
-
-function renderPeligroBadge(nrVal: number) {
-  if (!nrVal) return null;
-  const label = interpNivelRiesgo(nrVal).label;
-  if (!label) return null;
-  if (label === 'I') return { dot: '#ef4444', bg: '#fce8e8', text: 'Nivel I' };
-  if (label === 'II') return { dot: '#EAB308', bg: '#fdecea', text: 'Nivel II' };
-  if (label === 'III') return { dot: '#198754', bg: '#fff3e0', text: 'Nivel III' };
-  if (label === 'IV') return { dot: '#198754', bg: '#e8f5e9', text: 'Nivel IV' };
-  return null;
+  if (nr <= 20) return { label: 'IV', color: '#16a34a' }
+  if (nr <= 120) return { label: 'III', color: '#16a34a' }
+  if (nr <= 500) return { label: 'II', color: '#ca8a04' }
+  return { label: 'I', color: '#dc2626' }
 }
 
 function aceptabilidadFromNivel(label: string) {
   if (!label) return ''
   switch (label) {
-    case 'IV': return 'Aceptable'
-    case 'III': return 'Mejorable'
-    case 'II': return 'Aceptable con Control Especifico'
-    case 'I': return 'No Aceptable'
-    default: return ''
+    case 'IV':
+      return 'Aceptable'
+    case 'III':
+      return 'Mejorable'
+    case 'II':
+      return 'Aceptable con Control Especifico'
+    case 'I':
+      return 'No Aceptable'
+    default:
+      return ''
   }
-}
-
-function aceptabilidadColor(text: string) {
-  if (!text) return '#9CA3AF'
-  if (text.includes('No Aceptable')) return '#dc3545' // Rojo
-  if (text.includes('Control Especifico')) return '#EAB308' // Amarillo
-  if (text.includes('Mejorable')) return '#198754' // Verde
-  if (text.includes('Aceptable')) return '#198754' // Verde profundo
-  return '#9CA3AF'
-}
-
-function shortFileName(n: string, maxBase = 12) {
-  if (!n) return ''
-  const idx = n.lastIndexOf('.')
-  const ext = idx > 0 ? n.slice(idx) : ''
-  const base = idx > 0 ? n.slice(0, idx) : n
-  if (base.length > maxBase) return base.slice(0, maxBase - 2) + '…' + ext
-  return base + ext
-}
-
-function getStablePeligroLabel(peligro: any, fallbackIndex: number) {
-  const baseLabel = peligro?._ui?.stableLabel || `Peligro ${fallbackIndex + 1}`
-  if (peligro?.descripcion) {
-    const desc = peligro.descripcion.trim()
-    const truncated = desc.length > 50 ? desc.slice(0, 50) + '...' : desc
-    return `${baseLabel}: ${truncated}`
-  }
-  return baseLabel
-}
-
-function getStableActividadLabel(actividad: any, fallbackIndex: number) {
-  const baseLabel = actividad.nombre || `Actividad ${fallbackIndex + 1}`
-  if (actividad.descripcion) {
-    const desc = actividad.descripcion.trim()
-    const truncated = desc.length > 50 ? desc.slice(0, 50) + '...' : desc
-    return `${baseLabel}: ${truncated}`
-  }
-  return baseLabel
 }
 
 export default function MatrixEditor({ id }: { id?: string }) {
   const router = useRouter()
   const searchParams = useSearchParams()
-  const peligroIdParam = searchParams?.get('peligroId')
+  const peligroIdParam = searchParams?.get('peligroId') || null
+
+  // Matrix State
   const [matrix, setMatrix] = useState<any>(null)
-  const [selected, setSelected] = useState<{procesoId?: string, zonaId?: string, actividadId?: string}>({})
+  const [selected, setSelected] = useState<{
+    procesoId?: string
+    zonaId?: string
+    actividadId?: string
+  }>({})
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false)
+  const [isSaving, setIsSaving] = useState(false)
+
+  // Search & Navigation State
+  const [searchTerm, setSearchTerm] = useState('')
+  const [expandedZonaIds, setExpandedZonaIds] = useState<Record<string, boolean>>({})
+
+  // Modals State
+  const [showProcesoModal, setShowProcesoModal] = useState(false)
+  const [editingProceso, setEditingProceso] = useState<any>(null)
+
+  const [showZonaModal, setShowZonaModal] = useState(false)
+  const [editingZona, setEditingZona] = useState<any>(null)
+  const [zonaParentProcesoId, setZonaParentProcesoId] = useState<string | null>(null)
+
+  const [showActividadModal, setShowActividadModal] = useState(false)
+  const [editingActividad, setEditingActividad] = useState<any>(null)
+  const [actividadTarget, setActividadTarget] = useState<{
+    procesoId?: string
+    zonaId?: string
+  } | null>(null)
+
+  const [showFilesModal, setShowFilesModal] = useState(false)
+
+  // Confirmation Modal State
+  const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false)
+  const [confirmDeleteTitle, setConfirmDeleteTitle] = useState('Confirmar eliminación')
+  const [confirmDeleteMessage, setConfirmDeleteMessage] = useState(
+    '¿Estás seguro? Esta acción no se puede deshacer.'
+  )
+  const [pendingDeleteAction, setPendingDeleteAction] = useState<null | (() => void)>(null)
+
+  // Drag & Drop State
+  const isDraggingRef = useRef(false)
+  const actividadDragSourceRef = useRef<{
+    procesoId: string
+    zonaId: string
+    actividadId: string
+  } | null>(null)
+  const [dragOverActividadId, setDragOverActividadId] = useState<string | null>(null)
+  const [dragOverActividadEdge, setDragOverActividadEdge] = useState<'before' | 'after' | null>(null)
+
+  const isDraggingPeligroRef = useRef(false)
+  const peligroDragSourceRef = useRef<{
+    procesoId: string
+    zonaId: string
+    actividadId: string
+    peligroId: string
+  } | null>(null)
+  const [dragOverPeligroId, setDragOverPeligroId] = useState<string | null>(null)
+  const [dragOverPeligroEdge, setDragOverPeligroEdge] = useState<'before' | 'after' | null>(null)
+
   const peligroRefMap = useRef<Record<string, HTMLDivElement | null>>({})
   const autoFocusPeligroKeyRef = useRef<string | null>(null)
+  const [highlightedPeligroId, setHighlightedPeligroId] = useState<string | null>(peligroIdParam)
 
+  // Initial Data Fetching
   useEffect(() => {
     if (id && id !== 'nuevo') {
       apiFetch(`/api/riesgos/${id}`)
-        .then(r => r.json())
-        .then(data => {
+        .then((r) => r.json())
+        .then((data) => {
           if (data.error) {
             toast({ title: 'Error', variant: 'destructive', description: data.error })
             router.push('/dashboard')
           } else {
             const withStableLabels = JSON.parse(JSON.stringify(data))
             ;(withStableLabels.procesos || []).forEach((p: any) => {
-              (p.zonas || []).forEach((z: any) => {
-                (z.actividades || []).forEach((a: any) => {
-                    (a.peligros || []).forEach((pel: any, pelIdx: number) => {
-                    const persistedNumero = typeof pel.numero === 'number' && pel.numero > 0 ? pel.numero : null
-                    const labelFromNumero = persistedNumero ? `Peligro ${persistedNumero}` : `Peligro ${pelIdx + 1}`
-                    pel._ui = { ...(pel._ui || {}), stableLabel: pel._ui?.stableLabel || labelFromNumero, numero: pel.numero }
+              ;(p.zonas || []).forEach((z: any) => {
+                ;(z.actividades || []).forEach((a: any) => {
+                  ;(a.peligros || []).forEach((pel: any, pelIdx: number) => {
+                    const persistedNumero =
+                      typeof pel.numero === 'number' && pel.numero > 0 ? pel.numero : null
+                    const labelFromNumero = persistedNumero
+                      ? `Peligro ${persistedNumero}`
+                      : `Peligro ${pelIdx + 1}`
+                    pel._ui = {
+                      ...(pel._ui || {}),
+                      stableLabel: pel._ui?.stableLabel || labelFromNumero,
+                      numero: pel.numero,
+                    }
                   })
                 })
               })
             })
-            setMatrix({ ...withStableLabels, fecha_actualizacion: withStableLabels.fecha_actualizacion || getTodayDate() })
-            const p = withStableLabels.procesos?.[0]
-            const z = p?.zonas?.[0]
-            const a = z?.actividades?.[0]
-            setSelected({ procesoId: p?.id, zonaId: z?.id, actividadId: a?.id })
+            setMatrix({
+              ...withStableLabels,
+              fecha_actualizacion: withStableLabels.fecha_actualizacion || getTodayDate(),
+            })
+            let targetP = withStableLabels.procesos?.[0]
+            let targetZ = targetP?.zonas?.[0]
+            let targetA = targetZ?.actividades?.[0]
+
+            if (peligroIdParam) {
+              for (const p of withStableLabels.procesos || []) {
+                for (const z of p.zonas || []) {
+                  for (const a of z.actividades || []) {
+                    const pel = (a.peligros || []).find((x: any) => x.id === peligroIdParam)
+                    if (pel) {
+                      targetP = p
+                      targetZ = z
+                      targetA = a
+                      pel._ui = { ...(pel._ui || {}), expanded: true }
+                      break
+                    }
+                  }
+                }
+              }
+            }
+
+            setSelected({ procesoId: targetP?.id, zonaId: targetZ?.id, actividadId: targetA?.id })
+            if (targetZ?.id) {
+              setExpandedZonaIds((prev) => ({ ...prev, [targetZ.id]: true }))
+            }
           }
         })
-        .catch(e => {
-          toast({ title: 'Error', variant: 'destructive', description: 'No se pudo cargar la matriz' })
+        .catch((e) => {
+          toast({
+            title: 'Error',
+            variant: 'destructive',
+            description: 'No se pudo cargar la matriz',
+          })
           router.push('/dashboard')
         })
     } else {
@@ -190,29 +210,23 @@ export default function MatrixEditor({ id }: { id?: string }) {
         responsable: '',
         fecha_elaboracion: getTodayDate(),
         fecha_actualizacion: getTodayDate(),
-        procesos: []
+        procesos: [],
       })
     }
   }, [id, router])
 
-  useEffect(() => {
-    // Reset one-time foco when URL target changes
-    autoFocusPeligroKeyRef.current = null
-  }, [id, peligroIdParam])
-
-  // Auto-expand and highlight peligro when accessed from report
+  // Deep Link: Auto-focus, uncollapse, and highlight peligro when accessed from URL query
   useEffect(() => {
     if (!matrix || !peligroIdParam) return
 
     const autofocusKey = `${id || 'nuevo'}:${peligroIdParam}`
     if (autoFocusPeligroKeyRef.current === autofocusKey) return
-    
-    // Find the peligro and its parent structure
+
     let targetProcesoId: string | undefined = undefined
     let targetZonaId: string | undefined = undefined
     let targetActividadId: string | undefined = undefined
     let foundPeligro: any = null
-    
+
     for (const proceso of matrix.procesos || []) {
       for (const zona of proceso.zonas || []) {
         for (const actividad of zona.actividades || []) {
@@ -229,94 +243,104 @@ export default function MatrixEditor({ id }: { id?: string }) {
       }
       if (foundPeligro) break
     }
-    
+
     if (!foundPeligro || !targetZonaId || !targetActividadId) return
-    
+
     autoFocusPeligroKeyRef.current = autofocusKey
 
-    // Update selected state to show the activity
-    setSelected({ procesoId: targetProcesoId, zonaId: targetZonaId, actividadId: targetActividadId })
-    
-    // Expand the zone
-    setExpandedZonaIds(s => ({ ...s, [targetZonaId]: true }))
-    
-    // Collapse all peligros except the target one
-    updateMatrix((m: any) => {
-      for (const proceso of m.procesos || []) {
+    setSelected({
+      procesoId: targetProcesoId,
+      zonaId: targetZonaId,
+      actividadId: targetActividadId,
+    })
+    setExpandedZonaIds((s) => ({ ...s, [targetZonaId!]: true }))
+
+    // Uncollapse specific peligro without setting dirty unsaved changes
+    setMatrix((m: any) => {
+      if (!m) return m
+      const cloned = JSON.parse(JSON.stringify(m))
+      for (const proceso of cloned.procesos || []) {
         for (const zona of proceso.zonas || []) {
           for (const actividad of zona.actividades || []) {
             for (const peligro of actividad.peligros || []) {
-              peligro._ui = { ...peligro._ui, expanded: peligro.id === peligroIdParam }
+              if (peligro.id === peligroIdParam) {
+                peligro._ui = { ...peligro._ui, expanded: true }
+              }
             }
           }
         }
       }
-      return m
+      return cloned
     })
-    
-    // Scroll to the peligro after a short delay to ensure DOM is ready
-    const timeoutId = window.setTimeout(() => {
-      const element = peligroRefMap.current?.[peligroIdParam]
+
+    // Set prominent highlight on the card
+    setHighlightedPeligroId(peligroIdParam)
+    const highlightTimer = window.setTimeout(() => {
+      setHighlightedPeligroId(null)
+    }, 4500)
+
+    // Multi-stage progressive smooth scroll to center target hazard in view
+    const scrollToTarget = () => {
+      const element = document.querySelector(`[data-peligro-id="${peligroIdParam}"]`) as HTMLElement | null
       if (element) {
-        element.scrollIntoView({ behavior: 'smooth', block: 'center' })
+        element.scrollIntoView({
+          behavior: 'smooth',
+          block: 'center',
+          inline: 'nearest',
+        })
       }
-    }, 100)
+    }
+
+    const t1 = window.setTimeout(scrollToTarget, 80)
+    const t2 = window.setTimeout(scrollToTarget, 250)
+    const t3 = window.setTimeout(scrollToTarget, 550)
+    const t4 = window.setTimeout(scrollToTarget, 900)
 
     return () => {
-      window.clearTimeout(timeoutId)
+      window.clearTimeout(t1)
+      window.clearTimeout(t2)
+      window.clearTimeout(t3)
+      window.clearTimeout(t4)
+      window.clearTimeout(highlightTimer)
     }
   }, [matrix, peligroIdParam, id])
 
-  const [searchTerm, setSearchTerm] = useState('')
-  const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false)
-  const [showProcesoModal, setShowProcesoModal] = useState(false)
-  const [editingProceso, setEditingProceso] = useState<any>(null)
-  const [showActividadModal, setShowActividadModal] = useState(false)
-  const [editingActividad, setEditingActividad] = useState<any>(null)
-  const [actividadTarget, setActividadTarget] = useState<{procesoId?:string,zonaId?:string}|null>(null)
-  const [showZonaModal, setShowZonaModal] = useState(false)
-  const [editingZona, setEditingZona] = useState<any>(null)
-  const [zonaParentProcesoId, setZonaParentProcesoId] = useState<string | null>(null)
-  const [zonaModalName, setZonaModalName] = useState('')
-  const [zonaModalCargo, setZonaModalCargo] = useState('')
-  const [zonaModalRutinario, setZonaModalRutinario] = useState(false)
-  const [zonaModalActivities, setZonaModalActivities] = useState<Array<{id:string,nombre:string,tareas:string}>>([])
-  const [expandedZonaIds, setExpandedZonaIds] = useState<Record<string, boolean>>({})
-  const [dragOverActividadId, setDragOverActividadId] = useState<string | null>(null)
-  const [dragOverActividadEdge, setDragOverActividadEdge] = useState<'before' | 'after' | null>(null)
-  const [dragOverPeligroId, setDragOverPeligroId] = useState<string | null>(null)
-  const [dragOverPeligroEdge, setDragOverPeligroEdge] = useState<'before' | 'after' | null>(null)
-  const [showFilesModal, setShowFilesModal] = useState(false)
-  const [uploadedFiles, setUploadedFiles] = useState<Array<{name:string,type:string,size:number,data:string}>>([])
-  const [selectedPreviewIndex, setSelectedPreviewIndex] = useState<number | null>(null)
-  const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false)
-  const [confirmDeleteTitle, setConfirmDeleteTitle] = useState('Confirmar eliminación')
-  const [confirmDeleteMessage, setConfirmDeleteMessage] = useState('¿Estás seguro? Esta acción no se puede deshacer.')
-  const [pendingDeleteAction, setPendingDeleteAction] = useState<null | (() => void)>(null)
-  const fileInputRef = useRef<HTMLInputElement | null>(null)
-  const isDraggingRef = useRef(false)
-  const actividadDragSourceRef = useRef<{ procesoId: string, zonaId: string, actividadId: string } | null>(null)
-  const isDraggingPeligroRef = useRef(false)
-  const peligroDragSourceRef = useRef<{ procesoId: string, zonaId: string, actividadId: string, peligroId: string } | null>(null)
-
-  // helpers to mutate matrix immutably
+  // Helpers to mutate matrix immutably
   function updateMatrix(fn: (m: any) => any) {
     setMatrix((m: any) => {
       const next = fn(JSON.parse(JSON.stringify(m)))
       return next
     })
+    setHasUnsavedChanges(true)
   }
 
-  function addProceso() {
+  // General info update handler
+  function handleUpdateGeneralInfo(data: {
+    area: string
+    responsable: string
+    fecha_elaboracion: string
+  }) {
+    updateMatrix((m: any) => {
+      m.area = data.area
+      m.responsable = data.responsable
+      m.fecha_elaboracion = data.fecha_elaboracion
+      return m
+    })
+  }
+
+  // Process Handlers
+  function handleAddProceso() {
     setEditingProceso(null)
     setShowProcesoModal(true)
   }
 
-  function saveProceso(name: string) {
+  function handleSaveProceso(name: string) {
     if (!name) return setShowProcesoModal(false)
     if (editingProceso && editingProceso.id) {
       updateMatrix((m: any) => {
-        m.procesos = m.procesos.map((p: any) => p.id === editingProceso.id ? { ...p, nombre: name } : p)
+        m.procesos = m.procesos.map((p: any) =>
+          p.id === editingProceso.id ? { ...p, nombre: name } : p
+        )
         return m
       })
       setShowProcesoModal(false)
@@ -328,81 +352,20 @@ export default function MatrixEditor({ id }: { id?: string }) {
       m.procesos.push({ id: newProcesoId, nombre: name, zonas: [] })
       return m
     })
-    // select the new proceso so user can add zonas
     setSelected({ procesoId: newProcesoId, zonaId: undefined, actividadId: undefined })
     setShowProcesoModal(false)
   }
 
-  function editProceso(p: any) { setEditingProceso(p); setShowProcesoModal(true) }
-
-  function addZona(procesoId: string) {
-    // open Zona / Lugar creation modal so user can fill name and add actividades
-    const p = matrix?.procesos?.find((x: any) => x.id === procesoId)
-    setEditingZona(null)
-    setZonaParentProcesoId(procesoId)
-    setZonaModalName(`Zona / Lugar ${ (p?.zonas?.length||0) + 1 }`)
-    setZonaModalCargo('')
-    setZonaModalRutinario(false)
-    setZonaModalActivities([])
-    setShowZonaModal(true)
+  function handleEditProceso(p: any) {
+    setEditingProceso(p)
+    setShowProcesoModal(true)
   }
 
-  function editZonaItem(procesoId: string, z: any) {
-    setEditingZona(z)
-    setZonaParentProcesoId(procesoId)
-    setZonaModalName(z.nombre || '')
-    setZonaModalCargo(z.cargo || '')
-    setZonaModalRutinario(!!z.rutinario)
-    setZonaModalActivities([]) // We don't edit child activities here
-    setShowZonaModal(true)
-  }
-
-  function addActividadToZonaModal(name = '', tareas = '') {
-    setZonaModalActivities((cur) => [...cur, { id: makeId('ma-'), nombre: name || `Actividad ${cur.length+1}`, tareas: tareas || '' }])
-  }
-
-  function removeActividadFromZonaModal(id: string) {
-    setZonaModalActivities((cur) => cur.filter(a => a.id !== id))
-  }
-
-  function saveZonaModal() {
-    if (!zonaParentProcesoId) { setShowZonaModal(false); return }
-    
-    if (editingZona) {
-      updateMatrix((m: any) => {
-        const p = m.procesos.find((x: any) => x.id === zonaParentProcesoId)
-        const z = p.zonas.find((x: any) => x.id === editingZona.id)
-        if (z) {
-          z.nombre = zonaModalName
-          z.cargo = zonaModalCargo
-          z.rutinario = !!zonaModalRutinario
-        }
-        return m
-      })
-      setShowZonaModal(false)
-      setZonaParentProcesoId(null)
-      setEditingZona(null)
-      return
-    }
-
-    const newZonaId = makeId('z-')
-    const actividadIds = (zonaModalActivities||[]).map(a => ({ id: makeId('a-'), nombre: a.nombre, tareas: a.tareas || '' }))
-    updateMatrix((m: any) => {
-      const p = m.procesos.find((x: any) => x.id === zonaParentProcesoId)
-      const newZona = { id: newZonaId, nombre: zonaModalName || `Zona / Lugar ${ (p?.zonas?.length||0) + 1 }`, cargo: zonaModalCargo || '', actividades: actividadIds.map(a => ({ id: a.id, nombre: a.nombre, tareas: a.tareas || '', cargo: '', rutinario: false, peligros: [] })), rutinario: !!zonaModalRutinario }
-      p.zonas.push(newZona)
-      return m
-    })
-    // do NOT select the new zona yet; user should add/select an actividad to edit details
-    setSelected({ procesoId: zonaParentProcesoId })
-    setShowZonaModal(false)
-    setZonaParentProcesoId(null)
-    setZonaModalActivities([])
-  }
-
-  function removeProceso(procesoId: string) {
+  function handleDeleteProceso(procesoId: string) {
     setConfirmDeleteTitle('Eliminar proceso')
-    setConfirmDeleteMessage('¿Estás seguro de que deseas eliminar este proceso? Se eliminarán también sus zonas, actividades y peligros asociados.')
+    setConfirmDeleteMessage(
+      '¿Estás seguro de que deseas eliminar este proceso? Se eliminarán también sus zonas, actividades y peligros asociados.'
+    )
     setPendingDeleteAction(() => () => {
       updateMatrix((m: any) => {
         m.procesos = m.procesos.filter((p: any) => p.id !== procesoId)
@@ -418,62 +381,111 @@ export default function MatrixEditor({ id }: { id?: string }) {
     setConfirmDeleteOpen(true)
   }
 
-  function removeZona(procesoId: string, zonaId: string) {
+  // Zone Handlers
+  function handleAddZona(procesoId: string) {
+    setEditingZona(null)
+    setZonaParentProcesoId(procesoId)
+    setShowZonaModal(true)
+  }
+
+  function handleEditZona(procesoId: string, z: any) {
+    setEditingZona(z)
+    setZonaParentProcesoId(procesoId)
+    setShowZonaModal(true)
+  }
+
+  function handleSaveZona(name: string) {
+    if (!zonaParentProcesoId) {
+      setShowZonaModal(false)
+      return
+    }
+
+    if (editingZona) {
+      updateMatrix((m: any) => {
+        const p = m.procesos.find((x: any) => x.id === zonaParentProcesoId)
+        const z = p?.zonas?.find((x: any) => x.id === editingZona.id)
+        if (z) z.nombre = name
+        return m
+      })
+      setShowZonaModal(false)
+      setZonaParentProcesoId(null)
+      setEditingZona(null)
+      return
+    }
+
+    const newZonaId = makeId('z-')
+    updateMatrix((m: any) => {
+      const p = m.procesos.find((x: any) => x.id === zonaParentProcesoId)
+      if (p) {
+        p.zonas = p.zonas || []
+        p.zonas.push({ id: newZonaId, nombre: name, actividades: [] })
+      }
+      return m
+    })
+    setExpandedZonaIds((prev) => ({ ...prev, [newZonaId]: true }))
+    setShowZonaModal(false)
+    setZonaParentProcesoId(null)
+  }
+
+  function handleDeleteZona(procesoId: string, zonaId: string) {
     setConfirmDeleteTitle('Eliminar zona')
-    setConfirmDeleteMessage('¿Estás seguro de que deseas eliminar esta zona / lugar? Se eliminarán también sus actividades y peligros asociados.')
+    setConfirmDeleteMessage(
+      '¿Estás seguro de que deseas eliminar esta zona / lugar? Se eliminarán también sus actividades y peligros asociados.'
+    )
     setPendingDeleteAction(() => () => {
       updateMatrix((m: any) => {
         const p = m.procesos.find((x: any) => x.id === procesoId)
-        p.zonas = p.zonas.filter((z: any) => z.id !== zonaId)
-        if (selected.zonaId === zonaId) setSelected({ procesoId, zonaId: p.zonas?.[0]?.id })
+        if (p) {
+          p.zonas = p.zonas.filter((z: any) => z.id !== zonaId)
+        }
+        if (selected.zonaId === zonaId) {
+          setSelected({ procesoId, zonaId: p?.zonas?.[0]?.id })
+        }
         return m
       })
     })
     setConfirmDeleteOpen(true)
   }
 
-  function openAddActividadModal(procesoId: string, zonaId: string) {
-    // create actividad automatically with default name (Actividad N)
+  // Activity Handlers
+  function handleAddActividad(procesoId: string, zonaId: string) {
     const newId = makeId('a-')
     updateMatrix((m: any) => {
-      const z = m.procesos.find((x:any)=>x.id===procesoId).zonas.find((y:any)=>y.id===zonaId)
-      z.actividades = z.actividades || []
-      const nueva = { id: newId, nombre: `Actividad ${ (z.actividades.length||0) + 1 }`, descripcion: '', tareas:'', cargo:'', rutinario:false, peligros: [] }
-      z.actividades.push(nueva)
+      const z = m.procesos
+        .find((x: any) => x.id === procesoId)
+        ?.zonas?.find((y: any) => y.id === zonaId)
+      if (z) {
+        z.actividades = z.actividades || []
+        const nueva = {
+          id: newId,
+          nombre: `Actividad ${(z.actividades.length || 0) + 1}`,
+          descripcion: '',
+          tareas: '',
+          cargo: '',
+          rutinario: false,
+          peligros: [],
+        }
+        z.actividades.push(nueva)
+      }
       return m
     })
-    setExpandedZonaIds(s=>({...s, [zonaId]: true}))
+    setExpandedZonaIds((s) => ({ ...s, [zonaId]: true }))
     setSelected({ procesoId, zonaId, actividadId: newId })
   }
 
-  function saveActividad(name: string) {
-    if (!actividadTarget) return setShowActividadModal(false)
-    const { procesoId, zonaId } = actividadTarget
-    const newActividadId = makeId('a-')
-    updateMatrix((m: any) => {
-      const z = m.procesos.find((x:any)=>x.id===procesoId).zonas.find((y:any)=>y.id===zonaId)
-      const nueva = { id: newActividadId, nombre: name || `Actividad ${ (z.actividades?.length||0)+1 }`, descripcion:'', tareas:'', cargo:'', rutinario:false, peligros: [ ] }
-      z.actividades = z.actividades || []
-      z.actividades.push(nueva)
-      return m
-    })
-    // select the new actividad immediately
-    setSelected({ procesoId: actividadTarget.procesoId, zonaId: actividadTarget.zonaId, actividadId: newActividadId })
-    setShowActividadModal(false)
-    setActividadTarget(null)
-  }
-
-  function editActividad(procesoId: string, zonaId: string, actividad: any) {
+  function handleEditActividad(procesoId: string, zonaId: string, actividad: any) {
     setEditingActividad({ ...actividad, procesoId, zonaId })
-    setActividadTarget({procesoId, zonaId})
+    setActividadTarget({ procesoId, zonaId })
     setShowActividadModal(true)
   }
 
-  function saveEditedActividad(name: string) {
+  function handleSaveEditedActividad(name: string) {
     if (!editingActividad) return setShowActividadModal(false)
-    updateMatrix((m:any)=>{
-      const z = m.procesos.find((x:any)=>x.id===editingActividad.procesoId).zonas.find((y:any)=>y.id===editingActividad.zonaId)
-      const a = z.actividades.find((aa:any)=>aa.id===editingActividad.id)
+    updateMatrix((m: any) => {
+      const z = m.procesos
+        .find((x: any) => x.id === editingActividad.procesoId)
+        ?.zonas?.find((y: any) => y.id === editingActividad.zonaId)
+      const a = z?.actividades?.find((aa: any) => aa.id === editingActividad.id)
       if (a) a.nombre = name
       return m
     })
@@ -482,56 +494,187 @@ export default function MatrixEditor({ id }: { id?: string }) {
     setActividadTarget(null)
   }
 
-  function addPeligro(procesoId: string, zonaId: string, actividadId: string) {
-    updateMatrix((m: any) => {
-      const a = m.procesos.find((x: any)=> x.id===procesoId).zonas.find((y:any)=>y.id===zonaId).actividades.find((aa:any)=>aa.id===actividadId)
-      const nextNumero = Math.max(0, ...(a.peligros || []).map((p: any) => Number(p.numero) || 0)) + 1
-      const stableLabel = `Peligro ${nextNumero}`
-      a.peligros.push({ id: makeId('r-'), numero: nextNumero, descripcion: '', clasificacion: '', efectos: '', controles: { fuente:'', medio:'', individuo:'' }, evaluacion: { nd: null, ne: null, nc: null, np: null, nr: null, interp_np: '', interp_nr: '', nivel_riesgo: '', aceptabilidad: '' }, criterios: { num_expuestos: null, peor_consecuencia: '', requisito_legal: false }, intervencion: { eliminacion:'', sustitucion:'', controles_ingenieria:'', controles_administrativos:'', epp:'', responsable:'', fecha_ejecucion:'' }, _ui: { expanded: true, activeTab: 0, stableLabel } })
-      return m
-    })
-  }
-
-  function removePeligro(procesoId: string, zonaId: string, actividadId: string, peligroId: string) {
-    setConfirmDeleteTitle('Eliminar peligro')
-    setConfirmDeleteMessage('¿Estás seguro de que deseas eliminar este peligro? Esta acción no se puede deshacer.')
+  function handleDeleteActividad(procesoId: string, zonaId: string, actividadId: string) {
+    setConfirmDeleteTitle('Eliminar actividad')
+    setConfirmDeleteMessage(
+      '¿Estás seguro de que deseas eliminar esta actividad? Se eliminarán también sus peligros asociados.'
+    )
     setPendingDeleteAction(() => () => {
       updateMatrix((m: any) => {
-        const a = m.procesos.find((x: any)=> x.id===procesoId).zonas.find((y:any)=>y.id===zonaId).actividades.find((aa:any)=>aa.id===actividadId)
-        a.peligros = a.peligros.filter((p: any) => p.id !== peligroId)
+        const z = m.procesos
+          .find((x: any) => x.id === procesoId)
+          ?.zonas?.find((y: any) => y.id === zonaId)
+        if (z) {
+          z.actividades = z.actividades.filter((a: any) => a.id !== actividadId)
+        }
+        if (selected.actividadId === actividadId) {
+          setSelected({ procesoId, zonaId, actividadId: z?.actividades?.[0]?.id })
+        }
         return m
       })
     })
     setConfirmDeleteOpen(true)
   }
-  function duplicatePeligro(procesoId: string, zonaId: string, actividadId: string, peligroId: string) {
-    updateMatrix((m:any)=>{
-      const a = m.procesos.find((x:any)=>x.id===procesoId).zonas.find((y:any)=>y.id===zonaId).actividades.find((aa:any)=>aa.id===actividadId)
-      const peligroToDuplicate = a.peligros.find((p:any)=> p.id === peligroId)
-      if (!peligroToDuplicate) return m
-      const newPeligro = JSON.parse(JSON.stringify(peligroToDuplicate))
-      newPeligro.id = makeId('r-')
-      newPeligro.numero = Math.max(0, ...(a.peligros || []).map((p: any) => Number(p.numero) || 0)) + 1
-      newPeligro._ui = { expanded: false, activeTab: 0, stableLabel: `Peligro ${newPeligro.numero}` }
-      a.peligros.push(newPeligro)
+
+  function handleUpdateActivityField(field: string, value: any) {
+    if (!selected.procesoId || !selected.zonaId || !selected.actividadId) return
+    updateMatrix((m: any) => {
+      const a = m.procesos
+        .find((p: any) => p.id === selected.procesoId)
+        ?.zonas?.find((z: any) => z.id === selected.zonaId)
+        ?.actividades?.find((aa: any) => aa.id === selected.actividadId)
+      if (a) {
+        a[field] = value
+      }
       return m
     })
-    toast({ title: 'Éxito', description: 'Peligro duplicado correctamente' })
-  }  function updatePeligroField(procesoId: string, zonaId: string, actividadId: string, riesgoId: string, path: string[], value: any) {
-    updateMatrix((m: any) => {
-      const a = m.procesos.find((x: any)=> x.id===procesoId).zonas.find((y:any)=>y.id===zonaId).actividades.find((aa:any)=>aa.id===actividadId)
-      const r = a.peligros.find((p: any) => p.id === riesgoId)
-      let cur: any = r
-      for (let i=0;i<path.length-1;i++) { cur = cur[path[i]] }
-      cur[path[path.length-1]] = value
+  }
 
-      // If evaluation fields updated, recalc initial
+  // Hazard Handlers
+  function handleAddPeligro() {
+    if (!selected.procesoId || !selected.zonaId || !selected.actividadId) return
+    updateMatrix((m: any) => {
+      const a = m.procesos
+        .find((x: any) => x.id === selected.procesoId)
+        ?.zonas?.find((y: any) => y.id === selected.zonaId)
+        ?.actividades?.find((aa: any) => aa.id === selected.actividadId)
+      if (a) {
+        a.peligros = a.peligros || []
+        const nextNumero =
+          Math.max(0, ...(a.peligros || []).map((p: any) => Number(p.numero) || 0)) + 1
+        const stableLabel = `Peligro ${nextNumero}`
+        a.peligros.push({
+          id: makeId('r-'),
+          numero: nextNumero,
+          descripcion: '',
+          clasificacion: '',
+          efectos: '',
+          controles: { fuente: '', medio: '', individuo: '' },
+          evaluacion: {
+            nd: null,
+            ne: null,
+            nc: null,
+            np: null,
+            nr: null,
+            interp_np: '',
+            interp_nr: '',
+            nivel_riesgo: '',
+            aceptabilidad: '',
+          },
+          criterios: { num_expuestos: null, peor_consecuencia: '', requisito_legal: false },
+          intervencion: {
+            eliminacion: '',
+            sustitucion: '',
+            controles_ingenieria: '',
+            controles_administrativos: '',
+            epp: '',
+            responsable: '',
+            fecha_ejecucion: '',
+          },
+          _ui: { expanded: true, activeTab: 0, stableLabel },
+        })
+      }
+      return m
+    })
+  }
+
+  function handleDuplicatePeligro(peligroId: string) {
+    if (!selected.procesoId || !selected.zonaId || !selected.actividadId) return
+    updateMatrix((m: any) => {
+      const a = m.procesos
+        .find((x: any) => x.id === selected.procesoId)
+        ?.zonas?.find((y: any) => y.id === selected.zonaId)
+        ?.actividades?.find((aa: any) => aa.id === selected.actividadId)
+      if (a) {
+        const peligroToDuplicate = a.peligros.find((p: any) => p.id === peligroId)
+        if (peligroToDuplicate) {
+          const newPeligro = JSON.parse(JSON.stringify(peligroToDuplicate))
+          newPeligro.id = makeId('r-')
+          newPeligro.numero =
+            Math.max(0, ...(a.peligros || []).map((p: any) => Number(p.numero) || 0)) + 1
+          newPeligro._ui = {
+            expanded: false,
+            activeTab: 0,
+            stableLabel: `Peligro ${newPeligro.numero}`,
+          }
+          a.peligros.push(newPeligro)
+        }
+      }
+      return m
+    })
+    toast({ title: 'Éxito', description: 'Peligro duplicado correctamente.' })
+  }
+
+  function handleDeletePeligro(peligroId: string) {
+    setConfirmDeleteTitle('Eliminar peligro')
+    setConfirmDeleteMessage(
+      '¿Estás seguro de que deseas eliminar este peligro? Esta acción no se puede deshacer.'
+    )
+    setPendingDeleteAction(() => () => {
+      updateMatrix((m: any) => {
+        const a = m.procesos
+          .find((x: any) => x.id === selected.procesoId)
+          ?.zonas?.find((y: any) => y.id === selected.zonaId)
+          ?.actividades?.find((aa: any) => aa.id === selected.actividadId)
+        if (a) {
+          a.peligros = a.peligros.filter((p: any) => p.id !== peligroId)
+        }
+        return m
+      })
+    })
+    setConfirmDeleteOpen(true)
+  }
+
+  function handleToggleExpandPeligro(peligroId: string) {
+    updateMatrix((m: any) => {
+      const a = m.procesos
+        .find((x: any) => x.id === selected.procesoId)
+        ?.zonas?.find((y: any) => y.id === selected.zonaId)
+        ?.actividades?.find((aa: any) => aa.id === selected.actividadId)
+      const p = a?.peligros?.find((pel: any) => pel.id === peligroId)
+      if (p) {
+        p._ui = { ...p._ui, expanded: !p._ui?.expanded }
+      }
+      return m
+    })
+  }
+
+  function handleChangeTabPeligro(peligroId: string, tabIndex: number) {
+    updateMatrix((m: any) => {
+      const a = m.procesos
+        .find((x: any) => x.id === selected.procesoId)
+        ?.zonas?.find((y: any) => y.id === selected.zonaId)
+        ?.actividades?.find((aa: any) => aa.id === selected.actividadId)
+      const p = a?.peligros?.find((pel: any) => pel.id === peligroId)
+      if (p) {
+        p._ui = { ...p._ui, activeTab: tabIndex }
+      }
+      return m
+    })
+  }
+
+  function handleUpdatePeligroField(peligroId: string, path: string[], value: any) {
+    updateMatrix((m: any) => {
+      const a = m.procesos
+        .find((x: any) => x.id === selected.procesoId)
+        ?.zonas?.find((y: any) => y.id === selected.zonaId)
+        ?.actividades?.find((aa: any) => aa.id === selected.actividadId)
+      const r = a?.peligros?.find((p: any) => p.id === peligroId)
+      if (!r) return m
+
+      let cur: any = r
+      for (let i = 0; i < path.length - 1; i++) {
+        cur = cur[path[i]]
+      }
+      cur[path[path.length - 1]] = value
+
+      // Initial evaluation recalculation (GTC 45)
       if (path[0] === 'evaluacion') {
         const nd = Number(r.evaluacion.nd || 0)
         const ne = Number(r.evaluacion.ne || 0)
         const nc = Number(r.evaluacion.nc || 0)
-        const np = (!nd || !ne) ? 0 : nd * ne
-        const nr = (!np || !nc) ? 0 : np * nc
+        const np = !nd || !ne ? 0 : nd * ne
+        const nr = !np || !nc ? 0 : np * nc
         r.evaluacion.np = np
         r.evaluacion.nr = nr
         r.evaluacion.interp_np = interpProbabilidad(np).label
@@ -541,13 +684,14 @@ export default function MatrixEditor({ id }: { id?: string }) {
         r.evaluacion.aceptabilidad = nivelLabel ? aceptabilidadFromNivel(nivelLabel) : ''
       }
 
-      // Recalc residual if updated
-      if (r.evaluacionPost) {
+      // Residual evaluation recalculation (GTC 45 post-intervention)
+      if (path[0] === 'evaluacionPost' || r.evaluacionPost) {
+        if (!r.evaluacionPost) r.evaluacionPost = {}
         const ndP = Number(r.evaluacionPost.nd || 0)
         const neP = Number(r.evaluacionPost.ne || 0)
         const ncP = Number(r.evaluacionPost.nc || 0)
-        const npP = (!ndP || !neP) ? 0 : ndP * neP
-        const nrP = (!npP || !ncP) ? 0 : npP * ncP
+        const npP = !ndP || !neP ? 0 : ndP * neP
+        const nrP = !npP || !ncP ? 0 : npP * ncP
         r.evaluacionPost.np = npP
         r.evaluacionPost.nr = nrP
         r.evaluacionPost.interp_np = interpProbabilidad(npP).label
@@ -556,17 +700,30 @@ export default function MatrixEditor({ id }: { id?: string }) {
         const nivelLabelP = interpNivelRiesgo(nrP).label
         r.evaluacionPost.aceptabilidad = nivelLabelP ? aceptabilidadFromNivel(nivelLabelP) : ''
       }
+
       return m
     })
   }
 
-  // Drag & drop handlers for reordering actividades and peligros
-  function onActividadDragStart(e: React.DragEvent, procesoId: string, zonaId: string, actividadId: string) {
+  // Drag and drop handlers
+  function onActividadDragStart(
+    e: React.DragEvent,
+    procesoId: string,
+    zonaId: string,
+    actividadId: string
+  ) {
     isDraggingRef.current = true
     actividadDragSourceRef.current = { procesoId, zonaId, actividadId }
     e.stopPropagation()
-    try { e.dataTransfer.setData('application/json', JSON.stringify({ type: 'actividad', procesoId, zonaId, actividadId })) } catch (e) {}
-    try { e.dataTransfer.setData('text/plain', actividadId) } catch (e) {}
+    try {
+      e.dataTransfer.setData(
+        'application/json',
+        JSON.stringify({ type: 'actividad', procesoId, zonaId, actividadId })
+      )
+    } catch (err) {}
+    try {
+      e.dataTransfer.setData('text/plain', actividadId)
+    } catch (err) {}
     e.dataTransfer.effectAllowed = 'move'
   }
 
@@ -589,43 +746,32 @@ export default function MatrixEditor({ id }: { id?: string }) {
     setDragOverActividadEdge(null)
   }
 
-  function onActividadDrop(e: React.DragEvent, procesoId: string, zonaId: string, targetActividadId: string | null) {
+  function onActividadDrop(
+    e: React.DragEvent,
+    procesoId: string,
+    zonaId: string,
+    targetActividadId: string | null
+  ) {
     e.preventDefault()
     e.stopPropagation()
     isDraggingRef.current = false
     const dropEdge = dragOverActividadEdge
     setDragOverActividadId(null)
     setDragOverActividadEdge(null)
+
     let src: any = actividadDragSourceRef.current
     if (!src) {
-      try { src = JSON.parse(e.dataTransfer.getData('application/json')) } catch (err) { }
-    }
-    // fallback: some browsers strip custom MIME types; try text/plain and locate source by id
-    if (!src || (!src.type && !src.actividadId) || src.type === 'actividad') {
       try {
-        const txt = e.dataTransfer.getData('text/plain') || ''
-        if (txt) {
-          // find actividad location by id scanning current matrix
-          const id = txt
-          if (matrix && matrix.procesos) {
-            for (const p of matrix.procesos) {
-              for (const z of p.zonas || []) {
-                const idx = (z.actividades || []).findIndex((aa: any) => aa.id === id)
-                if (idx !== -1) {
-                  src = { type: 'actividad', procesoId: p.id, zonaId: z.id, actividadId: id }
-                  break
-                }
-              }
-              if (src) break
-            }
-          }
-        }
+        src = JSON.parse(e.dataTransfer.getData('application/json'))
       } catch (err) {}
     }
     if (!src || !src.actividadId) return
-    if (src.procesoId === procesoId && src.zonaId === zonaId && targetActividadId === src.actividadId) {
+    if (
+      src.procesoId === procesoId &&
+      src.zonaId === zonaId &&
+      targetActividadId === src.actividadId
+    ) {
       actividadDragSourceRef.current = null
-      setTimeout(() => { isDraggingRef.current = false }, 0)
       return
     }
 
@@ -640,27 +786,40 @@ export default function MatrixEditor({ id }: { id?: string }) {
       const dstP = m.procesos.find((p: any) => p.id === procesoId)
       const dstZ = dstP?.zonas?.find((z: any) => z.id === zonaId)
       if (!dstZ) return m
-      const targetIdx = targetActividadId ? dstZ.actividades.findIndex((aa: any) => aa.id === targetActividadId) : -1
-      if (targetIdx === -1) dstZ.actividades.push(actividadObj)
-      else {
+      const targetIdx = targetActividadId
+        ? dstZ.actividades.findIndex((aa: any) => aa.id === targetActividadId)
+        : -1
+      if (targetIdx === -1) {
+        dstZ.actividades.push(actividadObj)
+      } else {
         const insertIdx = dropEdge === 'after' ? targetIdx + 1 : targetIdx
         dstZ.actividades.splice(insertIdx, 0, actividadObj)
       }
-
       return m
     })
 
     actividadDragSourceRef.current = null
-    setTimeout(() => { isDraggingRef.current = false }, 0)
   }
 
-  function onPeligroDragStart(e: React.DragEvent, procesoId: string, zonaId: string, actividadId: string, peligroId: string) {
+  function onPeligroDragStart(
+    e: React.DragEvent,
+    peligroId: string
+  ) {
+    if (!selected.procesoId || !selected.zonaId || !selected.actividadId) return
     isDraggingPeligroRef.current = true
-    const src = { procesoId, zonaId, actividadId, peligroId }
+    const src = {
+      procesoId: selected.procesoId,
+      zonaId: selected.zonaId,
+      actividadId: selected.actividadId,
+      peligroId,
+    }
     peligroDragSourceRef.current = src
-    console.log('[Peligro DnD] dragstart', src)
-    try { e.dataTransfer.setData('application/json', JSON.stringify({ type: 'peligro', ...src })) } catch (err) {}
-    try { e.dataTransfer.setData('text/plain', peligroId) } catch (err) {}
+    try {
+      e.dataTransfer.setData('application/json', JSON.stringify({ type: 'peligro', ...src }))
+    } catch (err) {}
+    try {
+      e.dataTransfer.setData('text/plain', peligroId)
+    } catch (err) {}
     e.dataTransfer.effectAllowed = 'move'
     e.stopPropagation()
   }
@@ -675,20 +834,8 @@ export default function MatrixEditor({ id }: { id?: string }) {
       const rect = (e.currentTarget as HTMLElement).getBoundingClientRect()
       const edge: 'before' | 'after' = e.clientY < rect.top + rect.height / 2 ? 'before' : 'after'
       setDragOverPeligroEdge(edge)
-      console.log('[Peligro DnD] dragover', { targetPeligroId, edge, clientY: e.clientY, top: rect.top, height: rect.height })
     }
     e.dataTransfer.dropEffect = 'move'
-  }
-
-  function resolvePeligroDropTarget(e: React.DragEvent) {
-    const target = e.target as HTMLElement | null
-    const row = target?.closest?.('[data-peligro-id]') as HTMLElement | null
-    if (!row) return { targetPeligroId: null as string | null, edge: null as 'before' | 'after' | null }
-
-    const targetPeligroId = row.getAttribute('data-peligro-id')
-    const rect = row.getBoundingClientRect()
-    const edge: 'before' | 'after' = e.clientY < rect.top + rect.height / 2 ? 'before' : 'after'
-    return { targetPeligroId, edge }
   }
 
   function onPeligroDragLeave() {
@@ -696,53 +843,21 @@ export default function MatrixEditor({ id }: { id?: string }) {
     setDragOverPeligroEdge(null)
   }
 
-  function onPeligroDrop(e: React.DragEvent, procesoId: string, zonaId: string, actividadId: string, targetPeligroId: string | null) {
+  function onPeligroDrop(e: React.DragEvent, targetPeligroId: string | null) {
     e.preventDefault()
     e.stopPropagation()
+    const dropEdge = dragOverPeligroEdge
     setDragOverPeligroId(null)
-    const resolved = resolvePeligroDropTarget(e)
-    const dropTargetId = targetPeligroId || resolved.targetPeligroId
-    const dropEdge = resolved.edge || dragOverPeligroEdge
     setDragOverPeligroEdge(null)
-
-    console.log('[Peligro DnD] drop', {
-      processTarget: { procesoId, zonaId, actividadId },
-      dropTargetId,
-      dropEdge,
-      resolved,
-      currentSource: peligroDragSourceRef.current,
-    })
 
     let src: any = peligroDragSourceRef.current
     if (!src) {
-      try { src = JSON.parse(e.dataTransfer.getData('application/json')) } catch (err) {}
+      try {
+        src = JSON.parse(e.dataTransfer.getData('application/json'))
+      } catch (err) {}
     }
-    if ((!src || !src.peligroId) && matrix && matrix.procesos) {
-      const plain = e.dataTransfer.getData('text/plain') || ''
-      if (plain) {
-        console.log('[Peligro DnD] drop fallback lookup', { plain })
-        for (const p of matrix.procesos) {
-          for (const z of p.zonas || []) {
-            for (const a of z.actividades || []) {
-              if ((a.peligros || []).some((pp: any) => pp.id === plain)) {
-                src = { procesoId: p.id, zonaId: z.id, actividadId: a.id, peligroId: plain }
-                console.log('[Peligro DnD] drop source resolved from plain text', src)
-                break
-              }
-            }
-            if (src) break
-          }
-          if (src) break
-        }
-      }
-    }
-
     if (!src || !src.peligroId) return
-    if (src.procesoId === procesoId && src.zonaId === zonaId && src.actividadId === actividadId && dropTargetId === src.peligroId) {
-      peligroDragSourceRef.current = null
-      setTimeout(() => { isDraggingPeligroRef.current = false }, 0)
-      return
-    }
+    if (!selected.procesoId || !selected.zonaId || !selected.actividadId) return
 
     updateMatrix((m: any) => {
       const srcP = m.procesos.find((p: any) => p.id === src.procesoId)
@@ -755,12 +870,14 @@ export default function MatrixEditor({ id }: { id?: string }) {
 
       const peligroObj = srcA.peligros.splice(srcIdx, 1)[0]
 
-      const dstP = m.procesos.find((p: any) => p.id === procesoId)
-      const dstZ = dstP?.zonas?.find((z: any) => z.id === zonaId)
-      const dstA = dstZ?.actividades?.find((aa: any) => aa.id === actividadId)
+      const dstP = m.procesos.find((p: any) => p.id === selected.procesoId)
+      const dstZ = dstP?.zonas?.find((z: any) => z.id === selected.zonaId)
+      const dstA = dstZ?.actividades?.find((aa: any) => aa.id === selected.actividadId)
       if (!dstA) return m
 
-      const targetIdx = dropTargetId ? dstA.peligros.findIndex((pp: any) => pp.id === dropTargetId) : -1
+      const targetIdx = targetPeligroId
+        ? dstA.peligros.findIndex((pp: any) => pp.id === targetPeligroId)
+        : -1
       if (targetIdx === -1) {
         dstA.peligros.push(peligroObj)
       } else {
@@ -768,175 +885,75 @@ export default function MatrixEditor({ id }: { id?: string }) {
         dstA.peligros.splice(insertIdx, 0, peligroObj)
       }
 
-      setSelected({ procesoId, zonaId, actividadId })
       return m
     })
 
     peligroDragSourceRef.current = null
-    setTimeout(() => { isDraggingPeligroRef.current = false }, 0)
   }
 
-  function removeActividad(procesoId: string, zonaId: string, actividadId: string) {
-    setConfirmDeleteTitle('Eliminar actividad')
-    setConfirmDeleteMessage('¿Estás seguro de que deseas eliminar esta actividad? Se eliminarán también sus peligros asociados.')
+  // Files Handlers
+  function handleSaveFilesToMatrix(
+    newFiles: Array<{ name: string; type: string; size: number; data: string }>
+  ) {
+    updateMatrix((m: any) => {
+      m.files = m.files || []
+      m.files = m.files.concat(newFiles)
+      return m
+    })
+  }
+
+  function handleDeleteFile(index: number) {
+    setConfirmDeleteTitle('Eliminar archivo adjunto')
+    setConfirmDeleteMessage('¿Deseas eliminar este archivo adjunto de la matriz?')
     setPendingDeleteAction(() => () => {
-      updateMatrix((m:any)=>{
-        const z = m.procesos.find((x:any)=>x.id===procesoId).zonas.find((y:any)=>y.id===zonaId)
-        z.actividades = z.actividades.filter((a:any)=> a.id !== actividadId)
-        if (selected.actividadId === actividadId) setSelected({ procesoId, zonaId, actividadId: z.actividades?.[0]?.id })
+      updateMatrix((m: any) => {
+        m.files = m.files || []
+        m.files.splice(index, 1)
         return m
       })
     })
     setConfirmDeleteOpen(true)
   }
 
-  const stats = useMemo(() => {
-    if (!matrix) return { zonas: 0, peligros: 0 }
-    const zonas = (matrix.procesos || []).reduce((acc: number, p: any) => acc + (p.zonas?.length||0), 0)
-    const peligros = (matrix.procesos || []).reduce((acc: number, p: any) => acc + (p.zonas?.reduce((a:number,z:any)=> a + (z.actividades?.reduce((aa:number,act:any)=> aa + (act.peligros?.length||0),0)||0),0)||0), 0)
-    return { zonas, peligros }
-  }, [matrix])
-
-  const filteredProcesos = useMemo(() => {
-    if (!searchTerm.trim()) return matrix?.procesos || []
-    const term = searchTerm.toLowerCase().trim()
-
-    const mapped = (matrix?.procesos || []).map((p: any) => {
-      const pMatches = p.nombre.toLowerCase().includes(term)
-
-      const filteredZonas = (p.zonas || []).map((z: any) => {
-        const zMatches = z.nombre.toLowerCase().includes(term)
-
-        const filteredActividades = (z.actividades || []).filter((a: any) => {
-          const aMatches =
-            a.nombre.toLowerCase().includes(term) ||
-            (a.descripcion || '').toLowerCase().includes(term) ||
-            (a.tareas || '').toLowerCase().includes(term) ||
-            (a.cargo || '').toLowerCase().includes(term)
-
-          const dangerMatches = (a.peligros || []).some((pel: any) =>
-            (pel.descripcion || '').toLowerCase().includes(term) ||
-            (pel.clasificacion || '').toLowerCase().includes(term)
-          )
-
-          return aMatches || dangerMatches
-        })
-
-        // Sort activities so that those directly matching the term appear first
-        const sortedActividades = [...filteredActividades].sort((a: any, b: any) => {
-          const aDirect = (
-            a.nombre.toLowerCase().includes(term) ||
-            (a.descripcion || '').toLowerCase().includes(term) ||
-            (a.tareas || '').toLowerCase().includes(term) ||
-            (a.cargo || '').toLowerCase().includes(term)
-          ) ? 1 : 0
-          const bDirect = (
-            b.nombre.toLowerCase().includes(term) ||
-            (b.descripcion || '').toLowerCase().includes(term) ||
-            (b.tareas || '').toLowerCase().includes(term) ||
-            (b.cargo || '').toLowerCase().includes(term)
-          ) ? 1 : 0
-          return bDirect - aDirect
-        })
-
-        if (zMatches || filteredActividades.length > 0) {
-          return {
-            ...z,
-            actividades: zMatches ? z.actividades : sortedActividades,
-            _searchMatch: true
-          }
-        }
-        return null
-      }).filter(Boolean)
-
-      // Sort matching Zonas/Cargos to the top
-      filteredZonas.sort((a: any, b: any) => {
-        const aDirect = a.nombre.toLowerCase().includes(term) ? 1 : 0
-        const bDirect = b.nombre.toLowerCase().includes(term) ? 1 : 0
-        return bDirect - aDirect
-      })
-
-      if (pMatches || filteredZonas.length > 0) {
-        return {
-          ...p,
-          zonas: pMatches ? p.zonas.map((z: any) => ({ ...z, _searchMatch: true })) : filteredZonas,
-          _searchMatch: true
-        }
-      }
-      return null
-    }).filter(Boolean)
-
-    // Sort matching procesos to the top
-    mapped.sort((a: any, b: any) => {
-      const aDirect = a.nombre.toLowerCase().includes(term) ? 1 : 0
-      const bDirect = b.nombre.toLowerCase().includes(term) ? 1 : 0
-      return bDirect - aDirect
-    })
-
-    return mapped
-  }, [matrix?.procesos, searchTerm])
-
-  const searchResults = useMemo(() => {
-    if (!searchTerm.trim()) return []
-    const term = searchTerm.toLowerCase().trim()
-    const results: Array<{ proceso: any, zona: any, actividad: any }> = []
-    
-    ;(matrix?.procesos || []).forEach((p: any) => {
-      ;(p.zonas || []).forEach((z: any) => {
-        ;(z.actividades || []).forEach((a: any) => {
-          const aMatches =
-            a.nombre.toLowerCase().includes(term) ||
-            (a.descripcion || '').toLowerCase().includes(term) ||
-            (a.tareas || '').toLowerCase().includes(term) ||
-            (a.cargo || '').toLowerCase().includes(term)
-
-          const dangerMatches = (a.peligros || []).some((pel: any) =>
-            (pel.descripcion || '').toLowerCase().includes(term) ||
-            (pel.clasificacion || '').toLowerCase().includes(term)
-          )
-
-          if (aMatches || dangerMatches) {
-            results.push({ proceso: p, zona: z, actividad: a })
-          }
-        })
-      })
-    })
-    return results
-  }, [matrix?.procesos, searchTerm])
-
+  // Save Matrix Handler (with automatic update-date)
   async function saveMatrix() {
     try {
+      setIsSaving(true)
       let currentMatrix = { ...matrix }
-      currentMatrix.fecha_actualizacion = getTodayDate()
       
-      // Step 1: Pre-upload base64 files to decouple them from the main save payload
+      // Automatic update date on real persisted save
+      currentMatrix.fecha_actualizacion = getTodayDate()
+
+      // Pre-upload base64 files
       if (currentMatrix.files && currentMatrix.files.length > 0) {
-        const base64Files = currentMatrix.files.filter((f: any) => f.data && f.data.startsWith('data:'))
+        const base64Files = currentMatrix.files.filter(
+          (f: any) => f.data && f.data.startsWith('data:')
+        )
         if (base64Files.length > 0) {
           const uploadRes = await apiFetch('/api/upload', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ files: base64Files })
+            body: JSON.stringify({ files: base64Files }),
           })
 
           if (!uploadRes.ok) {
             const errBody = await uploadRes.json().catch(() => ({}))
             throw new Error(errBody.error || 'Error al subir los archivos')
           }
-          
+
           const uploaded = await uploadRes.json()
-          
+
           currentMatrix.files = currentMatrix.files.map((f: any) => {
             if (f.data && f.data.startsWith('data:')) {
-              const updated = uploaded.find((uf: any) => uf.originalName === f.name || uf.name === f.name)
+              const updated = uploaded.find(
+                (uf: any) => uf.originalName === f.name || uf.name === f.name
+              )
               if (updated) {
                 return { ...f, data: updated.url, name: updated.name }
               }
             }
             return f
           })
-          
-          setMatrix(currentMatrix)
         }
       }
 
@@ -944,7 +961,7 @@ export default function MatrixEditor({ id }: { id?: string }) {
       const method = isNew ? 'POST' : 'PUT'
       const url = isNew ? '/api/riesgos' : `/api/riesgos/${currentMatrix.id}`
 
-      // Ensure ordering fields reflect current array positions so server persists order
+      // Persist order indices
       if (currentMatrix.procesos && Array.isArray(currentMatrix.procesos)) {
         currentMatrix.procesos.forEach((p: any, pIdx: number) => {
           p.orden = pIdx
@@ -957,9 +974,6 @@ export default function MatrixEditor({ id }: { id?: string }) {
                   if (a.peligros && Array.isArray(a.peligros)) {
                     a.peligros.forEach((pel: any, pelIdx: number) => {
                       pel.orden = pelIdx
-
-                      // Keep label identity stable: only backfill numero when missing.
-                      // We recover it from existing stable label first ("Peligro N"), not from current position.
                       if (!(typeof pel.numero === 'number' && pel.numero > 0)) {
                         const label = String(pel?._ui?.stableLabel || '')
                         const match = label.match(/\b(\d+)\b/)
@@ -968,10 +982,9 @@ export default function MatrixEditor({ id }: { id?: string }) {
                       if (!(typeof pel.numero === 'number' && pel.numero > 0)) {
                         pel.numero = pelIdx + 1
                       }
-
                       pel._ui = {
                         ...(pel._ui || {}),
-                        stableLabel: `Peligro ${pel.numero}`
+                        stableLabel: `Peligro ${pel.numero}`,
                       }
                     })
                   }
@@ -985,7 +998,7 @@ export default function MatrixEditor({ id }: { id?: string }) {
       const res = await apiFetch(url, {
         method,
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(currentMatrix)
+        body: JSON.stringify(currentMatrix),
       })
 
       if (!res.ok) {
@@ -996,1150 +1009,324 @@ export default function MatrixEditor({ id }: { id?: string }) {
 
       const saved = await res.json().catch(() => ({}))
       setMatrix(currentMatrix)
-      toast({ title: 'Éxito', description: 'La matriz se ha guardado correctamente en la base de datos.' })
+      setHasUnsavedChanges(false)
+      toast({
+        title: 'Éxito',
+        description: 'La matriz se ha guardado correctamente en la base de datos.',
+      })
       if (isNew && saved.id) {
         router.push(`/matriz/${saved.id}`)
       }
     } catch (err: any) {
       console.error(err)
-      toast({ title: 'Error', variant: 'destructive', description: err.message || 'No se pudo guardar la matriz' })
+      toast({
+        title: 'Error',
+        variant: 'destructive',
+        description: err.message || 'No se pudo guardar la matriz',
+      })
+    } finally {
+      setIsSaving(false)
     }
   }
 
+  // Export to Excel Handler
   async function handleExportMatrix() {
     try {
-      if (!matrix.id || String(matrix.id).startsWith('m-')) {
-        toast({ title: 'Aviso', description: 'Por favor, guarda la matriz primero antes de exportar.' })
+      if (!matrix?.id || String(matrix.id).startsWith('m-')) {
+        toast({
+          title: 'Aviso',
+          description: 'Por favor, guarda la matriz primero antes de exportar.',
+        })
         return
       }
-      
-      // Fetch the full matrix data from API
       const res = await apiFetch(`/api/riesgos/${matrix.id}`)
       if (!res.ok) throw new Error('No se pudo obtener los datos de la matriz')
       const matrizData = await res.json()
-      
-      // Export to Excel
       await exportMatrizToExcel(matrizData)
-      toast({ title: 'Éxito', description: 'La matriz se ha exportado correctamente a Excel.' })
+      toast({
+        title: 'Éxito',
+        description: 'La matriz se ha exportado correctamente a Excel.',
+      })
     } catch (err: any) {
       console.error(err)
-      toast({ title: 'Error', variant: 'destructive', description: err.message || 'No se pudo exportar la matriz' })
-    }
-  }
-
-  function exportJson() { const s = JSON.stringify(matrix, null, 2); const blob = new Blob([s], {type:'application/json'}); const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = `matrix_${matrix.id}.json`; a.click(); URL.revokeObjectURL(url) }
-
-  async function handleFilesInput(e: React.ChangeEvent<HTMLInputElement>) {
-    const files = Array.from(e.target.files || [])
-    const read = await Promise.all(files.map((f) => new Promise<any>((res) => {
-      const fr = new FileReader()
-      fr.onload = () => res({ name: f.name, type: f.type, size: f.size, data: String(fr.result) })
-      fr.readAsDataURL(f)
-    })))
-    setUploadedFiles((cur) => [...cur, ...read])
-  }
-
-  function removeUploadedFile(index: number) {
-    setConfirmDeleteTitle('Eliminar archivo')
-    setConfirmDeleteMessage('¿Deseas eliminar este archivo de la carga actual?')
-    setPendingDeleteAction(() => () => {
-      setUploadedFiles((cur) => {
-        const copy = [...cur]
-        copy.splice(index, 1)
-        return copy
+      toast({
+        title: 'Error',
+        variant: 'destructive',
+        description: err.message || 'No se pudo exportar la matriz',
       })
-      setSelectedPreviewIndex((cur) => (cur === index ? null : cur && cur > index ? cur - 1 : cur))
-    })
-    setConfirmDeleteOpen(true)
-  }
-
-  function handleConfirmDelete() {
-    const action = pendingDeleteAction
-    setConfirmDeleteOpen(false)
-    setPendingDeleteAction(null)
-    if (action) action()
-  }
-
-  function handleCancelDelete() {
-    setConfirmDeleteOpen(false)
-    setPendingDeleteAction(null)
-  }
-
-  function decodeDataUrl(dataUrl: string) {
-    try {
-      const parts = dataUrl.split(',')
-      if (parts.length < 2) return ''
-      const meta = parts[0]
-      const isBase64 = meta.indexOf(';base64') !== -1
-      const payload = parts[1]
-      if (isBase64) {
-        // atob may throw for very large binaries; wrap in try
-        try { return atob(payload) } catch (e) { return '' }
-      }
-      return decodeURIComponent(payload)
-    } catch (e) { return '' }
-  }
-
-  function getPreviewSnippet(f: {name:string,type:string,size:number,data:string}) {
-    if (!f.data) return null
-    if (f.type.startsWith('image/')) return null
-    if (f.type.startsWith('text/') || f.type === 'application/json') {
-      const txt = decodeDataUrl(f.data)
-      return txt ? txt.slice(0, 1000) : null
     }
-    return null
   }
 
-  function saveFilesToMatrix() {
-    if (!uploadedFiles || uploadedFiles.length === 0) { setShowFilesModal(false); return }
-    updateMatrix((m:any)=>{
-      m.files = m.files || []
-      m.files = m.files.concat(uploadedFiles)
-      return m
+  // Filtered Procesos based on search
+  const filteredProcesos = useMemo(() => {
+    if (!searchTerm.trim()) return matrix?.procesos || []
+    const term = searchTerm.toLowerCase().trim()
+
+    const mapped = (matrix?.procesos || [])
+      .map((p: any) => {
+        const pMatches = p.nombre?.toLowerCase().includes(term)
+
+        const filteredZonas = (p.zonas || [])
+          .map((z: any) => {
+            const zMatches = z.nombre?.toLowerCase().includes(term)
+
+            const filteredActividades = (z.actividades || []).filter((a: any) => {
+              const aMatches =
+                a.nombre?.toLowerCase().includes(term) ||
+                (a.descripcion || '').toLowerCase().includes(term) ||
+                (a.tareas || '').toLowerCase().includes(term) ||
+                (a.cargo || '').toLowerCase().includes(term)
+
+              const dangerMatches = (a.peligros || []).some(
+                (pel: any) =>
+                  (pel.descripcion || '').toLowerCase().includes(term) ||
+                  (pel.clasificacion || '').toLowerCase().includes(term)
+              )
+
+              return aMatches || dangerMatches
+            })
+
+            if (zMatches || filteredActividades.length > 0) {
+              return {
+                ...z,
+                actividades: zMatches ? z.actividades : filteredActividades,
+                _searchMatch: true,
+              }
+            }
+            return null
+          })
+          .filter(Boolean)
+
+        if (pMatches || filteredZonas.length > 0) {
+          return {
+            ...p,
+            zonas: pMatches ? p.zonas : filteredZonas,
+            _searchMatch: true,
+          }
+        }
+        return null
+      })
+      .filter(Boolean)
+
+    return mapped
+  }, [matrix?.procesos, searchTerm])
+
+  const searchResults = useMemo(() => {
+    if (!searchTerm.trim()) return []
+    const term = searchTerm.toLowerCase().trim()
+    const results: Array<{ proceso: any; zona: any; actividad: any }> = []
+
+    ;(matrix?.procesos || []).forEach((p: any) => {
+      ;(p.zonas || []).forEach((z: any) => {
+        ;(z.actividades || []).forEach((a: any) => {
+          const aMatches =
+            a.nombre?.toLowerCase().includes(term) ||
+            (a.descripcion || '').toLowerCase().includes(term) ||
+            (a.tareas || '').toLowerCase().includes(term) ||
+            (a.cargo || '').toLowerCase().includes(term)
+
+          const dangerMatches = (a.peligros || []).some(
+            (pel: any) =>
+              (pel.descripcion || '').toLowerCase().includes(term) ||
+              (pel.clasificacion || '').toLowerCase().includes(term)
+          )
+
+          if (aMatches || dangerMatches) {
+            results.push({ proceso: p, zona: z, actividad: a })
+          }
+        })
+      })
     })
-    setUploadedFiles([])
-    setShowFilesModal(false)
-  }
+    return results
+  }, [matrix?.procesos, searchTerm])
 
+  // Current Selections
   const currentProceso = matrix?.procesos?.find((p: any) => p.id === selected.procesoId)
   const currentZona = currentProceso?.zonas?.find((z: any) => z.id === selected.zonaId)
-  const currentActividad = currentZona?.actividades?.find((a: any) => a.id === selected.actividadId)
+  const currentActividad = currentZona?.actividades?.find(
+    (a: any) => a.id === selected.actividadId
+  )
+  const currentActividadIndex = (currentZona?.actividades || []).findIndex(
+    (a: any) => a.id === selected.actividadId
+  )
+
+  const tasksCount = useMemo(() => {
+    if (!currentActividad?.tareas?.trim()) return 0
+    return currentActividad.tareas
+      .split('\n')
+      .map((l: string) => l.trim())
+      .filter(Boolean).length
+  }, [currentActividad?.tareas])
 
   if (!matrix) {
     return (
-      <div className="flex items-center justify-center p-8 text-slate-500 h-screen w-full bg-[#f3f7f3]">
-        Cargando matriz de riesgos...
+      <div className="flex items-center justify-center p-12 text-[#5e6b62] h-screen w-full bg-[#f8faf9]">
+        <div className="text-center space-y-3">
+          <div className="size-10 rounded-2xl bg-[#eef7f0] animate-pulse mx-auto" />
+          <div className="text-sm font-bold text-[#163522]">Cargando matriz de riesgos...</div>
+        </div>
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen bg-[#f8faf9] text-[#2c3630]">
-      {/* Premium Topbar */}
-      <header className="sticky top-0 z-30 bg-white/80 backdrop-blur-md border-b border-[#e2e9e4] px-4 md:px-6 py-3 flex flex-col lg:flex-row lg:items-center justify-between gap-4">
-        <div className="flex items-center justify-between lg:justify-start gap-3 w-full lg:w-auto">
-          <button 
-            onClick={() => router.push('/dashboard')}
-            className="flex items-center gap-2 px-3 py-1.5 rounded-lg hover:bg-gray-100 transition-colors text-sm font-semibold text-[#1F7D3E]"
-          >
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
-            Volver
-          </button>
-          <div className="w-[1px] h-6 bg-[#e2e9e4] hidden sm:block" />
-          <img src="/matriz-riesgos/csm_logo_long.png" alt="CSM" className="h-7 object-contain" />
-        </div>
+    <div className="min-h-screen bg-[#f8faf9] text-[#2c3630] flex flex-col">
+      {/* 1. Global Header: Navigation & Branding */}
+      <MatrixGeneralInfoHeader />
 
-        <div className="flex-1 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 w-full px-0 lg:px-6">
-            <div className="flex flex-col">
-              <label className="text-[10px] font-bold text-[#8aa08f] uppercase tracking-widest ml-1 mb-0.5">Área / Proceso</label>
-              <Input className="h-9 w-full rounded-xl border-[#d1e2d6] bg-[#f0f9f1] text-[#1F7D3E] font-bold focus:ring-[#1F7D3E]/20" value={matrix.area} onChange={(e:any)=> updateMatrix((m:any)=>{ m.area = e.target.value; return m })} />
-            </div>
-            <div className="flex flex-col">
-              <label className="text-[10px] font-bold text-[#8aa08f] uppercase tracking-widest ml-1 mb-0.5">Responsable</label>
-              <Input className="h-9 w-full rounded-xl border-[#d1e2d6] bg-[#f0f9f1] text-[#1F7D3E] font-bold focus:ring-[#1F7D3E]/20" value={matrix.responsable} onChange={(e:any)=> updateMatrix((m:any)=>{ m.responsable = e.target.value; return m })} />
-            </div>
-            <div className="flex flex-col">
-              <label className="text-[10px] font-bold text-[#8aa08f] uppercase tracking-widest ml-1 mb-0.5">Elaboración</label>
-              <DisplayDateInput className="h-9 w-full rounded-xl border-[#d1e2d6] bg-[#f0f9f1] text-[#1F7D3E] text-[12px] focus:ring-[#1F7D3E]/20" value={matrix.fecha_elaboracion} onChange={(value)=> updateMatrix((m:any)=>{ m.fecha_elaboracion = value; return m })} />
-            </div>
-            <div className="flex flex-col">
-              <label className="text-[10px] font-bold text-[#8aa08f] uppercase tracking-widest ml-1 mb-0.5">Fecha actualización</label>
-              <DisplayDateInput className="h-9 w-full rounded-xl border-[#d1e2d6] bg-[#f0f9f1] text-[#1F7D3E] text-[12px] focus:ring-[#1F7D3E]/20" value={matrix.fecha_actualizacion || ''} onChange={(value)=> updateMatrix((m:any)=>{ m.fecha_actualizacion = value; return m })} />
-            </div>
-        </div>
+      {/* 2. Main Editor Body */}
+      <div className="flex-1 max-w-[1750px] w-full mx-auto p-4 sm:p-6 lg:p-7 space-y-6">
+        {/* Dedicated Matrix Information Card with Actions */}
+        <MatrixInfoCard
+          matrix={matrix}
+          isSaving={isSaving}
+          hasUnsavedChanges={hasUnsavedChanges}
+          onUpdateGeneralInfo={handleUpdateGeneralInfo}
+          onExport={handleExportMatrix}
+          onSave={saveMatrix}
+        />
 
-        <div className="flex items-center justify-end gap-3 w-full lg:w-auto">
-          <Button onClick={handleExportMatrix} variant="outline" className="border-[#1F7D3E] text-[#1F7D3E] hover:bg-[#f0f9f1] font-bold rounded-xl shadow-sm flex-1 lg:flex-none">Exportar</Button>
-          <Button className="bg-[#1F7D3E] hover:bg-[#186331] font-bold rounded-xl shadow-md shadow-[#1F7D3E]/20 flex-1 lg:flex-none" onClick={saveMatrix}>Guardar Matriz</Button>
-        </div>
-      </header>
+        {/* Layout: Organizational Sidebar + Activity View */}
+        <div className="flex flex-col lg:flex-row items-stretch lg:items-start gap-6 lg:gap-7">
+          {/* Left: Organizational Sidebar + Documents Panel */}
+          <OrganizationalSidebar
+            procesos={matrix.procesos || []}
+            filteredProcesos={filteredProcesos}
+            searchTerm={searchTerm}
+            onSearchTermChange={setSearchTerm}
+            searchResults={searchResults}
+            selected={selected}
+            expandedZonaIds={expandedZonaIds}
+            dragOverActividadId={dragOverActividadId}
+            dragOverActividadEdge={dragOverActividadEdge}
+            files={matrix.files || []}
+            onSelectActividad={(pId, zId, aId) =>
+              setSelected({ procesoId: pId, zonaId: zId, actividadId: aId })
+            }
+            onToggleExpandZona={(zId) =>
+              setExpandedZonaIds((prev) => ({ ...prev, [zId]: !prev[zId] }))
+            }
+            onAddProceso={handleAddProceso}
+            onEditProceso={handleEditProceso}
+          onDeleteProceso={handleDeleteProceso}
+          onAddZona={handleAddZona}
+          onEditZona={handleEditZona}
+          onDeleteZona={handleDeleteZona}
+          onAddActividad={handleAddActividad}
+          onEditActividad={handleEditActividad}
+          onDeleteActividad={handleDeleteActividad}
+          onActividadDragStart={onActividadDragStart}
+          onActividadDragOver={onActividadDragOver}
+          onActividadDragLeave={onActividadDragLeave}
+          onActividadDrop={onActividadDrop}
+          onOpenAddFiles={() => setShowFilesModal(true)}
+          onDeleteFile={handleDeleteFile}
+        />
 
-                <div className="p-4 md:p-6 flex flex-col lg:flex-row items-stretch lg:items-start gap-6 lg:gap-8">
-                  {/* Mobile Navigation Toggle and Search */}
-                  <div className="w-full lg:hidden space-y-3">
-                    <div className="flex items-center justify-between bg-white border border-[#e2e9e4] p-3 rounded-xl shadow-sm">
-                      <Button 
-                        variant="outline" 
-                        className="flex items-center gap-2 text-[#1F7D3E] border-[#1F7D3E] font-bold h-9 text-xs" 
-                        onClick={() => setMobileSidebarOpen(true)}
-                      >
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
-                        📂 Estructura Organizacional
-                      </Button>
-                      {currentActividad && (
-                        <span className="text-[11px] font-bold text-[#1F7D3E] truncate max-w-[45vw]">
-                          {currentProceso?.nombre} › {currentZona?.nombre} › {currentActividad?.nombre}
-                        </span>
-                      )}
-                    </div>
-
-                    <div>
-                      <Input
-                        placeholder="Buscar actividad, cargo, peligro..."
-                        value={searchTerm}
-                        onChange={(e) => setSearchTerm(e.target.value)}
-                        className="h-9 text-xs rounded-xl border-[#d1e2d6] focus:ring-[#1F7D3E]/20 bg-white shadow-sm"
-                      />
-                    </div>
-
-                    {searchTerm.trim() && (
-                      <div className="bg-white border border-[#e2e9e4] rounded-2xl p-4 shadow-md space-y-2">
-                        <div className="text-[10px] font-black text-slate-400 uppercase tracking-wider">Resultados de búsqueda:</div>
-                        {searchResults.length === 0 ? (
-                          <div className="text-xs text-slate-500 py-1">No se encontraron actividades matching "{searchTerm}".</div>
-                        ) : (
-                          <div className="space-y-1.5 max-h-52 overflow-y-auto pr-1">
-                            {searchResults.map((res, i) => (
-                              <div
-                                key={i}
-                                onClick={() => {
-                                  setSelected({ procesoId: res.proceso.id, zonaId: res.zona.id, actividadId: res.actividad.id })
-                                  setSearchTerm('')
-                                }}
-                                className="p-2 hover:bg-[#f0f9f1] rounded-lg border border-[#e2e9e4] cursor-pointer transition-colors"
-                              >
-                                <div className="text-xs font-bold text-[#1F7D3E] truncate">
-                                  {res.actividad.nombre}: {res.actividad.descripcion || 'Sin descripción'}
-                                </div>
-                                <div className="text-[10px] text-slate-500 truncate mt-0.5">
-                                  {res.proceso.nombre} › {res.zona.nombre}
-                                </div>
-                              </div>
-                            ))}
-                          </div>
-                        )}
-                      </div>
-                    )}
-                  </div>
-
-                  <aside className="w-full lg:w-80 flex-none sticky top-24 h-auto lg:h-[calc(100vh-120px)] overflow-y-auto lg:block hidden">
-                    <div className="overflow-hidden rounded-2xl border border-[#e2e9e4] bg-white shadow-xl shadow-[#111827]/5">
-                      <div className="flex items-center justify-between px-5 py-4 bg-[#1F7D3E] text-white">
-                        <div className="font-black text-xs uppercase tracking-[0.15em]">Estructura Organizacional</div>
-                        <Button size="sm" variant="secondary" className="bg-white/10 border border-white/20 text-white hover:bg-white/20 h-7 px-2" onClick={addProceso}>+ Proceso</Button>
-                      </div>
-                      <div className="p-3 border-b border-[#e2e9e4] bg-[#f8faf9]">
-                        <Input
-                          placeholder="Buscar actividad, cargo, peligro..."
-                          value={searchTerm}
-                          onChange={(e) => setSearchTerm(e.target.value)}
-                          className="h-8 text-xs rounded-lg border-[#d1e2d6] focus:ring-[#1F7D3E]/20 bg-white"
-                        />
-                      </div>
-                      <div className="p-4 space-y-3">
-                    { (filteredProcesos || []).map((p: any) => (
-                      <div key={p.id} className="border border-[#e1ebe1] rounded-lg p-2 bg-[#fbfdfb]">
-                        <div className="flex items-center justify-between bg-[#1F7D3E] text-white p-2 rounded-lg">
-                          <div className="font-bold tracking-wide text-xs truncate max-w-[140px]" title={p.nombre}>{p.nombre}</div>
-                          <div className="flex items-center gap-1.5 bg-black/10 px-2 py-1 rounded">
-                            <button onClick={(e:any)=>{ e.stopPropagation(); addZona(p.id) }} className="text-white hover:text-green-200 text-[10px] font-bold px-1.5 py-0.5 rounded border border-white/20 hover:border-white/40 transition-colors" title="Agregar Zona / Lugar">+ Zona</button>
-                            <button onClick={(e:any)=>{ e.stopPropagation(); editProceso(p) }} className="text-white/80 hover:text-white transition-colors" aria-label="Editar proceso"><PencilIcon size={12} /></button>
-                            <button onClick={(e:any)=>{ e.stopPropagation(); removeProceso(p.id) }} className="text-red-200 hover:text-red-400 transition-colors" aria-label="Eliminar proceso"><TrashIcon size={12} /></button>
-                          </div>
-                        </div>
-
-                        <div className="mt-2 space-y-1">
-                          {(p.zonas||[]).map((z: any) => {
-                            const worst = (z.peligros||[]).reduce((acc:number, r:any) => Math.max(acc, Number(r.evaluacion?.nr||0)), 0)
-                            const pill = interpNivelRiesgo(worst)
-                            const expanded = !!(expandedZonaIds[z.id] || (searchTerm && z._searchMatch))
-                            return (
-                              <div key={z.id} className={`border rounded ${selected.zonaId===z.id? 'bg-[#edf5ed] border-[#bdd8c0]':'border-[#e4ece4]'}`}>
-                                <div className={`flex items-center justify-between p-2 cursor-pointer ${selected.zonaId===z.id? 'bg-[#e5f1e7]':''}`} onClick={() => setSelected({ procesoId: p.id, zonaId: z.id })}>
-                                  <div
-                                    className="w-full flex items-center justify-between text-xs bg-[#1F7D3E] text-white px-2 py-1.5 rounded cursor-pointer font-medium hover:bg-[#1a6b35] transition-colors"
-                                    onClick={(e:any) => { e.stopPropagation(); setExpandedZonaIds(s=>({...s, [z.id]: !expanded})); setSelected({ procesoId: p.id, zonaId: z.id }) }}
-                                    title={expanded ? 'Ocultar actividades' : 'Mostrar actividades'}
-                                  >
-                                    <span className="truncate max-w-[140px]">{z.nombre}</span>
-                                    <div className="flex items-center gap-1.5 bg-black/10 px-1.5 py-0.5 rounded ml-2">
-                                      <button onClick={(e:any)=>{ e.stopPropagation(); editZonaItem(p.id, z) }} className="text-white/80 hover:text-white transition-colors" title="Editar Zona / Lugar">
-                                        <PencilIcon size={11} />
-                                      </button>
-                                      <button onClick={(e:any)=>{ e.stopPropagation(); removeZona(p.id, z.id) }} className="text-red-200 hover:text-red-400 transition-colors" title="Eliminar Zona / Lugar">
-                                        <TrashIcon size={11} />
-                                      </button>
-                                    </div>
-                                  </div>
-                                </div>
-                                {expanded && (
-                                  <div className="pl-4 pr-2 pb-2">
-                                    <div className="space-y-1" onDragOver={(e)=> onActividadDragOver(e, null)} onDrop={(e)=> onActividadDrop(e, p.id, z.id, null)}>
-                                      {(z.actividades||[]).map((a: any, actIdx: number) => (
-                                        <div
-                                          key={a.id}
-                                          className={`flex items-center justify-between p-2 rounded cursor-pointer ${selected.actividadId===a.id? 'bg-[#e8f2ea] border-l-2 border-l-[#1F7D3E]':''} ${dragOverActividadId===a.id? 'bg-[#dcebdd]' : ''} ${dragOverActividadId===a.id && dragOverActividadEdge==='before' ? 'border-t-2 border-t-[#2d7a40]' : ''} ${dragOverActividadId===a.id && dragOverActividadEdge==='after' ? 'border-b-2 border-b-[#2d7a40]' : ''}`}
-                                          onDragStart={(e) => e.stopPropagation()}
-                                          onClick={() => {
-                                            if (isDraggingRef.current) { isDraggingRef.current = false; return }
-                                            setSelected({ procesoId: p.id, zonaId: z.id, actividadId: a.id })
-                                          }}
-                                          onDragOver={(e) => { e.stopPropagation(); onActividadDragOver(e, a.id) }}
-                                          onDragLeave={() => onActividadDragLeave()}
-                                          onDrop={(e) => { e.stopPropagation(); onActividadDrop(e, p.id, z.id, a.id) }}
-                                        >
-                                          <div className="flex items-center gap-1.5 flex-1 min-w-0">
-                                            <div
-                                              className="p-0.5 cursor-move rounded hover:bg-slate-200 flex-none"
-                                              draggable
-                                              onDragStart={(e) => onActividadDragStart(e, p.id, z.id, a.id)}
-                                              onDragEnd={() => {
-                                                setDragOverActividadId(null)
-                                                setDragOverActividadEdge(null)
-                                                actividadDragSourceRef.current = null
-                                                setTimeout(() => { isDraggingRef.current = false }, 0)
-                                              }}
-                                              onClick={(e:any) => e.stopPropagation()}
-                                              onMouseDown={(e:any) => e.stopPropagation()}
-                                              title="Reordenar actividad"
-                                            >
-                                              <svg xmlns="http://www.w3.org/2000/svg" className="w-3.5 h-3.5 text-slate-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                                <path d="M4 7h16"></path>
-                                                <path d="M4 12h16"></path>
-                                                <path d="M4 17h16"></path>
-                                              </svg>
-                                            </div>
-                                            <div className="text-xs truncate" title={a.descripcion ? `${a.nombre}: ${a.descripcion}` : a.nombre}>
-                                              {getStableActividadLabel(a, actIdx)}
-                                            </div>
-                                          </div>
-                                          <div className="flex items-center gap-1.5 flex-none ml-2">
-                                            <button aria-label="Editar actividad" className="text-slate-500 hover:text-slate-700" onClick={(e:any)=>{ e.stopPropagation(); editActividad(p.id, z.id, a) }}>
-                                              <svg xmlns="http://www.w3.org/2000/svg" className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                                <path d="M12 20h9"></path>
-                                                <path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5z"></path>
-                                              </svg>
-                                            </button>
-                                            <button aria-label="Eliminar actividad" className="text-red-400 hover:text-red-600 ml-1" onClick={(e:any)=>{ e.stopPropagation(); removeActividad(p.id, z.id, a.id) }}>
-                                              <TrashIcon size={12} />
-                                            </button>
-                                          </div>
-                                        </div>
-                                      ))}
-                                      <div className="pt-1">
-                                        <button className="w-full text-center text-xs text-[#1F7D3E] py-1.5 rounded-md border border-dashed border-[#d6e6d8] bg-white hover:bg-[#f4faf4] font-semibold" onClick={(e:any)=>{ e.stopPropagation(); openAddActividadModal(p.id, z.id) }}>+ Agregar actividad</button>
-                                      </div>
-                                    </div>
-                                  </div>
-                                )}
-                              </div>
-                            )
-                          })}
-                        </div>
-                      </div>
-                    )) }
-                  </div>
-                </div>
-                  
-
-          <div className="mt-6 pt-4">
-            <div className="overflow-hidden rounded-xl border border-[#d7e5d7] bg-white shadow-[0_8px_24px_rgba(17,24,39,0.04)]">
-              <div className="flex flex-row items-center justify-between px-4 py-3 bg-[#1f6f36] text-white">
-                <div className="font-semibold text-sm">Archivos</div>
-                <Button size="sm" variant="outline" style={{border: '0.5px solid #b2d8b2', color: '#1a5c2a', background: '#e8f5e9'}} onClick={()=> setShowFilesModal(true)}>Añadir Archivos</Button>
-              </div>
-              <div className="p-4">
-                {(!(matrix.files && matrix.files.length)) ? (
-                  <div className="text-sm text-slate-500">No hay archivos adjuntos a esta matriz.</div>
-                ) : (
-                  <div className="flex flex-wrap gap-3">
-                    {(matrix.files || []).map((f: any, i: number) => (
-                      <div key={i} className="w-28 p-2 flex flex-col items-center bg-white rounded shadow-sm border relative group">
-                        <button onClick={() => {
-                          setConfirmDeleteTitle('Eliminar archivo adjunto')
-                          setConfirmDeleteMessage('¿Deseas eliminar este archivo adjunto de la matriz?')
-                          setPendingDeleteAction(() => () => updateMatrix((m:any)=>{ m.files.splice(i,1); return m }))
-                          setConfirmDeleteOpen(true)
-                        }} className="absolute -top-2 -right-2 bg-red-100 hover:bg-red-200 text-red-600 rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity shadow-sm border border-red-200" title="Eliminar archivo">
-                          <TrashIcon size={12} />
-                        </button>
-                        {f.type?.startsWith('image/') ? (
-                          <img src={f.data} alt={f.name} className="w-20 h-14 object-cover rounded" />
-                        ) : (
-                          <div className="w-20 h-14 flex items-center justify-center bg-slate-100 rounded text-xs font-medium">{(f.name||'FILE').split('.').pop()?.toUpperCase() || 'FILE'}</div>
-                        )}
-                        <div className="text-xs mt-2 text-center text-slate-700 truncate w-full">{shortFileName(f.name)}</div>
-                        <div className="mt-1 flex gap-2">
-                          <a href={f.data} download={f.name} className="text-xs text-green-700 bg-green-50 px-2 py-1 rounded">Descargar</a>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
-        </aside>
-
-        {/* Main */}
-        <main className="flex-1">
+        {/* Right: Selected Activity View */}
+        <main className="flex-1 min-w-0 space-y-6">
           {!currentActividad ? (
-            <div className="h-60 flex items-center justify-center border-dashed border-2 border-[#c7dbc9] rounded-xl bg-white text-slate-500">Selecciona una actividad del panel izquierdo para comenzar.</div>
-          ) : (
-            <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <div className="text-sm font-medium text-[#244d2e]">{currentProceso?.nombre} › {currentZona?.nombre} › {currentActividad?.nombre}</div>
-                <div><Button variant="destructive" onClick={() => removeActividad(currentProceso.id, currentZona.id, currentActividad.id)}>Eliminar actividad</Button></div>
+            <div className="h-96 flex flex-col items-center justify-center border-2 border-dashed border-[#dfe9e2] rounded-3xl bg-white p-8 text-center space-y-3 shadow-2xs">
+              <div className="size-12 rounded-2xl bg-[#eef7f0] text-[#1F7D3E] flex items-center justify-center">
+                <FolderTree className="size-6" />
               </div>
+              <div className="text-base font-bold text-[#163522]">
+                Selecciona una actividad para comenzar a editar
+              </div>
+              <p className="text-xs text-[#7a9182] max-w-sm">
+                Explora el árbol organizacional en el panel izquierdo y haz clic en cualquier actividad para gestionar sus tareas, descripción y evaluación de peligros.
+              </p>
+            </div>
+          ) : (
+            <div className="space-y-6">
+              {/* 3. Activity Header */}
+              <ActivityHeader
+                activity={currentActividad}
+                activityIndex={currentActividadIndex >= 0 ? currentActividadIndex : 0}
+                matrixArea={matrix.area || 'Matriz'}
+                procesoNombre={currentProceso?.nombre || 'Proceso'}
+                zonaNombre={currentZona?.nombre || 'Zona'}
+                tasksCount={tasksCount}
+                onUpdateField={handleUpdateActivityField}
+                onDeleteActivity={() =>
+                  handleDeleteActividad(
+                    currentProceso.id,
+                    currentZona.id,
+                    currentActividad.id
+                  )
+                }
+              />
 
-                      <Card className="flex flex-col gap-0 overflow-hidden p-0 border border-[#d7e5d7] shadow-[0_10px_28px_rgba(17,24,39,0.05)] rounded-xl">
-                        <CardHeader className="flex items-center bg-[#1f6f36] text-white px-4 py-3 mt-0 min-h-[48px]"><CardTitle className="text-sm font-semibold">Información de la Actividad</CardTitle></CardHeader>
-                <CardContent className="p-4">
-                  <div className="grid grid-cols-2 gap-3 mt-0">
-                    <div className="col-span-2">
-                      <div style={{ color: '#2d7a40', fontSize: '11px', fontWeight: 500, textTransform: 'uppercase', letterSpacing: '0.04em' }} className="mb-1">Actividades</div>
-                      <Textarea rows={3} value={currentActividad.descripcion||''}  onInput={(e:any) => { e.currentTarget.style.height = 'auto'; e.currentTarget.style.height = e.currentTarget.scrollHeight + 'px'; }} onChange={(e:any)=> updateMatrix((m:any)=>{ const a = m.procesos.find((p:any)=>p.id===currentProceso.id).zonas.find((zz:any)=>zz.id===currentZona.id).actividades.find((aa:any)=>aa.id===currentActividad.id); if (a) a.descripcion = e.target.value; return m })} />
-                    </div>
-                    <div className="col-span-2">
-                      <div style={{ color: '#2d7a40', fontSize: '11px', fontWeight: 500, textTransform: 'uppercase', letterSpacing: '0.04em' }} className="mb-1">Tareas</div>
-                      <Textarea rows={2} value={currentActividad.tareas||''}  onInput={(e:any) => { e.currentTarget.style.height = 'auto'; e.currentTarget.style.height = e.currentTarget.scrollHeight + 'px'; }} onChange={(e:any)=> updateMatrix((m:any)=>{ const a = m.procesos.find((p:any)=>p.id===currentProceso.id).zonas.find((zz:any)=>zz.id===currentZona.id).actividades.find((aa:any)=>aa.id===currentActividad.id); if (a) a.tareas = e.target.value; return m })} />
-                    </div>
-                    <div>
-                      <div style={{ color: '#2d7a40', fontSize: '11px', fontWeight: 500, textTransform: 'uppercase', letterSpacing: '0.04em' }} className="mb-1">Cargo</div>
-                      <Input value={currentActividad.cargo||''} onChange={(e:any)=> updateMatrix((m:any)=>{ const a = m.procesos.find((p:any)=>p.id===currentProceso.id).zonas.find((zz:any)=>zz.id===currentZona.id).actividades.find((aa:any)=>aa.id===currentActividad.id); if (a) a.cargo = e.target.value; return m })} />
-                    </div>
-                    <div className="flex flex-col items-start justify-center">
-                      <div style={{ color: '#2d7a40', fontSize: '11px', fontWeight: 500, textTransform: 'uppercase', letterSpacing: '0.04em' }} className="mb-1">Rutinario</div>
-                      <div className="flex items-center gap-2">
-                        <Switch checked={!!currentActividad.rutinario} onCheckedChange={(v:boolean)=> updateMatrix((m:any)=>{ const a = m.procesos.find((p:any)=>p.id===currentProceso.id).zonas.find((zz:any)=>zz.id===currentZona.id).actividades.find((aa:any)=>aa.id===currentActividad.id); if (a) a.rutinario = v; return m })} />
-                        <div>{currentActividad.rutinario ? 'Sí' : 'No'}</div>
-                      </div>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
+              {/* 4. Collapsible Activity Detail (Description + Tasks inline) */}
+              <ActivityDetailPanel
+                description={currentActividad.descripcion || ''}
+                tasksString={currentActividad.tareas || ''}
+                cargo={currentActividad.cargo || ''}
+                onUpdateDescription={(desc) => handleUpdateActivityField('descripcion', desc)}
+                onUpdateTasks={(tasks) => handleUpdateActivityField('tareas', tasks)}
+              />
 
-                  <Card className="flex flex-col gap-0 overflow-hidden p-0 border border-[#d7e5d7] shadow-[0_10px_28px_rgba(17,24,39,0.05)] rounded-xl">
-                <CardHeader className="flex items-center justify-between bg-[#1f6f36] text-white px-4 py-3 mt-0 min-h-[48px]"><CardTitle className="text-sm font-semibold">Peligros</CardTitle><div><Badge className="bg-white/20 hover:bg-white/30 text-white">{currentActividad?.peligros?.length||0}</Badge> <Button size="sm" variant="secondary" className="bg-white text-[#2d7a40] hover:bg-slate-100 ml-2" onClick={() => addPeligro(currentProceso.id, currentZona.id, currentActividad?.id)}>+ Agregar peligro</Button></div></CardHeader>
-                <CardContent className="p-4">
-                  {(!currentActividad || !currentActividad.peligros || currentActividad.peligros.length===0) ? (
-                    <div className="p-6 border-dashed border rounded text-slate-500">No hay peligros en esta actividad.</div>
-                  ) : (
-                    <div
-                      className="space-y-3"
-                      onDragOver={(e) => {
-                        const resolved = resolvePeligroDropTarget(e)
-                        onPeligroDragOver(e, resolved.targetPeligroId)
-                      }}
-                      onDragLeave={() => {
-                        setDragOverPeligroId(null)
-                        setDragOverPeligroEdge(null)
-                      }}
-                      onDrop={(e) => onPeligroDrop(e, currentProceso.id, currentZona.id, currentActividad.id, null)}
-                    >
-                      {currentActividad.peligros.map((r: any, idx: number) => (
-                        <div
-                          key={r.id}
-                          ref={(el) => { if (el) peligroRefMap.current[r.id] = el }}
-                          data-peligro-id={r.id}
-                          className={`border rounded bg-[#fafcfa] ${dragOverPeligroId===r.id ? 'bg-slate-100' : ''} ${dragOverPeligroId===r.id && dragOverPeligroEdge==='before' ? 'border-t-2 border-t-[#2d7a40]' : ''} ${dragOverPeligroId===r.id && dragOverPeligroEdge==='after' ? 'border-b-2 border-b-[#2d7a40]' : ''} ${peligroIdParam === r.id ? 'ring-2 ring-[#2d7a40] bg-[rgba(45,122,64,0.06)]' : ''}`}
-                        >
-                          <div
-                            className="p-3 flex items-center justify-between cursor-pointer"
-                            onClick={() => {
-                            if (isDraggingPeligroRef.current) { isDraggingPeligroRef.current = false; return }
-                            updatePeligroField(currentProceso.id, currentZona.id, currentActividad.id, r.id, ['_ui','expanded'], !r._ui?.expanded)
-                            }}
-                          >
-                            <div className="flex items-center gap-3">
-                              <div
-                                className="mr-2 p-1 cursor-move rounded hover:bg-slate-100"
-                                draggable
-                                onDragStart={(e) => onPeligroDragStart(e, currentProceso.id, currentZona.id, currentActividad.id, r.id)}
-                                onDragEnd={() => {
-                                  setDragOverPeligroId(null)
-                                  setDragOverPeligroEdge(null)
-                                  peligroDragSourceRef.current = null
-                                  setTimeout(() => { isDraggingPeligroRef.current = false }, 0)
-                                }}
-                                onMouseDown={(e:any) => e.stopPropagation()}
-                                onClick={(e:any) => e.stopPropagation()}
-                                title="Reordenar peligro"
-                              >
-                                <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4 text-slate-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                  <path d="M4 7h16"></path>
-                                  <path d="M4 12h16"></path>
-                                  <path d="M4 17h16"></path>
-                                </svg>
-                              </div>
-                              <div className="font-medium">{getStablePeligroLabel(r, idx)}</div>
-                            </div>
-                            <div className="flex items-center gap-2">
-                              <div style={{width:14,height:14,background: interpProbabilidad(Number((r.evaluacionPost || r.evaluacion)?.np||0)).color, borderRadius:999}}></div>
-                              <button onClick={(e:any)=>{ e.stopPropagation(); duplicatePeligro(currentProceso.id, currentZona.id, currentActividad.id, r.id) }} className="text-slate-500 hover:text-slate-700" aria-label="Duplicar peligro"><CopyIcon size={14} /></button>
-                              <button onClick={(e:any)=>{ e.stopPropagation(); removePeligro(currentProceso.id, currentZona.id, currentActividad.id, r.id) }} className="text-red-400 hover:text-red-700" aria-label="Eliminar peligro"><TrashIcon size={14} /></button>
-                            </div>
-                          </div>
+              {/* 5. Activity Risk Summary (3 animated cards: Inherent, Impact, Residual) */}
+              <ActivityRiskSummary peligros={currentActividad.peligros || []} />
 
-                          {r._ui?.expanded && (
-                            <div className="p-3 border-t">
-                              <div className="flex flex-wrap gap-1.5 mb-3">
-                                {['Descripción & Controles','Evaluación','Criterios','Intervención'].map((t, i) => (
-                                  <button key={t} onClick={()=> updatePeligroField(currentProceso.id, currentZona.id, currentActividad.id, r.id, ['_ui','activeTab'], i)} className={`px-3 py-1.5 rounded-md text-sm transition-colors ${r._ui?.activeTab===i? 'bg-[#1f6f36] text-white shadow-sm':'bg-white border border-[#d6e5d7] text-slate-700 hover:bg-[#f4faf4]'}`}>{t}</button>
-                                ))}
-                              </div>
-
-                              {r._ui?.activeTab===0 && (
-                                <div className="grid grid-cols-1 gap-3">
-                                  <div>
-                                    <div className="text-xs">Descripción</div>
-                                    <Textarea rows={3} value={r.descripcion||''}  onInput={(e:any) => { e.currentTarget.style.height = 'auto'; e.currentTarget.style.height = e.currentTarget.scrollHeight + 'px'; }} onChange={(e:any)=> updatePeligroField(currentProceso.id, currentZona.id, currentActividad.id, r.id, ['descripcion'], e.target.value)} />
-                                  </div>
-                                  <div className="grid grid-cols-2 gap-3">
-                                    <div>
-                                      <div className="text-xs">Clasificación</div>
-                                      <Input placeholder="Ej: Físico, Químico..." value={r.clasificacion||''} onChange={(e:any)=> updatePeligroField(currentProceso.id, currentZona.id, currentActividad.id, r.id, ['clasificacion'], e.target.value)} />
-                                    </div>
-                                    <div>
-                                      <div className="text-xs">Efectos posibles</div>
-                                      <Textarea rows={2} value={r.efectos||''}  onInput={(e:any) => { e.currentTarget.style.height = 'auto'; e.currentTarget.style.height = e.currentTarget.scrollHeight + 'px'; }} onChange={(e:any)=> updatePeligroField(currentProceso.id, currentZona.id, currentActividad.id, r.id, ['efectos'], e.target.value)} />
-                                    </div>
-                                  </div>
-
-                                  <div>
-                                    <div className="text-xs font-medium">Controles existentes</div>
-                                    <div className="grid grid-cols-1 gap-2">
-                                      <Input placeholder="Fuente" value={r.controles?.fuente||''} onChange={(e:any)=> updatePeligroField(currentProceso.id, currentZona.id, currentActividad.id, r.id, ['controles','fuente'], e.target.value)} />
-                                      <Textarea rows={2} placeholder="Medio" value={r.controles?.medio||''}  onInput={(e:any) => { e.currentTarget.style.height = 'auto'; e.currentTarget.style.height = e.currentTarget.scrollHeight + 'px'; }} onChange={(e:any)=> updatePeligroField(currentProceso.id, currentZona.id, currentActividad.id, r.id, ['controles','medio'], e.target.value)} />
-                                      <Textarea rows={2} placeholder="Individuo" value={r.controles?.individuo||''}  onInput={(e:any) => { e.currentTarget.style.height = 'auto'; e.currentTarget.style.height = e.currentTarget.scrollHeight + 'px'; }} onChange={(e:any)=> updatePeligroField(currentProceso.id, currentZona.id, currentActividad.id, r.id, ['controles','individuo'], e.target.value)} />
-                                    </div>
-                                  </div>
-                                </div>
-                              )}
-
-                              {r._ui?.activeTab===1 && (
-                                <div className={`grid gap-6 w-full ${r.evaluacionPost ? 'grid-cols-1 lg:grid-cols-2' : 'grid-cols-1'}`}>
-                                  {/* Initial Evaluation */}
-                                  <div className="bg-white p-4 rounded-xl border border-[#dce8dc] shadow-sm space-y-4">
-                                    <h4 className="text-xs font-black text-[#1F7D3E] uppercase tracking-wider border-b border-[#dce8dc] pb-1">
-                                      Evaluación Inicial
-                                    </h4>
-
-                                    <div className="space-y-4">
-                                      {/* EVALUACIÓN DEL RIESGO */}
-                                      <div className="space-y-3">
-                                        <div className="text-[11px] font-black text-[#1F7D3E]/80 uppercase tracking-widest">
-                                          EVALUACIÓN DEL RIESGO
-                                        </div>
-                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                                          {/* Nivel Deficiencia */}
-                                          <div>
-                                            <label className="text-[10px] font-bold text-[#5e6b62] uppercase tracking-wider block mb-1">
-                                              Nivel Deficiencia
-                                            </label>
-                                            <select
-                                              value={r.evaluacion?.nd ?? ''}
-                                              onChange={(e: any) => updatePeligroField(currentProceso.id, currentZona.id, currentActividad.id, r.id, ['evaluacion', 'nd'], e.target.value ? Number(e.target.value) : null)}
-                                              className="w-full p-2 border rounded-lg text-xs font-bold bg-[#fcfdfc] border-[#dce8dc]"
-                                            >
-                                              <option value="">— Seleccionar —</option>
-                                              <option value={10}>10 - Muy Alto</option>
-                                              <option value={6}>6 - Alto</option>
-                                              <option value={2}>2 - Bajo</option>
-                                            </select>
-                                          </div>
-
-                                          {/* Nivel Exposición */}
-                                          <div>
-                                            <label className="text-[10px] font-bold text-[#5e6b62] uppercase tracking-wider block mb-1">
-                                              Nivel Exposición
-                                            </label>
-                                            <select
-                                              value={r.evaluacion?.ne ?? ''}
-                                              onChange={(e: any) => updatePeligroField(currentProceso.id, currentZona.id, currentActividad.id, r.id, ['evaluacion', 'ne'], e.target.value ? Number(e.target.value) : null)}
-                                              className="w-full p-2 border rounded-lg text-xs font-bold bg-[#fcfdfc] border-[#dce8dc]"
-                                            >
-                                              <option value="">— Seleccionar —</option>
-                                              <option value={4}>4 - Continua</option>
-                                              <option value={3}>3 - Frecuente</option>
-                                              <option value={2}>2 - Ocasional</option>
-                                              <option value={1}>1 - Esporádica</option>
-                                            </select>
-                                          </div>
-
-                                          {/* Nivel Probabilidad */}
-                                          <div>
-                                            <label className="text-[10px] font-bold text-[#5e6b62] uppercase tracking-wider block mb-1">
-                                              Nivel Probabilidad
-                                            </label>
-                                            <div className="w-full p-2 border rounded-lg text-xs font-bold bg-slate-50 border-[#dce8dc]">
-                                              {r.evaluacion?.np ?? '—'}
-                                            </div>
-                                          </div>
-
-                                          {/* Interpretación Nivel Probabilidad */}
-                                          <div>
-                                            <label className="text-[10px] font-bold text-[#5e6b62] uppercase tracking-wider block mb-1">
-                                              Interpretación Nivel Probabilidad
-                                            </label>
-                                            {r.evaluacion?.interp_np ? (
-                                              <div
-                                                className="w-full p-2 rounded-lg text-xs font-black text-center text-white"
-                                                style={{ backgroundColor: interpProbabilidad(Number(r.evaluacion?.np || 0)).color }}
-                                              >
-                                                {r.evaluacion.interp_np}
-                                              </div>
-                                            ) : (
-                                              <div className="w-full p-2 border rounded-lg text-xs font-bold bg-slate-50 border-[#dce8dc] text-gray-400">
-                                                —
-                                              </div>
-                                            )}
-                                          </div>
-
-                                          {/* Nivel Consecuencia */}
-                                          <div>
-                                            <label className="text-[10px] font-bold text-[#5e6b62] uppercase tracking-wider block mb-1">
-                                              Nivel Consecuencia
-                                            </label>
-                                            <select
-                                              value={r.evaluacion?.nc ?? ''}
-                                              onChange={(e: any) => updatePeligroField(currentProceso.id, currentZona.id, currentActividad.id, r.id, ['evaluacion', 'nc'], e.target.value ? Number(e.target.value) : null)}
-                                              className="w-full p-2 border rounded-lg text-xs font-bold bg-[#fcfdfc] border-[#dce8dc]"
-                                            >
-                                              <option value="">— Seleccionar —</option>
-                                              <option value={100}>100 - Mortal o Catastrófico</option>
-                                              <option value={60}>60 - Muy Grave</option>
-                                              <option value={25}>25 - Grave</option>
-                                              <option value={10}>10 - Leve</option>
-                                            </select>
-                                          </div>
-
-                                          {/* Nivel Riesgo */}
-                                          <div>
-                                            <label className="text-[10px] font-bold text-[#5e6b62] uppercase tracking-wider block mb-1">
-                                              Nivel Riesgo
-                                            </label>
-                                            <div className="w-full p-2 border rounded-lg text-xs font-bold bg-slate-50 border-[#dce8dc]">
-                                              {r.evaluacion?.nr ?? '—'}
-                                            </div>
-                                          </div>
-
-                                          {/* Interpretación Nivel Riesgo */}
-                                          <div className="sm:col-span-2">
-                                            <label className="text-[10px] font-bold text-[#5e6b62] uppercase tracking-wider block mb-1">
-                                              Interpretación Nivel Riesgo
-                                            </label>
-                                            {r.evaluacion?.interp_nr ? (
-                                              <div
-                                                className="w-full p-2 rounded-lg text-xs font-black text-center text-white"
-                                                style={{ backgroundColor: interpNivelRiesgo(Number(r.evaluacion?.nr || 0)).color }}
-                                              >
-                                                {r.evaluacion.interp_nr}
-                                              </div>
-                                            ) : (
-                                              <div className="w-full p-2 border rounded-lg text-xs font-bold bg-slate-50 border-[#dce8dc] text-gray-400">
-                                                —
-                                              </div>
-                                            )}
-                                          </div>
-                                        </div>
-                                      </div>
-
-                                      {/* VALORACIÓN DEL RIESGO */}
-                                      <div className="space-y-3 pt-2 border-t border-[#e2e9e4]">
-                                        <div className="text-[11px] font-black text-[#1F7D3E]/80 uppercase tracking-widest">
-                                          VALORACIÓN DEL RIESGO
-                                        </div>
-                                        <div>
-                                          <label className="text-[10px] font-bold text-[#5e6b62] uppercase tracking-wider block mb-1">
-                                            Aceptabilidad Del Riesgo
-                                          </label>
-                                          {r.evaluacion?.aceptabilidad ? (
-                                            <div
-                                              className="w-full p-2 rounded-lg text-xs font-black text-center text-white"
-                                              style={{ backgroundColor: aceptabilidadColor(r.evaluacion.aceptabilidad) }}
-                                            >
-                                              {r.evaluacion.aceptabilidad}
-                                            </div>
-                                          ) : (
-                                            <div className="w-full p-2 border rounded-lg text-xs font-bold bg-slate-50 border-[#dce8dc] text-gray-400">
-                                              —
-                                            </div>
-                                          )}
-                                        </div>
-                                      </div>
-                                    </div>
-                                  </div>
-
-                                  {/* Residual Evaluation (Post-Intervention) */}
-                                  {r.evaluacionPost && (
-                                    <div className="bg-[#fcfdfc] p-4 rounded-xl border border-[#dce8dc] shadow-sm space-y-4">
-                                      <h4 className="text-xs font-black text-[#1F7D3E] uppercase tracking-wider border-b border-[#dce8dc] pb-1 flex items-center gap-2">
-                                        Evaluación Residual
-                                        <Badge variant="outline" className="bg-[#f0f9f1] text-[#1F7D3E] border-[#d1e2d6] text-[9px]">Actualizado</Badge>
-                                      </h4>
-
-                                      <div className="space-y-4">
-                                        {/* EVALUACIÓN DEL RIESGO */}
-                                        <div className="space-y-3">
-                                          <div className="text-[11px] font-black text-[#1F7D3E]/80 uppercase tracking-widest">
-                                            EVALUACIÓN DEL RIESGO
-                                          </div>
-                                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                                            {/* Nivel Deficiencia */}
-                                            <div>
-                                              <label className="text-[10px] font-bold text-[#5e6b62] uppercase tracking-wider block mb-1">
-                                                Nivel Deficiencia
-                                              </label>
-                                              <select
-                                                value={r.evaluacionPost.nd ?? ''}
-                                                onChange={(e: any) => updatePeligroField(currentProceso.id, currentZona.id, currentActividad.id, r.id, ['evaluacionPost', 'nd'], e.target.value ? Number(e.target.value) : null)}
-                                                className="w-full p-2 border rounded-lg text-xs font-bold bg-[#fcfdfc] border-[#dce8dc]"
-                                              >
-                                                <option value="">— Seleccionar —</option>
-                                                <option value={10}>10 - Muy Alto</option>
-                                                <option value={6}>6 - Alto</option>
-                                                <option value={2}>2 - Bajo</option>
-                                              </select>
-                                            </div>
-
-                                            {/* Nivel Exposición */}
-                                            <div>
-                                              <label className="text-[10px] font-bold text-[#5e6b62] uppercase tracking-wider block mb-1">
-                                                Nivel Exposición
-                                              </label>
-                                              <select
-                                                value={r.evaluacionPost.ne ?? ''}
-                                                onChange={(e: any) => updatePeligroField(currentProceso.id, currentZona.id, currentActividad.id, r.id, ['evaluacionPost', 'ne'], e.target.value ? Number(e.target.value) : null)}
-                                                className="w-full p-2 border rounded-lg text-xs font-bold bg-[#fcfdfc] border-[#dce8dc]"
-                                              >
-                                                <option value="">— Seleccionar —</option>
-                                                <option value={4}>4 - Continua</option>
-                                                <option value={3}>3 - Frecuente</option>
-                                                <option value={2}>2 - Ocasional</option>
-                                                <option value={1}>1 - Esporádica</option>
-                                              </select>
-                                            </div>
-
-                                            {/* Nivel Probabilidad */}
-                                            <div>
-                                              <label className="text-[10px] font-bold text-[#5e6b62] uppercase tracking-wider block mb-1">
-                                                Nivel Probabilidad
-                                              </label>
-                                              <div className="w-full p-2 border rounded-lg text-xs font-bold bg-slate-50 border-[#dce8dc]">
-                                                {r.evaluacionPost.np ?? '—'}
-                                              </div>
-                                            </div>
-
-                                            {/* Interpretación Nivel Probabilidad */}
-                                            <div>
-                                              <label className="text-[10px] font-bold text-[#5e6b62] uppercase tracking-wider block mb-1">
-                                                Interpretación Nivel Probabilidad
-                                              </label>
-                                              {r.evaluacionPost.interp_np ? (
-                                                <div
-                                                  className="w-full p-2 rounded-lg text-xs font-black text-center text-white"
-                                                  style={{ backgroundColor: interpProbabilidad(Number(r.evaluacionPost.np || 0)).color }}
-                                                >
-                                                  {r.evaluacionPost.interp_np}
-                                                </div>
-                                              ) : (
-                                                <div className="w-full p-2 border rounded-lg text-xs font-bold bg-slate-50 border-[#dce8dc] text-gray-400">
-                                                  —
-                                                </div>
-                                              )}
-                                            </div>
-
-                                            {/* Nivel Consecuencia */}
-                                            <div>
-                                              <label className="text-[10px] font-bold text-[#5e6b62] uppercase tracking-wider block mb-1">
-                                                Nivel Consecuencia
-                                              </label>
-                                              <select
-                                                value={r.evaluacionPost.nc ?? ''}
-                                                onChange={(e: any) => updatePeligroField(currentProceso.id, currentZona.id, currentActividad.id, r.id, ['evaluacionPost', 'nc'], e.target.value ? Number(e.target.value) : null)}
-                                                className="w-full p-2 border rounded-lg text-xs font-bold bg-[#fcfdfc] border-[#dce8dc]"
-                                              >
-                                                <option value="">— Seleccionar —</option>
-                                                <option value={100}>100 - Mortal o Catastrófico</option>
-                                                <option value={60}>60 - Muy Grave</option>
-                                                <option value={25}>25 - Grave</option>
-                                                <option value={10}>10 - Leve</option>
-                                              </select>
-                                            </div>
-
-                                            {/* Nivel Riesgo */}
-                                            <div>
-                                              <label className="text-[10px] font-bold text-[#5e6b62] uppercase tracking-wider block mb-1">
-                                                Nivel Riesgo
-                                              </label>
-                                              <div className="w-full p-2 border rounded-lg text-xs font-bold bg-slate-50 border-[#dce8dc]">
-                                                {r.evaluacionPost.nr ?? '—'}
-                                              </div>
-                                            </div>
-
-                                            {/* Interpretación Nivel Riesgo */}
-                                            <div className="sm:col-span-2">
-                                              <label className="text-[10px] font-bold text-[#5e6b62] uppercase tracking-wider block mb-1">
-                                                Interpretación Nivel Riesgo
-                                              </label>
-                                              {r.evaluacionPost.interp_nr ? (
-                                                <div
-                                                  className="w-full p-2 rounded-lg text-xs font-black text-center text-white"
-                                                  style={{ backgroundColor: interpNivelRiesgo(Number(r.evaluacionPost.nr || 0)).color }}
-                                                >
-                                                  {r.evaluacionPost.interp_nr}
-                                                </div>
-                                              ) : (
-                                                <div className="w-full p-2 border rounded-lg text-xs font-bold bg-slate-50 border-[#dce8dc] text-gray-400">
-                                                  —
-                                                </div>
-                                              )}
-                                            </div>
-                                          </div>
-                                        </div>
-
-                                        {/* VALORACIÓN DEL RIESGO */}
-                                        <div className="space-y-3 pt-2 border-t border-[#e2e9e4]">
-                                          <div className="text-[11px] font-black text-[#1F7D3E]/80 uppercase tracking-widest">
-                                            VALORACIÓN DEL RIESGO
-                                          </div>
-                                          <div>
-                                            <label className="text-[10px] font-bold text-[#5e6b62] uppercase tracking-wider block mb-1">
-                                              Aceptabilidad Del Riesgo
-                                            </label>
-                                            {r.evaluacionPost.aceptabilidad ? (
-                                              <div
-                                                className="w-full p-2 rounded-lg text-xs font-black text-center text-white"
-                                                style={{ backgroundColor: aceptabilidadColor(r.evaluacionPost.aceptabilidad) }}
-                                              >
-                                                {r.evaluacionPost.aceptabilidad}
-                                              </div>
-                                            ) : (
-                                              <div className="w-full p-2 border rounded-lg text-xs font-bold bg-slate-50 border-[#dce8dc] text-gray-400">
-                                                —
-                                              </div>
-                                            )}
-                                          </div>
-                                        </div>
-                                      </div>
-                                    </div>
-                                  )}
-                                </div>
-                              )}
-
-                              {r._ui?.activeTab===2 && (
-                                <div className="grid grid-cols-1 gap-3">
-                                  <div className="grid grid-cols-2 gap-3">
-                                    <div>
-                                      <div className="text-xs">Número de Expuestos</div>
-                                      <Input type="number" value={r.criterios?.num_expuestos||''} onChange={(e:any)=> updatePeligroField(currentProceso.id, currentZona.id, currentActividad.id, r.id, ['criterios','num_expuestos'], e.target.value?Number(e.target.value):null)} />
-                                    </div>
-                                    <div>
-                                      <div className="text-xs">Existencia de Requisito Legal</div>
-                                      <div className="flex items-center gap-2">
-                                        <Switch checked={!!r.criterios?.requisito_legal} onCheckedChange={(v:any)=> updatePeligroField(currentProceso.id, currentZona.id, currentActividad.id, r.id, ['criterios','requisito_legal'], !!v)} />
-                                        <div>{r.criterios?.requisito_legal ? 'Sí' : 'No'}</div>
-                                      </div>
-                                    </div>
-                                  </div>
-                                  <div>
-                                    <div className="text-xs">Peor Consecuencia</div>
-                                    <Textarea rows={2} value={r.criterios?.peor_consecuencia||''}  onInput={(e:any) => { e.currentTarget.style.height = 'auto'; e.currentTarget.style.height = e.currentTarget.scrollHeight + 'px'; }} onChange={(e:any)=> updatePeligroField(currentProceso.id, currentZona.id, currentActividad.id, r.id, ['criterios','peor_consecuencia'], e.target.value)} />
-                                  </div>
-                                </div>
-                              )}
-
-                              {r._ui?.activeTab===3 && (
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                                  <div>
-                                    <div className="text-xs">Eliminación</div>
-                                    <Input value={r.intervencion?.eliminacion||''} onChange={(e:any)=> updatePeligroField(currentProceso.id, currentZona.id, currentActividad.id, r.id, ['intervencion','eliminacion'], e.target.value)} />
-                                  </div>
-                                  <div>
-                                    <div className="text-xs">Sustitución</div>
-                                    <Input value={r.intervencion?.sustitucion||''} onChange={(e:any)=> updatePeligroField(currentProceso.id, currentZona.id, currentActividad.id, r.id, ['intervencion','sustitucion'], e.target.value)} />
-                                  </div>
-                                  <div className="col-span-2">
-                                    <div className="text-xs">Controles de Ingeniería</div>
-                                    <Textarea rows={2} value={r.intervencion?.controles_ingenieria||''}  onInput={(e:any) => { e.currentTarget.style.height = 'auto'; e.currentTarget.style.height = e.currentTarget.scrollHeight + 'px'; }} onChange={(e:any)=> updatePeligroField(currentProceso.id, currentZona.id, currentActividad.id, r.id, ['intervencion','controles_ingenieria'], e.target.value)} />
-                                  </div>
-                                  <div className="col-span-2">
-                                    <div className="text-xs">Señalización, Advertencia, Controles Administrativos</div>
-                                    <Textarea rows={2} value={r.intervencion?.controles_administrativos||''}  onInput={(e:any) => { e.currentTarget.style.height = 'auto'; e.currentTarget.style.height = e.currentTarget.scrollHeight + 'px'; }} onChange={(e:any)=> updatePeligroField(currentProceso.id, currentZona.id, currentActividad.id, r.id, ['intervencion','controles_administrativos'], e.target.value)} />
-                                  </div>
-                                  <div>
-                                    <div className="text-xs">Equipos / Elementos de Protección Personal</div>
-                                    <Textarea rows={2} value={r.intervencion?.epp||''}  onInput={(e:any) => { e.currentTarget.style.height = 'auto'; e.currentTarget.style.height = e.currentTarget.scrollHeight + 'px'; }} onChange={(e:any)=> updatePeligroField(currentProceso.id, currentZona.id, currentActividad.id, r.id, ['intervencion','epp'], e.target.value)} />
-                                  </div>
-                                  <div>
-                                    <div className="text-xs">Intervención</div>
-                                    <Textarea rows={2} value={r.intervencion?.responsable||''}  onInput={(e:any) => { e.currentTarget.style.height = 'auto'; e.currentTarget.style.height = e.currentTarget.scrollHeight + 'px'; }} onChange={(e:any)=> updatePeligroField(currentProceso.id, currentZona.id, currentActividad.id, r.id, ['intervencion','responsable'], e.target.value)} />
-                                  </div>
-                                  <div>
-                                    <div className="text-xs">Fecha de ejecución</div>
-                                    <Input type="date" value={r.intervencion?.fecha_ejecucion||''} onChange={(e:any)=> updatePeligroField(currentProceso.id, currentZona.id, currentActividad.id, r.id, ['intervencion','fecha_ejecucion'], e.target.value)} />
-                                  </div>
-                                </div>
-                              )}
-                            </div>
-                          )}
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
+              {/* 6. Hazards Section */}
+              <HazardSection
+                peligros={currentActividad.peligros || []}
+                highlightPeligroId={highlightedPeligroId}
+                dragOverPeligroId={dragOverPeligroId}
+                dragOverPeligroEdge={dragOverPeligroEdge}
+                onAddPeligro={handleAddPeligro}
+                onToggleExpand={handleToggleExpandPeligro}
+                onChangeTab={handleChangeTabPeligro}
+                onUpdateField={handleUpdatePeligroField}
+                onDuplicate={handleDuplicatePeligro}
+                onDelete={handleDeletePeligro}
+                onDragStart={onPeligroDragStart}
+                onDragEnd={() => {
+                  setDragOverPeligroId(null)
+                  setDragOverPeligroEdge(null)
+                  peligroDragSourceRef.current = null
+                  setTimeout(() => {
+                    isDraggingPeligroRef.current = false
+                  }, 0)
+                }}
+                onDragOver={onPeligroDragOver}
+                onDragLeave={onPeligroDragLeave}
+                onDrop={onPeligroDrop}
+              />
             </div>
           )}
         </main>
-
         </div>
+      </div>
 
-      {/* Mobile Sidebar Slide-out Drawer */}
-      {mobileSidebarOpen && (
-        <div className="fixed inset-0 z-50 lg:hidden flex">
-          {/* Backdrop */}
-          <div 
-            className="fixed inset-0 bg-black/50 transition-opacity" 
-            onClick={() => setMobileSidebarOpen(false)}
-          />
-          {/* Drawer Content */}
-          <div className="relative flex-1 flex flex-col max-w-[320px] w-full bg-[#f8faf9] h-full shadow-2xl animate-in slide-in-from-left duration-200 z-50">
-            <div className="flex items-center justify-between px-5 py-4 bg-[#1F7D3E] text-white">
-              <div className="font-black text-xs uppercase tracking-[0.15em]">Estructura</div>
-              <div className="flex items-center gap-1">
-                <Button size="sm" variant="secondary" className="bg-white/10 border border-white/20 text-white hover:bg-white/20 h-7 px-2" onClick={addProceso}>+ Proceso</Button>
-                <button 
-                  onClick={() => setMobileSidebarOpen(false)} 
-                  className="text-white hover:text-green-200 p-1.5 rounded-lg ml-1"
-                  aria-label="Cerrar menú"
-                >
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M18 6L6 18M6 6l12 12"/></svg>
-                </button>
-              </div>
-            </div>
-            <div className="p-3 border-b border-[#e2e9e4] bg-white">
-              <Input
-                placeholder="Buscar actividad, cargo, peligro..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="h-8 text-xs rounded-lg border-[#d1e2d6] focus:ring-[#1F7D3E]/20 bg-[#f8faf9]"
-              />
-            </div>
-            <div className="flex-1 overflow-y-auto p-4 space-y-3">
-              { (filteredProcesos || []).map((p: any) => (
-                <div key={p.id} className="border border-[#e1ebe1] rounded-lg p-2 bg-[#fbfdfb]">
-                  <div className="flex items-center justify-between bg-[#1F7D3E] text-white p-2 rounded-lg">
-                    <div className="font-bold tracking-wide text-xs truncate max-w-[140px]" title={p.nombre}>{p.nombre}</div>
-                    <div className="flex items-center gap-1.5 bg-black/10 px-2 py-1 rounded">
-                      <button onClick={(e:any)=>{ e.stopPropagation(); addZona(p.id) }} className="text-white hover:text-green-200 text-[10px] font-bold px-1.5 py-0.5 rounded border border-white/20 hover:border-white/40 transition-colors" title="Agregar Zona / Lugar">+ Zona</button>
-                      <button onClick={(e:any)=>{ e.stopPropagation(); editProceso(p) }} className="text-white/80 hover:text-white transition-colors" aria-label="Editar proceso"><PencilIcon size={12} /></button>
-                      <button onClick={(e:any)=>{ e.stopPropagation(); removeProceso(p.id) }} className="text-red-200 hover:text-red-400 transition-colors" aria-label="Eliminar proceso"><TrashIcon size={12} /></button>
-                    </div>
-                  </div>
+      {/* Auxiliary Modals */}
+      <EditProcesoModal
+        open={showProcesoModal}
+        onOpenChange={setShowProcesoModal}
+        proceso={editingProceso}
+        onSave={handleSaveProceso}
+      />
 
-                  <div className="mt-2 space-y-1">
-                    {(p.zonas||[]).map((z: any) => {
-                      const worst = (z.peligros||[]).reduce((acc:number, r:any) => Math.max(acc, Number(r.evaluacion?.nr||0)), 0)
-                      const pill = interpNivelRiesgo(worst)
-                      const expanded = !!(expandedZonaIds[z.id] || (searchTerm && z._searchMatch))
-                      return (
-                        <div key={z.id} className={`border rounded ${selected.zonaId===z.id? 'bg-[#edf5ed] border-[#bdd8c0]':'border-[#e4ece4]'}`}>
-                          <div className={`flex items-center justify-between p-2 cursor-pointer ${selected.zonaId===z.id? 'bg-[#e5f1e7]':''}`} onClick={() => setSelected({ procesoId: p.id, zonaId: z.id })}>
-                            <div
-                              className="w-full flex items-center justify-between text-xs bg-[#1F7D3E] text-white px-2 py-1.5 rounded cursor-pointer font-medium hover:bg-[#1a6b35] transition-colors"
-                              onClick={(e:any) => { e.stopPropagation(); setExpandedZonaIds(s=>({...s, [z.id]: !expanded})); setSelected({ procesoId: p.id, zonaId: z.id }) }}
-                              title={expanded ? 'Ocultar actividades' : 'Mostrar actividades'}
-                            >
-                              <span className="truncate max-w-[140px]">{z.nombre}</span>
-                              <div className="flex items-center gap-1.5 bg-black/10 px-1.5 py-0.5 rounded ml-2">
-                                <button onClick={(e:any)=>{ e.stopPropagation(); editZonaItem(p.id, z) }} className="text-white/80 hover:text-white transition-colors" title="Editar Zona / Lugar">
-                                  <PencilIcon size={11} />
-                                </button>
-                                <button onClick={(e:any)=>{ e.stopPropagation(); removeZona(p.id, z.id) }} className="text-red-200 hover:text-red-400 transition-colors" title="Eliminar Zona / Lugar">
-                                  <TrashIcon size={11} />
-                                </button>
-                              </div>
-                            </div>
-                          </div>
-                          {expanded && (
-                            <div className="pl-4 pr-2 pb-2">
-                              <div className="space-y-1" onDragOver={(e)=> onActividadDragOver(e, null)} onDrop={(e)=> onActividadDrop(e, p.id, z.id, null)}>
-                                {(z.actividades||[]).map((a: any, actIdx: number) => (
-                                  <div
-                                    key={a.id}
-                                    className={`flex items-center justify-between p-2 rounded cursor-pointer ${selected.actividadId===a.id? 'bg-[#e8f2ea] border-l-2 border-l-[#1F7D3E]':''} ${dragOverActividadId===a.id? 'bg-[#dcebdd]' : ''} ${dragOverActividadId===a.id && dragOverActividadEdge==='before' ? 'border-t-2 border-t-[#2d7a40]' : ''} ${dragOverActividadId===a.id && dragOverActividadEdge==='after' ? 'border-b-2 border-b-[#2d7a40]' : ''}`}
-                                    onDragStart={(e) => e.stopPropagation()}
-                                    onClick={() => {
-                                      if (isDraggingRef.current) { isDraggingRef.current = false; return }
-                                      setSelected({ procesoId: p.id, zonaId: z.id, actividadId: a.id })
-                                      setMobileSidebarOpen(false)
-                                    }}
-                                    onDragOver={(e) => { e.stopPropagation(); onActividadDragOver(e, a.id) }}
-                                    onDragLeave={() => onActividadDragLeave()}
-                                    onDrop={(e) => { e.stopPropagation(); onActividadDrop(e, p.id, z.id, a.id) }}
-                                  >
-                                    <div className="flex items-center gap-1.5 flex-1 min-w-0">
-                                      <div
-                                        className="p-0.5 cursor-move rounded hover:bg-slate-200 flex-none"
-                                        draggable
-                                        onDragStart={(e) => onActividadDragStart(e, p.id, z.id, a.id)}
-                                        onDragEnd={() => {
-                                          setDragOverActividadId(null)
-                                          setDragOverActividadEdge(null)
-                                          actividadDragSourceRef.current = null
-                                          setTimeout(() => { isDraggingRef.current = false }, 0)
-                                        }}
-                                        onClick={(e:any) => e.stopPropagation()}
-                                        onMouseDown={(e:any) => e.stopPropagation()}
-                                        title="Reordenar actividad"
-                                      >
-                                        <svg xmlns="http://www.w3.org/2000/svg" className="w-3.5 h-3.5 text-slate-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                          <path d="M4 7h16"></path>
-                                          <path d="M4 12h16"></path>
-                                          <path d="M4 17h16"></path>
-                                        </svg>
-                                      </div>
-                                      <div className="text-xs truncate" title={a.descripcion ? `${a.nombre}: ${a.descripcion}` : a.nombre}>
-                                        {getStableActividadLabel(a, actIdx)}
-                                      </div>
-                                    </div>
-                                    <div className="flex items-center gap-1.5 flex-none ml-2">
-                                      <button aria-label="Editar actividad" className="text-slate-500 hover:text-slate-700" onClick={(e:any)=>{ e.stopPropagation(); editActividad(p.id, z.id, a) }}>
-                                        <svg xmlns="http://www.w3.org/2000/svg" className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                          <path d="M12 20h9"></path>
-                                          <path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5z"></path>
-                                        </svg>
-                                      </button>
-                                      <button aria-label="Eliminar actividad" className="text-red-400 hover:text-red-600 ml-1" onClick={(e:any)=>{ e.stopPropagation(); removeActividad(p.id, z.id, a.id) }}>
-                                        <TrashIcon size={12} />
-                                      </button>
-                                    </div>
-                                  </div>
-                                ))}
-                                <div className="pt-1">
-                                  <button className="w-full text-center text-xs text-[#1F7D3E] py-1.5 rounded-md border border-dashed border-[#d6e6d8] bg-white hover:bg-[#f4faf4] font-semibold" onClick={(e:any)=>{ e.stopPropagation(); openAddActividadModal(p.id, z.id) }}>+ Agregar actividad</button>
-                                </div>
-                              </div>
-                            </div>
-                          )}
-                        </div>
-                      )
-                    })}
-                  </div>
-                </div>
-              )) }
-            </div>
-          </div>
-        </div>
-      )}
+      <EditZonaModal
+        open={showZonaModal}
+        onOpenChange={setShowZonaModal}
+        zona={editingZona}
+        onSave={handleSaveZona}
+      />
 
-      <Dialog open={showProcesoModal} onOpenChange={setShowProcesoModal}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>{editingProceso ? 'Editar Proceso' : 'Nuevo Proceso'}</DialogTitle>
-          </DialogHeader>
-          <div className="p-2">
-            <Input defaultValue={editingProceso?.nombre||''} id="procesoName" />
-            <div className="mt-3 flex justify-end gap-2">
-              <Button variant="ghost" onClick={()=>setShowProcesoModal(false)}>Cancelar</Button>
-              <Button onClick={()=>{ const el = (document.getElementById('procesoName') as HTMLInputElement); saveProceso(el?.value||'') }}>Guardar</Button>
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
+      <EditActividadModal
+        open={showActividadModal}
+        onOpenChange={setShowActividadModal}
+        actividad={editingActividad}
+        onSave={handleSaveEditedActividad}
+      />
 
-      <Dialog open={showActividadModal} onOpenChange={setShowActividadModal}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>{editingActividad ? 'Editar Actividad' : 'Nueva Actividad'}</DialogTitle>
-          </DialogHeader>
-          <div className="p-2">
-            <Input defaultValue={editingActividad?.nombre||''} id="actividadName" />
-            <div className="mt-3 flex justify-end gap-2">
-              <Button variant="ghost" onClick={()=>{ setShowActividadModal(false); setEditingActividad(null); setActividadTarget(null) }}>Cancelar</Button>
-              <Button onClick={()=>{ const el = (document.getElementById('actividadName') as HTMLInputElement); const val = el?.value||''; if (editingActividad) saveEditedActividad(val); else saveActividad(val) }}>Guardar</Button>
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
-
-      <Dialog open={showZonaModal} onOpenChange={(open) => { setShowZonaModal(open); if(!open) setEditingZona(null); }}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>{editingZona ? 'Editar Zona / Lugar' : 'Nueva Zona / Lugar'}</DialogTitle>
-          </DialogHeader>
-          <div className="p-2">
-            <div>
-              <div className="text-xs">Nombre de la zona / lugar</div>
-              <Input value={zonaModalName} onChange={(e:any)=> setZonaModalName(e.target.value)} />
-            </div>
-
-            <div className="mt-3 flex justify-end gap-2">
-              <Button variant="ghost" onClick={()=> setShowZonaModal(false)}>Cancelar</Button>
-              <Button onClick={saveZonaModal}>Guardar</Button>
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
-      
-      <Dialog open={showFilesModal} onOpenChange={setShowFilesModal}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Añadir Archivos a la Matriz</DialogTitle>
-          </DialogHeader>
-          <div className="p-2">
-              <div className="flex flex-col gap-2">
-              <input ref={fileInputRef} type="file" multiple className="hidden" onChange={handleFilesInput} />
-              <div className="flex items-center gap-3">
-                <Button onClick={() => fileInputRef.current?.click()}>Examinar...</Button>
-                <div className="text-sm text-slate-600">{uploadedFiles.length > 0 ? `${uploadedFiles.length} archivo(s) seleccionado(s)` : 'Ningún archivo seleccionado'}</div>
-              </div>
-              <div className="text-sm text-slate-600">Archivos añadidos:</div>
-              <div className="max-h-44 overflow-auto border rounded p-2 bg-white">
-                {uploadedFiles.length === 0 ? (
-                  <div className="text-xs text-slate-500">Ningún archivo seleccionado</div>
-                ) : (
-                  <div className="grid grid-cols-1 gap-2">
-                    {uploadedFiles.map((f, i) => (
-                      <div key={i} className="flex items-center gap-2 p-1 rounded hover:bg-slate-50">
-                        <button onClick={() => setSelectedPreviewIndex(i)} className="flex items-center gap-2 flex-1 text-left">
-                          {f.type.startsWith('image/') ? (
-                            <img src={f.data} alt={f.name} className="w-16 h-12 object-cover rounded border" />
-                          ) : (
-                            <div className="w-16 h-12 flex items-center justify-center bg-slate-100 rounded border text-xs text-slate-600">{f.name.split('.').pop()?.toUpperCase() || 'FILE'}</div>
-                          )}
-                          <div className="flex-1">
-                            <div className="font-medium">{f.name}</div>
-                            <div className="text-xs text-slate-500">{Math.round(f.size/1024)} KB</div>
-                          </div>
-                        </button>
-                        <div>
-                          <button onClick={() => removeUploadedFile(i)} className="text-red-600 text-sm px-2">Eliminar</button>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-
-              {/* Preview area */}
-              <div className="mt-3">
-                {selectedPreviewIndex === null ? (
-                  <div className="text-xs text-slate-500">Selecciona un archivo para previsualizar</div>
-                ) : (() => {
-                  const f = uploadedFiles[selectedPreviewIndex as number]
-                  if (!f) return <div className="text-xs text-slate-500">Archivo no disponible</div>
-                  if (f.type.startsWith('image/')) {
-                    return <img src={f.data} alt={f.name} className="max-h-56 w-auto rounded border" />
-                  }
-                  const snippet = getPreviewSnippet(f)
-                  if (snippet) {
-                    return <pre className="max-h-56 overflow-auto text-xs bg-slate-50 p-2 rounded border">{snippet}</pre>
-                  }
-                  return <div className="text-sm text-slate-600">Sin previsualización disponible para este tipo de archivo.</div>
-                })()}
-              </div>
-            </div>
-
-            <div className="mt-3 flex justify-end gap-2">
-              <Button variant="ghost" onClick={()=>{ setShowFilesModal(false); setUploadedFiles([]) }}>Cancelar</Button>
-              <Button onClick={saveFilesToMatrix}>Guardar archivos</Button>
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
+      <FilesModal
+        open={showFilesModal}
+        onOpenChange={setShowFilesModal}
+        onSaveFiles={handleSaveFilesToMatrix}
+      />
 
       <ConfirmModal
         open={confirmDeleteOpen}
@@ -2147,10 +1334,16 @@ export default function MatrixEditor({ id }: { id?: string }) {
         message={confirmDeleteMessage}
         confirmLabel="Eliminar"
         cancelLabel="Cancelar"
-        onConfirm={handleConfirmDelete}
-        onCancel={handleCancelDelete}
+        onConfirm={() => {
+          if (pendingDeleteAction) pendingDeleteAction()
+          setConfirmDeleteOpen(false)
+          setPendingDeleteAction(null)
+        }}
+        onCancel={() => {
+          setConfirmDeleteOpen(false)
+          setPendingDeleteAction(null)
+        }}
       />
     </div>
   )
 }
-

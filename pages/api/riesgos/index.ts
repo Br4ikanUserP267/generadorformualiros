@@ -105,7 +105,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
       })
 
       // Construct JSON exactly like the frontend expects
-      const mapped = rows.map((m) => {
+      const mapped = rows.map((m: any) => {
         return {
           id: m.id,
           area: m.area || '',

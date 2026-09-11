@@ -21,7 +21,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
       return res.status(400).json({ error: 'Peligro ID is required' })
     }
 
-    const result = await prisma.$transaction(async (tx) => {
+    const result = await prisma.$transaction(async (tx: any) => {
       // 1. Update or Create Intervencion
       const updatedIntervencion = await tx.intervencion.upsert({
         where: { peligroId },

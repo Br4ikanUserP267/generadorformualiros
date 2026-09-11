@@ -1,657 +1,487 @@
 "use client"
 
-import React, { useEffect, useState, useMemo } from 'react'
+import React, { useEffect, useState, useCallback, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Badge } from '@/components/ui/badge'
-import { Input } from '@/components/ui/input'
-import { Button } from '@/components/ui/button'
-import { Textarea } from '@/components/ui/textarea'
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
+import {
+  Search,
+  Filter,
+  X,
+  ChevronLeft,
+  ChevronRight,
+  Shield,
+  Loader2,
+  AlertTriangle,
+  RotateCcw,
+} from 'lucide-react'
+import { AppSidebar } from '@/components/dashboard/app-sidebar'
+import { DashboardHeader } from '@/components/dashboard/dashboard-header'
+import { InstructionsModal } from '@/components/InstructionsModal'
+import { PriorizacionStats } from '@/components/priorizacion/priorizacion-stats'
+import { RiskRowItem, RiskPrioritizationItem } from '@/components/priorizacion/risk-row-item'
+import { InterventionDrawer } from '@/components/priorizacion/intervention-drawer'
 import { apiFetch } from '@/lib/utils'
-import { useAuth } from '@/lib/auth-context'
 import { toast } from '@/hooks/use-toast'
 
-type EvaluationData = {
-  nd: number | null
-  ne: number | null
-  nc: number | null
-  np: number | null
-  nr: number | null
-  interp_np: string
-  interp_nr: string
-  aceptabilidad: string
-}
-
-type RiskPrioritizationItem = {
-  id: string
-  matrizId: string
-  descripcion: string
-  clasificacion: string
-  area: string
-  proceso: string
-  zona: string
-  actividad: string
-  evaluacion: EvaluationData
-  evaluacionPost: EvaluationData | null
-  intervencion: {
-    eliminacion: string
-    sustitucion: string
-    controles_ingenieria: string
-    controles_administrativos: string
-    epp: string
-    responsable: string
-    fecha_ejecucion: string
+interface PriorizacionResponse {
+  items: RiskPrioritizationItem[]
+  pagination: {
+    page: number
+    pageSize: number
+    total: number
+    totalPages: number
   }
-}
-
-function interpProbabilidad(np: number) {
-  if (!np) return { label: '', color: '#9CA3AF' }
-  if (np <= 4) return { label: 'Bajo', color: '#198754' }     // Green
-  if (np <= 8) return { label: 'Medio', color: '#EAB308' }    // Yellow
-  if (np <= 20) return { label: 'Alto', color: '#ef4444' }     // Red
-  return { label: 'Muy Alto', color: '#a50000' } // Deep Red
-}
-
-function interpNivelRiesgo(nr: number) {
-  if (!nr) return { label: '', color: '#9CA3AF' }
-  if (nr <= 20) return { label: 'IV', color: '#198754' }     // IV = Green
-  if (nr <= 120) return { label: 'III', color: '#198754' }    // III = Green
-  if (nr <= 500) return { label: 'II', color: '#EAB308' }    // II = Yellow
-  return { label: 'I', color: '#ef4444' }    // I = Red
-}
-
-function aceptabilidadFromNivel(label: string) {
-  if (!label) return ''
-  switch (label) {
-    case 'IV': return 'Aceptable'
-    case 'III': return 'Mejorable'
-    case 'II': return 'Aceptable con Control Especifico'
-    case 'I': return 'No Aceptable'
-    default: return ''
+  stats: {
+    total: number
+    muyAlto: number
+    alto: number
+    medio: number
+    conEvaluacionPost: number
   }
-}
-
-function aceptabilidadColor(text: string) {
-  if (!text) return '#9CA3AF'
-  if (text.includes('No Aceptable')) return '#dc3545' // Rojo
-  if (text.includes('Control Especifico')) return '#EAB308' // Amarillo
-  if (text.includes('Mejorable')) return '#198754' // Verde
-  if (text.includes('Aceptable')) return '#198754' // Verde profundo
-  return '#9CA3AF'
+  filterOptions: {
+    areas: string[]
+    procesos: string[]
+  }
 }
 
 export function PriorizacionRiesgos() {
   const router = useRouter()
-  const { user } = useAuth()
-  const [risks, setRisks] = useState<RiskPrioritizationItem[]>([])
-  const [loading, setLoading] = useState(true)
-  const [search, setSearch] = useState('')
-  const [selectedRisk, setSelectedRisk] = useState<RiskPrioritizationItem | null>(null)
-  const [showModal, setShowModal] = useState(false)
-  const [currentPage, setCurrentPage] = useState(1)
-  const [itemsPerPage, setItemsPerPage] = useState(10)
-  
-  // Form State
-  const [formIntervencion, setFormIntervencion] = useState<any>({})
-  const [formEvalPost, setFormEvalPost] = useState<any>({ nd: '', ne: '', nc: '' })
+  const [, startTransition] = useTransition()
 
-  const loadRisks = async () => {
+  // Shell states
+  const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false)
+  const [instructionsOpen, setInstructionsOpen] = useState(false)
+
+  // Data states
+  const [risks, setRisks] = useState<RiskPrioritizationItem[]>([])
+  const [stats, setStats] = useState({
+    total: 0,
+    muyAlto: 0,
+    alto: 0,
+    medio: 0,
+    conEvaluacionPost: 0,
+  })
+  const [filterOptions, setFilterOptions] = useState<{
+    areas: string[]
+    procesos: string[]
+  }>({
+    areas: [],
+    procesos: [],
+  })
+
+  // Pagination states
+  const [currentPage, setCurrentPage] = useState(1)
+  const [pageSize, setPageSize] = useState(10)
+  const [totalItems, setTotalItems] = useState(0)
+  const [totalPages, setTotalPages] = useState(1)
+  const [loading, setLoading] = useState(true)
+
+  // Filter states
+  const [search, setSearch] = useState('')
+  const [debouncedSearch, setDebouncedSearch] = useState('')
+  const [selectedArea, setSelectedArea] = useState('all')
+  const [selectedProceso, setSelectedProceso] = useState('all')
+
+  // Drawer states
+  const [selectedRisk, setSelectedRisk] = useState<RiskPrioritizationItem | null>(null)
+  const [drawerOpen, setDrawerOpen] = useState(false)
+
+  // Debounce search input
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearch(search)
+      setCurrentPage(1)
+    }, 300)
+    return () => clearTimeout(timer)
+  }, [search])
+
+  // Fetch prioritized risks from API
+  const loadData = useCallback(async () => {
     setLoading(true)
     try {
-      const res = await apiFetch('/api/priorizacion')
-      if (!res.ok) throw new Error('Error al cargar riesgos')
-      const data = await res.json()
-      setRisks(data)
-    } catch (error) {
-      console.error(error)
-      toast({ title: 'Error', variant: 'destructive', description: 'No se pudieron cargar los riesgos prioritarios' })
+      const params = new URLSearchParams()
+      params.set('page', String(currentPage))
+      params.set('pageSize', String(pageSize))
+      if (debouncedSearch.trim()) params.set('search', debouncedSearch.trim())
+      if (selectedArea && selectedArea !== 'all') params.set('area', selectedArea)
+      if (selectedProceso && selectedProceso !== 'all') params.set('proceso', selectedProceso)
+
+      const res = await apiFetch(`/api/priorizacion?${params.toString()}`)
+      if (!res.ok) {
+        const errPayload = await res.json().catch(() => null)
+        throw new Error(errPayload?.details || errPayload?.error || `HTTP error ${res.status}`)
+      }
+
+      const data: PriorizacionResponse = await res.json()
+
+      setRisks(data.items || [])
+      setTotalItems(data.pagination?.total || 0)
+      setTotalPages(data.pagination?.totalPages || 1)
+      if (data.stats) {
+        setStats(data.stats)
+      }
+      if (data.filterOptions) {
+        setFilterOptions(data.filterOptions)
+      }
+    } catch (error: any) {
+      console.error('Error fetching priorizacion data:', error?.message || error)
+      toast({
+        title: 'Error de carga',
+        variant: 'destructive',
+        description: error?.message || 'No se pudieron cargar los riesgos prioritarios.',
+      })
     } finally {
       setLoading(false)
     }
-  }
+  }, [currentPage, pageSize, debouncedSearch, selectedArea, selectedProceso])
 
   useEffect(() => {
-    loadRisks()
-  }, [])
+    loadData()
+  }, [loadData])
 
-  const filteredRisks = useMemo(() => {
-    if (!search.trim()) return risks
-    const s = search.toLowerCase()
-    return risks.filter(r => 
-      r.descripcion.toLowerCase().includes(s) || 
-      r.area.toLowerCase().includes(s) || 
-      r.proceso.toLowerCase().includes(s)
-    )
-  }, [risks, search])
-
-  // Reset to first page when search or itemsPerPage changes
-  useEffect(() => {
+  // Reset filters
+  const handleResetFilters = () => {
+    setSearch('')
+    setDebouncedSearch('')
+    setSelectedArea('all')
+    setSelectedProceso('all')
     setCurrentPage(1)
-  }, [search, itemsPerPage])
+  }
 
-  const totalPages = useMemo(() => {
-    return Math.max(1, Math.ceil(filteredRisks.length / itemsPerPage))
-  }, [filteredRisks, itemsPerPage])
-
-  const paginatedRisks = useMemo(() => {
-    const startIndex = (currentPage - 1) * itemsPerPage
-    return filteredRisks.slice(startIndex, startIndex + itemsPerPage)
-  }, [filteredRisks, currentPage, itemsPerPage])
-
-  const openIntervention = (risk: RiskPrioritizationItem) => {
+  // Open intervention drawer
+  const handleOpenIntervention = (risk: RiskPrioritizationItem) => {
     setSelectedRisk(risk)
-    setFormIntervencion({ ...risk.intervencion })
-    setFormEvalPost({
-      nd: risk.evaluacionPost?.nd || '',
-      ne: risk.evaluacionPost?.ne || '',
-      nc: risk.evaluacionPost?.nc || ''
+    setDrawerOpen(true)
+  }
+
+  // Handle successful intervention save
+  const handleSaveSuccess = (updatedRisk: RiskPrioritizationItem) => {
+    // 1. Update row in memory
+    setRisks((prev) =>
+      prev.map((r) => (r.id === updatedRisk.id ? updatedRisk : r))
+    )
+
+    // 2. Refresh list and stats seamlessly
+    startTransition(() => {
+      loadData()
     })
-    setShowModal(true)
   }
 
-  const postEvalResult = useMemo(() => {
-    const nd = Number(formEvalPost.nd || 0)
-    const ne = Number(formEvalPost.ne || 0)
-    const nc = Number(formEvalPost.nc || 0)
-    const np = (!nd || !ne) ? 0 : nd * ne
-    const nr = (!np || !nc) ? 0 : np * nc
-    
-    const prob = interpProbabilidad(np)
-    const riesgo = interpNivelRiesgo(nr)
-    
-    return {
-      np,
-      nr,
-      interp_np: prob.label,
-      interp_nr: riesgo.label,
-      aceptabilidad: aceptabilidadFromNivel(riesgo.label),
-      probColor: prob.color,
-      riesgoColor: riesgo.color
-    }
-  }, [formEvalPost])
-
-  const saveIntervention = async () => {
-    if (!selectedRisk) return
-    
-    try {
-      const payload = {
-        peligroId: selectedRisk.id,
-        intervencion: formIntervencion,
-        evaluacionPost: {
-          nd: formEvalPost.nd,
-          ne: formEvalPost.ne,
-          nc: formEvalPost.nc,
-          np: postEvalResult.np,
-          nr: postEvalResult.nr,
-          interp_np: postEvalResult.interp_np,
-          interp_nr: postEvalResult.interp_nr,
-          aceptabilidad: postEvalResult.aceptabilidad
-        }
-      }
-
-      const res = await apiFetch('/api/priorizacion/intervencion', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
-      })
-
-      if (!res.ok) throw new Error('Error al guardar')
-
-      toast({ title: 'Éxito', description: 'Intervención guardada correctamente' })
-      setShowModal(false)
-      loadRisks() // Refresh list (will remove if Bajo)
-    } catch (error) {
-      console.error(error)
-      toast({ title: 'Error', variant: 'destructive', description: 'No se pudo guardar la intervención' })
-    }
-  }
+  const hasActiveFilters =
+    search.trim() !== '' || selectedArea !== 'all' || selectedProceso !== 'all'
 
   return (
-    <div className="min-h-screen bg-[#f8faf9] text-[#2c3630]">
-      {/* Topbar */}
-      <header className="sticky top-0 z-30 bg-white/80 backdrop-blur-md border-b border-[#e2e9e4] px-4 md:px-6 py-3 flex flex-col md:flex-row items-center justify-between gap-3">
-        <div className="flex items-center gap-4 justify-between w-full md:w-auto">
-          <div className="flex items-center gap-2 sm:gap-3">
-            <button 
-              onClick={() => router.push('/dashboard')}
-              className="flex items-center gap-2 px-3 py-1.5 rounded-lg hover:bg-gray-100 transition-colors text-sm font-semibold text-[#1F7D3E] shrink-0"
-            >
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
-              Volver
-            </button>
-            <div className="w-[1px] h-6 bg-[#e2e9e4] shrink-0" />
-            <h1 className="text-base sm:text-lg font-bold text-[#1F7D3E] truncate">Priorización de Riesgos</h1>
-          </div>
-        </div>
-        
-        <div className="flex items-center gap-4 justify-end w-full md:w-auto shrink-0">
-          <div className="text-right">
-            <p className="text-sm font-bold text-[#5e6b62] leading-tight">{user?.nombre}</p>
-            <p className="text-[10px] font-bold text-[#8aa08f] uppercase tracking-wider">Gestión de Intervenciones</p>
-          </div>
-        </div>
-      </header>
+    <div className="min-h-screen bg-[#f8faf9] flex text-[#2c3630]">
+      {/* 1. Left Sidebar */}
+      <AppSidebar
+        mobileOpen={mobileSidebarOpen}
+        setMobileOpen={setMobileSidebarOpen}
+      />
 
-      <main className="max-w-[1400px] mx-auto p-3 sm:p-6 space-y-6">
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-          <div>
-            <h2 className="text-2xl font-black text-[#1F7D3E] tracking-tight">Riesgos por Intervenir</h2>
-            <p className="text-sm font-medium text-[#5e6b62]">Mostrando riesgos con probabilidad Media, Alta o Muy Alta que aún no han sido mitigados.</p>
-          </div>
-          <div className="w-full md:w-72">
-            <Input 
-              placeholder="Buscar riesgo, área o proceso..." 
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              className="bg-white border-[#e2e9e4] rounded-xl"
-            />
-          </div>
-        </div>
+      {/* Main Content Area */}
+      <div className="flex-1 flex flex-col min-w-0">
+        {/* 2. Top Application Header */}
+        <DashboardHeader
+          onOpenMobileSidebar={() => setMobileSidebarOpen(true)}
+          onOpenInstructions={() => setInstructionsOpen(true)}
+        />
 
-        {loading ? (
-          <div className="py-20 text-center animate-pulse text-[#5e6b62] font-medium">Cargando riesgos prioritarios...</div>
-        ) : (
-          <div className="bg-white border border-[#e2e9e4] rounded-2xl overflow-hidden shadow-sm">
-            <div className="overflow-x-auto">
-              <table className="w-full border-collapse text-[13px] min-w-[700px]">
-                <thead className="bg-[#f8faf9] border-b border-[#e2e9e4]">
-                  <tr>
-                    <th className="px-6 py-4 text-left font-bold text-[#5e6b62] uppercase tracking-wider">Peligro / Descripción</th>
-                    <th className="px-6 py-4 text-left font-bold text-[#5e6b62] uppercase tracking-wider">Clasificación</th>
-                    <th className="px-6 py-4 text-left font-bold text-[#5e6b62] uppercase tracking-wider">Área / Proceso</th>
-                    <th className="px-6 py-4 text-center font-bold text-[#5e6b62] uppercase tracking-wider">Estado Inicial</th>
-                    <th className="px-6 py-4 text-center font-bold text-[#5e6b62] uppercase tracking-wider">Estado Post</th>
-                    <th className="px-6 py-4 text-right font-bold text-[#5e6b62] uppercase tracking-wider">Acciones</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-[#e2e9e4]/50">
-                  {paginatedRisks.map(risk => (
-                    <tr key={risk.id} className="hover:bg-[#f0f9f1]/20 transition-colors group">
-                      <td className="px-6 py-4 max-w-xs">
-                        <div 
-                          className="font-bold text-[#2c3630] line-clamp-2 cursor-pointer hover:text-[#1F7D3E] hover:underline transition-all flex items-center gap-1.5"
-                          onClick={() => router.push(`/matriz/${risk.matrizId}?peligroId=${risk.id}`)}
-                          title="Click para ver en la matriz"
-                        >
-                          {risk.descripcion}
-                          <svg className="opacity-0 group-hover:opacity-100 transition-opacity text-[#1F7D3E]" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
-                        </div>
-                        <div className="text-[10px] text-[#8aa08f] mt-0.5">{risk.actividad}</div>
-                      </td>
-                      <td className="px-6 py-4">
-                        <Badge variant="outline" className="bg-[#f8faf9] text-[#5e6b62] border-[#e2e9e4] text-[10px] uppercase">{risk.clasificacion}</Badge>
-                      </td>
-                      <td className="px-6 py-4">
-                        <div className="font-medium text-[#2c3630]">{risk.area}</div>
-                        <div className="text-[11px] text-[#5e6b62]">{risk.proceso}</div>
-                      </td>
-                      <td className="px-6 py-4 text-center">
-                        <span 
-                          className="px-3 py-1 rounded-full text-[10px] font-black text-white shadow-sm uppercase tracking-tight"
-                          style={{ backgroundColor: interpProbabilidad(risk.evaluacion.np || 0).color }}
-                        >
-                          {risk.evaluacion.interp_np}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4 text-center">
-                        {risk.evaluacionPost ? (
-                          <span 
-                            className="px-3 py-1 rounded-full text-[10px] font-black text-white shadow-sm uppercase tracking-tight"
-                            style={{ backgroundColor: interpProbabilidad(risk.evaluacionPost.np || 0).color }}
-                          >
-                            {risk.evaluacionPost.interp_np}
-                          </span>
-                        ) : (
-                          <span className="text-[10px] font-bold text-gray-300 italic uppercase">Pendiente</span>
-                        )}
-                      </td>
-                      <td className="px-6 py-4 text-right">
-                        <Button 
-                          size="sm" 
-                          onClick={() => openIntervention(risk)}
-                          className="bg-[#1F7D3E] hover:bg-[#186331] text-white font-bold rounded-xl px-4 py-1 h-8"
-                        >
-                          Intervenir
-                        </Button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+        {/* 3. Main Priorización Body */}
+        <main className="flex-1 max-w-[1500px] w-full mx-auto p-4 sm:p-6 lg:p-8 space-y-6 select-none">
+          {/* Page Header */}
+          <div className="space-y-1">
+            <span className="text-[10px] font-black uppercase tracking-widest text-[#1F7D3E]">
+              Gestión de Riesgos
+            </span>
+            <h1 className="text-xl sm:text-2xl font-black tracking-tight text-[#163522]">
+              Priorización de Riesgos
+            </h1>
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="text-sm font-black text-[#1F7D3E]">
+                Riesgos por Intervenir
+              </span>
+              <span className="size-1 rounded-full bg-[#d1e2d6] hidden sm:inline-block" />
+              <p className="text-xs sm:text-sm text-[#5e6b62] font-medium">
+                Mostrando riesgos con valoración Muy Alta, Alta o Media que aún no han sido mitigados.
+              </p>
             </div>
-
-            {/* Pagination Controls */}
-            {filteredRisks.length > 0 && (
-              <div className="px-6 py-4 border-t border-[#e2e9e4] bg-[#fcfdfc] flex flex-col sm:flex-row items-center justify-between gap-4">
-                <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
-                  <div className="text-xs font-semibold text-[#5e6b62]">
-                    Mostrando <span className="font-bold text-[#1F7D3E]">{Math.min(filteredRisks.length, (currentPage - 1) * itemsPerPage + 1)}</span> a{" "}
-                    <span className="font-bold text-[#1F7D3E]">{Math.min(filteredRisks.length, currentPage * itemsPerPage)}</span> de{" "}
-                    <span className="font-bold text-[#1F7D3E]">{filteredRisks.length}</span> riesgos
-                  </div>
-                  <div className="flex items-center gap-1.5 text-[10px] sm:text-xs text-[#5e6b62] font-semibold uppercase tracking-wider">
-                    <span>Ver:</span>
-                    <select 
-                      value={itemsPerPage} 
-                      onChange={e => setItemsPerPage(Number(e.target.value))}
-                      className="p-1 border rounded-lg bg-white border-[#e2e9e4] focus:outline-none focus:border-[#1F7D3E] font-bold text-xs text-[#2c3630]"
-                    >
-                      <option value={10}>10</option>
-                      <option value={20}>20</option>
-                      <option value={30}>30</option>
-                      <option value={50}>50</option>
-                      <option value={100}>100</option>
-                    </select>
-                  </div>
-                </div>
-                
-                <div className="flex flex-wrap items-center gap-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    disabled={currentPage === 1}
-                    onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
-                    className="h-8 border-[#e2e9e4] hover:bg-white text-xs font-bold text-[#5e6b62] rounded-lg transition-colors flex items-center gap-1 disabled:opacity-50"
-                  >
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
-                    Anterior
-                  </Button>
-                  
-                  <div className="flex items-center gap-1">
-                    {Array.from({ length: totalPages }, (_, i) => i + 1)
-                      .filter(page => {
-                        return (
-                          page === 1 ||
-                          page === totalPages ||
-                          Math.abs(page - currentPage) <= 1
-                        )
-                      })
-                      .map((page, index, array) => {
-                        const showEllipsis = index > 0 && page - array[index - 1] > 1;
-                        return (
-                          <React.Fragment key={page}>
-                            {showEllipsis && (
-                              <span className="px-1.5 text-gray-400 text-xs">...</span>
-                            )}
-                            <Button
-                              variant={currentPage === page ? "default" : "outline"}
-                              size="sm"
-                              onClick={() => setCurrentPage(page)}
-                              className={`h-8 w-8 text-xs font-bold rounded-lg p-0 transition-all ${
-                                currentPage === page
-                                  ? "bg-[#1F7D3E] hover:bg-[#186331] text-white border-none shadow-sm"
-                                  : "border-[#e2e9e4] hover:bg-white text-[#5e6b62]"
-                              }`}
-                            >
-                              {page}
-                            </Button>
-                          </React.Fragment>
-                        );
-                      })}
-                  </div>
-
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    disabled={currentPage === totalPages}
-                    onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
-                    className="h-8 border-[#e2e9e4] hover:bg-white text-xs font-bold text-[#5e6b62] rounded-lg transition-colors flex items-center gap-1 disabled:opacity-50"
-                  >
-                    Siguiente
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
-                  </Button>
-                </div>
-              </div>
-            )}
-            
-            {filteredRisks.length === 0 && (
-              <div className="py-20 text-center bg-white border-t border-[#e2e9e4]">
-                <p className="text-sm font-medium text-[#5e6b62]">No hay riesgos que requieran priorización en este momento.</p>
-                <p className="text-xs text-gray-400 mt-1">Todos los riesgos críticos han sido mitigados o no se encontraron coincidencias.</p>
-              </div>
-            )}
           </div>
-        )}
-      </main>
 
-      <Dialog open={showModal} onOpenChange={setShowModal}>
-        <DialogContent aria-describedby={undefined} className="w-[95vw] max-w-[95vw] sm:max-w-5xl md:max-w-7xl max-h-[90vh] overflow-y-auto p-3 sm:p-6">
-          <DialogHeader>
-            <DialogTitle className="text-xl font-bold text-[#1F7D3E]">Intervención de Riesgo</DialogTitle>
-          </DialogHeader>
-          
-          <div className="space-y-6 py-2">
-            <div className="bg-[#fcfdfc] border border-[#e2e9e4] rounded-xl p-4 space-y-2 shadow-sm">
-              <h4 className="text-xs font-black text-[#1F7D3E] uppercase tracking-widest">Riesgo Original</h4>
-              <p className="text-base font-bold text-[#2c3630] leading-relaxed">{selectedRisk?.descripcion}</p>
-              <div className="flex flex-wrap gap-2 items-center mt-2">
-                <Badge variant="outline" className="text-xs font-semibold px-2.5 py-0.5 bg-[#f4f7f5] border-[#d2dfd6] text-[#425046]">{selectedRisk?.area}</Badge>
-                <Badge variant="outline" className="text-xs font-semibold px-2.5 py-0.5 bg-[#f4f7f5] border-[#d2dfd6] text-[#425046]">{selectedRisk?.proceso}</Badge>
-                <Badge className="text-xs font-extrabold px-3 py-0.5 text-white border-none" style={{ backgroundColor: interpProbabilidad(selectedRisk?.evaluacion.np || 0).color }}>
-                  NP: {selectedRisk?.evaluacion.interp_np}
-                </Badge>
-              </div>
-            </div>
+          {/* 4. Statistics Strip (5 Compact KPIs) */}
+          <PriorizacionStats stats={stats} />
 
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              {/* Intervention Actions */}
-              <div className="space-y-5">
-                <h4 className="text-base font-black text-[#1F7D3E] flex items-center gap-2.5 border-b border-[#e2e9e4] pb-2">
-                  <span className="w-7 h-7 rounded-full bg-[#1F7D3E] text-white flex items-center justify-center text-sm font-black">1</span>
-                  Medidas de Intervención
-                </h4>
-                
-                <div className="space-y-4">
-                  <div>
-                    <label className="text-xs font-bold text-[#5e6b62] uppercase tracking-wider mb-1.5 block">Eliminación / Sustitución</label>
-                    <Textarea 
-                      placeholder="Acciones específicas para eliminar o sustituir el riesgo..."
-                      value={formIntervencion.eliminacion || ''}
-                      onChange={e => setFormIntervencion({...formIntervencion, eliminacion: e.target.value})}
-                      className="text-xs min-h-[75px] p-3 rounded-xl border-[#e2e9e4] focus-visible:ring-[#1F7D3E] leading-relaxed"
-                    />
-                  </div>
-                  <div>
-                    <label className="text-xs font-bold text-[#5e6b62] uppercase tracking-wider mb-1.5 block">Controles de Ingeniería / Admin</label>
-                    <Textarea 
-                      placeholder="Controles técnicos, de ingeniería o administrativos a implementar..."
-                      value={formIntervencion.controles_ingenieria || ''}
-                      onChange={e => setFormIntervencion({...formIntervencion, controles_ingenieria: e.target.value})}
-                      className="text-xs min-h-[75px] p-3 rounded-xl border-[#e2e9e4] focus-visible:ring-[#1F7D3E] leading-relaxed"
-                    />
-                  </div>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <div>
-                      <label className="text-xs font-bold text-[#5e6b62] uppercase tracking-wider mb-1.5 block">EPP</label>
-                      <Input 
-                        placeholder="Ninguno o EPP específico..."
-                        value={formIntervencion.epp || ''}
-                        onChange={e => setFormIntervencion({...formIntervencion, epp: e.target.value})}
-                        className="text-xs h-10 p-3 rounded-xl border-[#e2e9e4] focus-visible:ring-[#1F7D3E]"
-                      />
-                    </div>
-                    <div>
-                      <label className="text-xs font-bold text-[#5e6b62] uppercase tracking-wider mb-1.5 block">Responsable</label>
-                      <Input 
-                        placeholder="Nombre o rol del responsable..."
-                        value={formIntervencion.responsable || ''}
-                        onChange={e => setFormIntervencion({...formIntervencion, responsable: e.target.value})}
-                        className="text-xs h-10 p-3 rounded-xl border-[#e2e9e4] focus-visible:ring-[#1F7D3E]"
-                      />
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Re-evaluation */}
-              <div className="space-y-5 bg-[#f8faf9] p-5 rounded-xl border border-[#e2e9e4] shadow-sm">
-                <h4 className="text-base font-black text-[#1F7D3E] flex items-center gap-2.5 border-b border-[#e2e9e4] pb-2">
-                  <span className="w-7 h-7 rounded-full bg-[#1F7D3E] text-white flex items-center justify-center text-sm font-black">2</span>
-                  Evaluación Post-Intervención
-                </h4>
-
-                <div className="space-y-4">
-                  {/* EVALUACIÓN DEL RIESGO */}
-                  <div className="space-y-3">
-                    <div className="text-[11px] font-black text-[#1F7D3E]/80 uppercase tracking-widest">
-                      EVALUACIÓN DEL RIESGO
-                    </div>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                      {/* Nivel Deficiencia */}
-                      <div>
-                        <label className="text-[10px] font-bold text-[#5e6b62] uppercase tracking-wider block mb-1">
-                          Nivel Deficiencia
-                        </label>
-                        <select 
-                          value={formEvalPost.nd}
-                          onChange={e => setFormEvalPost({...formEvalPost, nd: e.target.value})}
-                          className="w-full p-2 border rounded-lg text-xs font-bold bg-white border-[#e2e9e4] focus:border-[#1F7D3E] focus:ring-1 focus:ring-[#1F7D3E] outline-none"
-                        >
-                          <option value="">— Seleccionar —</option>
-                          <option value="10">10 - Muy Alto</option>
-                          <option value="6">6 - Alto</option>
-                          <option value="2">2 - Bajo</option>
-                        </select>
-                      </div>
-
-                      {/* Nivel Exposición */}
-                      <div>
-                        <label className="text-[10px] font-bold text-[#5e6b62] uppercase tracking-wider block mb-1">
-                          Nivel Exposición
-                        </label>
-                        <select 
-                          value={formEvalPost.ne}
-                          onChange={e => setFormEvalPost({...formEvalPost, ne: e.target.value})}
-                          className="w-full p-2 border rounded-lg text-xs font-bold bg-white border-[#e2e9e4] focus:border-[#1F7D3E] focus:ring-1 focus:ring-[#1F7D3E] outline-none"
-                        >
-                          <option value="">— Seleccionar —</option>
-                          <option value="4">4 - Continua</option>
-                          <option value="3">3 - Frecuente</option>
-                          <option value="2">2 - Ocasional</option>
-                          <option value="1">1 - Esporádica</option>
-                        </select>
-                      </div>
-
-                      {/* Nivel Probabilidad */}
-                      <div>
-                        <label className="text-[10px] font-bold text-[#5e6b62] uppercase tracking-wider block mb-1">
-                          Nivel Probabilidad
-                        </label>
-                        <div className="w-full p-2.5 border rounded-lg text-xs font-bold bg-slate-50 border-[#e2e9e4]">
-                          {postEvalResult.np || '—'}
-                        </div>
-                      </div>
-
-                      {/* Interpretación Nivel Probabilidad */}
-                      <div>
-                        <label className="text-[10px] font-bold text-[#5e6b62] uppercase tracking-wider block mb-1">
-                          Interpretación Nivel Probabilidad
-                        </label>
-                        {postEvalResult.interp_np ? (
-                          <div
-                            className="w-full p-2 rounded-lg text-xs font-black text-center text-white"
-                            style={{ backgroundColor: postEvalResult.probColor }}
-                          >
-                            {postEvalResult.interp_np}
-                          </div>
-                        ) : (
-                          <div className="w-full p-2.5 border rounded-lg text-xs font-bold bg-slate-50 border-[#e2e9e4] text-gray-400">
-                            —
-                          </div>
-                        )}
-                      </div>
-
-                      {/* Nivel Consecuencia */}
-                      <div>
-                        <label className="text-[10px] font-bold text-[#5e6b62] uppercase tracking-wider block mb-1">
-                          Nivel Consecuencia
-                        </label>
-                        <select 
-                          value={formEvalPost.nc}
-                          onChange={e => setFormEvalPost({...formEvalPost, nc: e.target.value})}
-                          className="w-full p-2 border rounded-lg text-xs font-bold bg-white border-[#e2e9e4] focus:border-[#1F7D3E] focus:ring-1 focus:ring-[#1F7D3E] outline-none"
-                        >
-                          <option value="">— Seleccionar —</option>
-                          <option value="100">100 - Mortal o Catastrófico</option>
-                          <option value="60">60 - Muy Grave</option>
-                          <option value="25">25 - Grave</option>
-                          <option value="10">10 - Leve</option>
-                        </select>
-                      </div>
-
-                      {/* Nivel Riesgo */}
-                      <div>
-                        <label className="text-[10px] font-bold text-[#5e6b62] uppercase tracking-wider block mb-1">
-                          Nivel Riesgo
-                        </label>
-                        <div className="w-full p-2.5 border rounded-lg text-xs font-bold bg-slate-50 border-[#e2e9e4]">
-                          {postEvalResult.nr || '—'}
-                        </div>
-                      </div>
-
-                      {/* Interpretación Nivel Riesgo */}
-                      <div className="sm:col-span-2">
-                        <label className="text-[10px] font-bold text-[#5e6b62] uppercase tracking-wider block mb-1">
-                          Interpretación Nivel Riesgo
-                        </label>
-                        {postEvalResult.interp_nr ? (
-                          <div
-                            className="w-full p-2 rounded-lg text-xs font-black text-center text-white"
-                            style={{ backgroundColor: postEvalResult.riesgoColor }}
-                          >
-                            {postEvalResult.interp_nr}
-                          </div>
-                        ) : (
-                          <div className="w-full p-2.5 border rounded-lg text-xs font-bold bg-slate-50 border-[#e2e9e4] text-gray-400">
-                            —
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* VALORACIÓN DEL RIESGO */}
-                  <div className="space-y-3 pt-2 border-t border-[#e2e9e4]">
-                    <div className="text-[11px] font-black text-[#1F7D3E]/80 uppercase tracking-widest">
-                      VALORACIÓN DEL RIESGO
-                    </div>
-                    <div>
-                      <label className="text-[10px] font-bold text-[#5e6b62] uppercase tracking-wider block mb-1">
-                        Aceptabilidad Del Riesgo
-                      </label>
-                      {postEvalResult.aceptabilidad ? (
-                        <div
-                          className="w-full p-2 rounded-lg text-xs font-black text-center text-white"
-                          style={{ backgroundColor: aceptabilidadColor(postEvalResult.aceptabilidad) }}
-                        >
-                          {postEvalResult.aceptabilidad}
-                        </div>
-                      ) : (
-                        <div className="w-full p-2.5 border rounded-lg text-xs font-bold bg-slate-50 border-[#e2e9e4] text-gray-400">
-                          —
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                </div>
-
-                {postEvalResult.interp_np === 'Bajo' && (
-                  <div className="mt-4 p-3 bg-[#f0f9f1] border border-[#d1e2d6] rounded-xl flex items-center gap-2.5 text-[#1F7D3E] shadow-sm animate-pulse">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-                    <span className="text-xs font-black uppercase tracking-wider">¡Riesgo mitigado! Se removerá de la lista.</span>
-                  </div>
+          {/* 5. Search & Filters Bar */}
+          <div className="bg-white border border-[#dfe9e2] rounded-2xl p-3 sm:p-4 shadow-2xs flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3">
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5 flex-1 max-w-3xl">
+              {/* Search Input */}
+              <div className="relative flex-1">
+                <Search className="size-4 text-[#8aa08f] absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+                <input
+                  type="text"
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  placeholder="Buscar riesgo, área o proceso..."
+                  className="w-full pl-9.5 pr-8 py-2 rounded-xl text-xs font-medium bg-[#fbfdfb] border border-[#d1e2d6] placeholder:text-[#8aa08f] focus:outline-none focus:border-[#1F7D3E] focus:bg-white transition-colors"
+                />
+                {search && (
+                  <button
+                    type="button"
+                    onClick={() => setSearch('')}
+                    className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[#8aa08f] hover:text-[#2c3630] p-0.5"
+                  >
+                    <X className="size-3.5" />
+                  </button>
                 )}
               </div>
+
+              {/* Area Filter */}
+              <div className="w-full sm:w-56">
+                <select
+                  value={selectedArea}
+                  onChange={(e) => {
+                    setSelectedArea(e.target.value)
+                    setCurrentPage(1)
+                  }}
+                  className="w-full py-2 px-3 rounded-xl text-xs font-bold text-[#163522] bg-[#fbfdfb] border border-[#d1e2d6] focus:outline-none focus:border-[#1F7D3E] focus:bg-white transition-colors cursor-pointer"
+                >
+                  <option value="all">Área: Todas</option>
+                  {filterOptions.areas.map((a) => (
+                    <option key={a} value={a}>
+                      {a}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Proceso Filter */}
+              <div className="w-full sm:w-56">
+                <select
+                  value={selectedProceso}
+                  onChange={(e) => {
+                    setSelectedProceso(e.target.value)
+                    setCurrentPage(1)
+                  }}
+                  className="w-full py-2 px-3 rounded-xl text-xs font-bold text-[#163522] bg-[#fbfdfb] border border-[#d1e2d6] focus:outline-none focus:border-[#1F7D3E] focus:bg-white transition-colors cursor-pointer"
+                >
+                  <option value="all">Proceso: Todos</option>
+                  {filterOptions.procesos.map((p) => (
+                    <option key={p} value={p}>
+                      {p}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Reset Filters Button */}
+              {hasActiveFilters && (
+                <button
+                  type="button"
+                  onClick={handleResetFilters}
+                  className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold text-[#5e6b62] hover:text-[#1F7D3E] bg-[#f8faf9] border border-[#dfe9e2] hover:border-[#cbdad0] transition-colors shrink-0 cursor-pointer"
+                  title="Limpiar filtros"
+                >
+                  <RotateCcw className="size-3.5" />
+                  <span className="hidden sm:inline">Limpiar</span>
+                </button>
+              )}
+            </div>
+
+            {/* Right Counter */}
+            <div className="text-right shrink-0 pt-2 md:pt-0 border-t md:border-t-0 border-[#f0f4f2]">
+              <span className="text-xs font-black text-[#1F7D3E] tabular-nums">
+                {totalItems}
+              </span>
+              <span className="text-xs font-bold text-[#5e6b62] ml-1">
+                riesgos encontrados
+              </span>
             </div>
           </div>
 
-          <DialogFooter className="gap-2 sm:gap-0">
-            <Button variant="ghost" onClick={() => setShowModal(false)} className="font-bold text-gray-500">Cancelar</Button>
-            <Button onClick={saveIntervention} className="bg-[#1F7D3E] hover:bg-[#186331] text-white font-bold px-8">Guardar Intervención</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+          {/* 6. Main List / Rows Container */}
+          <div className="space-y-3">
+            {loading ? (
+              /* Skeleton Loader */
+              <div className="space-y-3">
+                {Array.from({ length: 5 }).map((_, i) => (
+                  <div
+                    key={i}
+                    className="bg-white border border-[#dfe9e2] rounded-2xl p-5 shadow-2xs animate-pulse flex items-center justify-between gap-4"
+                  >
+                    <div className="flex items-center gap-4 flex-1">
+                      <div className="size-11 rounded-2xl bg-slate-200 shrink-0" />
+                      <div className="space-y-2 flex-1 max-w-md">
+                        <div className="h-4 bg-slate-200 rounded w-3/4" />
+                        <div className="h-3 bg-slate-100 rounded w-1/3" />
+                      </div>
+                    </div>
+                    <div className="hidden sm:flex items-center gap-6">
+                      <div className="h-6 w-20 bg-slate-100 rounded-full" />
+                      <div className="h-6 w-24 bg-slate-100 rounded-full" />
+                      <div className="h-8 w-24 bg-slate-200 rounded-xl" />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : risks.length === 0 ? (
+              /* Empty State */
+              <div className="bg-white border border-[#dfe9e2] rounded-2xl p-12 text-center shadow-2xs space-y-3">
+                <div className="size-12 rounded-2xl bg-[#eef7f0] text-[#1F7D3E] flex items-center justify-center mx-auto shadow-2xs">
+                  <Shield className="size-6" />
+                </div>
+                <h3 className="text-sm sm:text-base font-black text-[#163522]">
+                  No se encontraron riesgos prioritarios
+                </h3>
+                <p className="text-xs text-[#5e6b62] max-w-sm mx-auto">
+                  {hasActiveFilters
+                    ? 'No hay riesgos que coincidan con los filtros aplicados. Intenta restablecer los filtros de búsqueda.'
+                    : 'Actualmente no existen riesgos con valoración Muy Alta, Alta o Media pendientes de intervención.'}
+                </p>
+                {hasActiveFilters && (
+                  <button
+                    type="button"
+                    onClick={handleResetFilters}
+                    className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-[#1F7D3E] text-white text-xs font-bold hover:bg-[#186331] transition-all cursor-pointer shadow-xs"
+                  >
+                    <RotateCcw className="size-3.5" />
+                    <span>Restablecer filtros</span>
+                  </button>
+                )}
+              </div>
+            ) : (
+              /* Risk Rows List with Aligned Column Headers */
+              <div className="space-y-2">
+                {/* Desktop Column Header */}
+                <div className="hidden lg:flex items-center justify-between gap-3 lg:gap-4 px-6 py-1 text-[10px] font-black text-[#5e6b62] uppercase tracking-wider">
+                  <div className="flex-1 min-w-0">Riesgo / Descripción</div>
+                  <div className="flex items-center justify-end gap-3 sm:gap-4 lg:gap-5 shrink-0">
+                    <div className="w-28 text-center">Clasificación</div>
+                    <div className="w-44 xl:w-52 text-left">Área / Proceso</div>
+                    <div className="w-28 text-center">Estado Inicial</div>
+                    <div className="w-28 text-center">Estado Post</div>
+                    <div className="w-28 text-right pr-2">Acciones</div>
+                  </div>
+                </div>
+
+                <div className="space-y-2.5">
+                  {risks.map((risk) => (
+                    <RiskRowItem
+                      key={risk.id}
+                      risk={risk}
+                      onOpenIntervention={handleOpenIntervention}
+                    />
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* 7. Server-Side Pagination Bar */}
+          {!loading && totalItems > 0 && (
+            <div className="bg-white border border-[#dfe9e2] rounded-2xl px-4 sm:px-6 py-3.5 shadow-2xs flex flex-col sm:flex-row items-center justify-between gap-4">
+              {/* Left: Total Range */}
+              <div className="text-xs font-semibold text-[#5e6b62]">
+                Mostrando{' '}
+                <span className="font-bold text-[#1F7D3E] tabular-nums">
+                  {(currentPage - 1) * pageSize + 1}
+                </span>{' '}
+                –{' '}
+                <span className="font-bold text-[#1F7D3E] tabular-nums">
+                  {Math.min(totalItems, currentPage * pageSize)}
+                </span>{' '}
+                de{' '}
+                <span className="font-bold text-[#1F7D3E] tabular-nums">
+                  {totalItems}
+                </span>{' '}
+                riesgos
+              </div>
+
+              {/* Center: Numeric Page Buttons */}
+              <div className="flex items-center gap-1.5">
+                <button
+                  type="button"
+                  disabled={currentPage <= 1}
+                  onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                  aria-label="Página anterior"
+                  className="size-8 rounded-xl border border-[#dfe9e2] flex items-center justify-center text-[#5e6b62] hover:bg-[#f8faf9] hover:border-[#cbdad0] disabled:opacity-40 disabled:pointer-events-none transition-colors cursor-pointer"
+                >
+                  <ChevronLeft className="size-4" />
+                </button>
+
+                {Array.from({ length: totalPages }, (_, i) => i + 1)
+                  .filter((p) => {
+                    return (
+                      p === 1 ||
+                      p === totalPages ||
+                      Math.abs(p - currentPage) <= 1
+                    )
+                  })
+                  .map((p, index, array) => {
+                    const showEllipsis = index > 0 && p - array[index - 1] > 1
+
+                    return (
+                      <React.Fragment key={p}>
+                        {showEllipsis && (
+                          <span className="px-1 text-xs text-[#8aa08f]">...</span>
+                        )}
+                        <button
+                          type="button"
+                          onClick={() => setCurrentPage(p)}
+                          className={`size-8 rounded-xl text-xs font-black transition-all cursor-pointer ${
+                            currentPage === p
+                              ? 'bg-[#1F7D3E] text-white shadow-xs'
+                              : 'border border-[#dfe9e2] text-[#5e6b62] hover:bg-[#f8faf9] hover:border-[#cbdad0]'
+                          }`}
+                        >
+                          {p}
+                        </button>
+                      </React.Fragment>
+                    )
+                  })}
+
+                <button
+                  type="button"
+                  disabled={currentPage >= totalPages}
+                  onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+                  aria-label="Página siguiente"
+                  className="size-8 rounded-xl border border-[#dfe9e2] flex items-center justify-center text-[#5e6b62] hover:bg-[#f8faf9] hover:border-[#cbdad0] disabled:opacity-40 disabled:pointer-events-none transition-colors cursor-pointer"
+                >
+                  <ChevronRight className="size-4" />
+                </button>
+              </div>
+
+              {/* Right: Page Size Selector */}
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-bold text-[#5e6b62]">Mostrar:</span>
+                <select
+                  value={pageSize}
+                  onChange={(e) => {
+                    setPageSize(Number(e.target.value))
+                    setCurrentPage(1)
+                  }}
+                  className="py-1 px-2.5 rounded-xl text-xs font-bold text-[#163522] bg-[#fbfdfb] border border-[#d1e2d6] focus:outline-none focus:border-[#1F7D3E] cursor-pointer"
+                >
+                  <option value={10}>10 por página</option>
+                  <option value={20}>20 por página</option>
+                  <option value={50}>50 por página</option>
+                </select>
+              </div>
+            </div>
+          )}
+        </main>
+      </div>
+
+      {/* 8. Slide-over Intervention Drawer */}
+      <InterventionDrawer
+        open={drawerOpen}
+        risk={selectedRisk}
+        onClose={() => setDrawerOpen(false)}
+        onSaveSuccess={handleSaveSuccess}
+      />
+
+      {/* 9. Instructions Modal */}
+      <InstructionsModal
+        open={instructionsOpen}
+        onClose={() => setInstructionsOpen(false)}
+      />
     </div>
   )
 }
