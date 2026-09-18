@@ -177,9 +177,9 @@ export function interpProbabilidad(np: number) {
 export function interpNivelRiesgo(nr: number) {
   if (!nr) return { label: '', color: '#9CA3AF', level: 'IV', key: 'BAJO' }
   if (nr <= 20) return { label: 'IV - Aceptable', color: '#16a34a', level: 'IV', key: 'BAJO' }
-  if (nr <= 120) return { label: 'III - Mejorable', color: '#16a34a', level: 'III', key: 'BAJO' }
-  if (nr <= 500) return { label: 'II - Control Específico', color: '#d97706', level: 'II', key: 'MEDIO' }
-  return { label: 'I - No Aceptable', color: '#dc2626', level: 'I', key: 'ALTO' }
+  if (nr <= 120) return { label: 'III - Mejorable', color: '#eab308', level: 'III', key: 'BAJO' }
+  if (nr <= 500) return { label: 'II - Control Específico', color: '#ef4444', level: 'II', key: 'MEDIO' }
+  return { label: 'I - No Aceptable', color: '#991b1b', level: 'I', key: 'ALTO' }
 }
 
 export function aceptabilidadFromNivel(nivel: string): string {

@@ -60,34 +60,26 @@ function parseDate(value: unknown) {
 function classifyRiskLevelForCounts(evalObj: any): 0 | 1 | 2 | 3 {
   if (!evalObj) return 3 // Bajo
 
-  // 1. Check NP text interpretation (interpretación NP)
-  const interpNp = String(evalObj.interpProbabilidad || evalObj.interp_np || '').toLowerCase().trim()
-  if (interpNp.includes('muy alto')) return 0
-  if (interpNp.includes('alto')) return 1
-  if (interpNp.includes('medio') || interpNp.includes('moderado')) return 2
-  if (interpNp.includes('bajo')) return 3
+  // 1. Prioritize Nivel de Riesgo (NR / interpRiesgo) according to GTC 45
+  const interpNr = String(evalObj.interpRiesgo || evalObj.interp_nr || evalObj.interpNivelRiesgo || '').toUpperCase()
+  if (interpNr.startsWith('I ') || interpNr === 'I' || (interpNr.includes('I') && !interpNr.includes('II') && !interpNr.includes('IV'))) return 0
+  if (interpNr.startsWith('II ') || interpNr === 'II' || (interpNr.includes('II') && !interpNr.includes('III'))) return 1
+  if (interpNr.startsWith('III ') || interpNr === 'III' || interpNr.includes('III') || interpNr.includes('MEJORABLE') || interpNr.includes('MODERADO')) return 2
+  if (interpNr.startsWith('IV ') || interpNr === 'IV' || interpNr.includes('IV') || interpNr.includes('ACEPTABLE') || interpNr.includes('BAJO')) return 3
 
-  // 2. Check numeric NP (Nivel de Probabilidad GTC 45)
-  // GTC 45: Muy Alto = 24-40 | Alto = 10-20 | Medio = 6-8 | Bajo = 2-4
-  const np = Number(evalObj.nivelProbabilidad ?? evalObj.np ?? 0)
-  if (np >= 24) return 0 // Muy Alto
-  if (np >= 10) return 1 // Alto
-  if (np >= 6) return 2  // Medio (6 y 8)
-  if (np > 0) return 3   // Bajo (2 y 4)
-
-  // 3. Fallback to NR (Nivel de Riesgo) if NP is not provided
+  // 2. Numeric NR (Nivel de Riesgo GTC 45)
   const nr = Number(evalObj.nivelRiesgo ?? evalObj.nr ?? 0)
-  if (nr > 500) return 0     // Nivel I (Muy Alto / Extremo)
-  if (nr > 120) return 1     // Nivel II (Alto)
-  if (nr > 20) return 2      // Nivel III (Medio / Moderado)
+  if (nr >= 600) return 0     // Nivel I (Muy Alto)
+  if (nr >= 150) return 1     // Nivel II (Alto)
+  if (nr >= 40) return 2      // Nivel III (Medio / Moderado)
   if (nr > 0) return 3       // Nivel IV (Bajo)
 
-  // 4. Fallback to NR text interpretation / aceptabilidad
-  const interpNr = String(evalObj.interpRiesgo || evalObj.interp_nr || evalObj.aceptabilidad || '').toLowerCase()
-  if (interpNr.includes('i') && !interpNr.includes('ii') && !interpNr.includes('iv')) return 0
-  if (interpNr.includes('ii') && !interpNr.includes('iii')) return 1
-  if (interpNr.includes('iii') || interpNr.includes('mejorable')) return 2
-  if (interpNr.includes('iv') || interpNr.includes('aceptable')) return 3
+  // 3. Fallback to NP (Nivel de Probabilidad) if NR is missing
+  const np = Number(evalObj.nivelProbabilidad ?? evalObj.np ?? 0)
+  if (np >= 24) return 0
+  if (np >= 10) return 1
+  if (np >= 6) return 2
+  if (np > 0) return 3
 
   return 3 // Default to Bajo
 }

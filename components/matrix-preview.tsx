@@ -25,9 +25,12 @@ import {
   Table as TableIcon,
   RefreshCw,
   Flame,
+  Sparkles,
 } from 'lucide-react'
 import { apiFetch } from '@/lib/utils'
 import { exportMatrizToExcel } from '@/lib/matriz-excel-export'
+import { getClasificacionStyle } from '@/lib/gtc45-utils'
+import { PlanAccionPreviewModal } from '@/components/plan-accion/plan-accion-preview-modal'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -240,6 +243,16 @@ export function MatrixPreview({ matrizId, onClose }: MatrixPreviewProps) {
   const [resizeStartX, setResizeStartX] = useState(0)
   const tableContainerRef = useRef<HTMLDivElement>(null)
 
+  // 5W2H Action Plans State
+  const [activeView, setActiveView] = useState<'matriz' | 'plan5w2h'>('matriz')
+  const [planesAccion5w2h, setPlanesAccion5w2h] = useState<any[]>([])
+  const [previewDanger, setPreviewDanger] = useState<any | null>(null)
+  const [previewDangerModalOpen, setPreviewDangerModalOpen] = useState(false)
+
+  const total5w2hActions = useMemo(() => {
+    return planesAccion5w2h.reduce((acc, curr) => acc + (curr.planes?.length || 0), 0)
+  }, [planesAccion5w2h])
+
   // Fetch paginated preview data from dedicated backend API
   const fetchPreviewData = async (targetPage: number, targetPageSize: number, isInitial = false) => {
     if (isInitial) setInitialLoading(true)
@@ -259,6 +272,9 @@ export function MatrixPreview({ matrizId, onClose }: MatrixPreviewProps) {
       setMetadata(data.matrix)
       setSummary(data.summary)
       setRecords(data.records || [])
+      if (Array.isArray(data.planesAccion5w2h)) {
+        setPlanesAccion5w2h(data.planesAccion5w2h)
+      }
       setPagination(
         data.pagination || {
           page: targetPage,
@@ -791,13 +807,42 @@ export function MatrixPreview({ matrizId, onClose }: MatrixPreviewProps) {
         <main className="flex-1 min-h-0 bg-white rounded-2xl border border-[#dfe9e2] shadow-sm flex flex-col overflow-hidden">
           {/* Table Header Utility Bar */}
           <div className="px-5 py-2.5 border-b border-[#dfe9e2] bg-[#fcfdfc] flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3 shrink-0">
-            <div className="flex items-center gap-2">
-              <span className="text-xs font-black text-[#163522] uppercase tracking-wider">
-                Matriz Consolidada de Riesgos (GTC 45)
-              </span>
+            <div className="flex items-center gap-3">
+              {/* Tab Selector: Matriz GTC 45 vs Plan 5W2H */}
+              <div className="flex items-center bg-[#eef4f0] p-1 rounded-xl border border-[#dfe9e2]">
+                <button
+                  type="button"
+                  onClick={() => setActiveView('matriz')}
+                  className={`px-3.5 py-1.5 rounded-lg text-xs font-black transition-all cursor-pointer ${
+                    activeView === 'matriz'
+                      ? 'bg-white text-[#163522] shadow-xs'
+                      : 'text-[#5e6b62] hover:text-[#163522]'
+                  }`}
+                >
+                  Matriz GTC 45
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setActiveView('plan5w2h')}
+                  className={`px-3.5 py-1.5 rounded-lg text-xs font-black transition-all flex items-center gap-1.5 cursor-pointer ${
+                    activeView === 'plan5w2h'
+                      ? 'bg-white text-[#1F7D3E] shadow-xs'
+                      : 'text-[#5e6b62] hover:text-[#1F7D3E]'
+                  }`}
+                >
+                  <Sparkles className="size-3.5 text-[#1F7D3E]" />
+                  <span>Plan de Acción 5W2H</span>
+                  {total5w2hActions > 0 && (
+                    <span className="px-1.5 py-0.5 rounded-full text-[10px] font-black bg-[#1F7D3E] text-white">
+                      {total5w2hActions}
+                    </span>
+                  )}
+                </button>
+              </div>
             </div>
 
-            <div className="flex items-center gap-2 flex-wrap shrink-0">
+            {activeView === 'matriz' && (
+              <div className="flex items-center gap-2 flex-wrap shrink-0">
               {/* Columns Count Badge */}
               <span className="inline-flex items-center gap-1.5 rounded-xl border border-[#dfe9e2] bg-white px-3 py-1.5 text-xs font-bold text-[#355244] shadow-2xs">
                 <Columns3 className="size-3.5 text-[#7a9182]" />
@@ -859,13 +904,23 @@ export function MatrixPreview({ matrizId, onClose }: MatrixPreviewProps) {
                 </DropdownMenuContent>
               </DropdownMenu>
             </div>
+            )}
+
+            {activeView === 'plan5w2h' && (
+              <div className="flex items-center gap-2 text-xs text-[#7a9182]">
+                <span className="font-bold text-[#163522]">{planesAccion5w2h.length}</span> peligros con plan vinculados
+              </div>
+            )}
           </div>
 
-          {/* Consolidated Table Body */}
-          <div
-            ref={tableContainerRef}
-            className="flex-1 min-h-0 overflow-auto bg-white scrollbar-thin scrollbar-thumb-[#cbd5cf] scrollbar-track-transparent relative"
-          >
+          {/* Matriz GTC 45 View */}
+          {activeView === 'matriz' && (
+            <>
+              {/* Consolidated Table Body */}
+              <div
+                ref={tableContainerRef}
+                className="flex-1 min-h-0 overflow-auto bg-white scrollbar-thin scrollbar-thumb-[#cbd5cf] scrollbar-track-transparent relative"
+              >
                 {tableLoading && (
                   <div className="absolute inset-0 bg-white/70 backdrop-blur-[1px] z-30 flex items-center justify-center">
                     <div className="flex items-center gap-2 px-4 py-2 rounded-xl bg-white border border-[#dfe9e2] shadow-md text-xs font-bold text-[#163522]">
@@ -1002,6 +1057,29 @@ export function MatrixPreview({ matrizId, onClose }: MatrixPreviewProps) {
                                         >
                                           {value}
                                         </span>
+                                      ) : col.key === 'peligro' ? (
+                                        <div className="space-y-1">
+                                          <div className="font-medium text-[#163522]">{value}</div>
+                                          {row.planesAccion && row.planesAccion.length > 0 && (
+                                            <button
+                                              type="button"
+                                              onClick={() => {
+                                                setPreviewDanger({
+                                                  id: row.catalogoPeligroId || row.id,
+                                                  descripcion: row.peligro,
+                                                  clasificacion: row.clasificacion,
+                                                  planesAccion: row.planesAccion,
+                                                })
+                                                setPreviewDangerModalOpen(true)
+                                              }}
+                                              className="inline-flex items-center gap-1 text-[10px] font-black text-emerald-800 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 px-2 py-0.5 rounded-md cursor-pointer transition-colors"
+                                              title="Ver Plan de Acción 5W2H sincronizado"
+                                            >
+                                              <Sparkles className="size-2.5 text-emerald-600" />
+                                              <span>Plan 5W2H ({row.planesAccion.length})</span>
+                                            </button>
+                                          )}
+                                        </div>
                                       ) : (
                                         value
                                       )}
@@ -1116,8 +1194,132 @@ export function MatrixPreview({ matrizId, onClose }: MatrixPreviewProps) {
                   </DropdownMenu>
                 </div>
               </footer>
+            </>
+          )}
+
+          {/* Dedicated 5W2H Tab View */}
+          {activeView === 'plan5w2h' && (
+            <div className="flex-1 min-h-0 overflow-auto p-4 sm:p-6 bg-[#fcfdfc] space-y-4">
+              <div className="flex items-center justify-between bg-white p-4 rounded-2xl border border-[#dfe9e2] shadow-2xs">
+                <div className="space-y-0.5">
+                  <h3 className="text-sm font-black text-[#163522]">
+                    Planes de Acción 5W2H de los Peligros de esta Matriz
+                  </h3>
+                  <p className="text-xs text-[#7a9182]">
+                    Cada plan se sincroniza automáticamente por peligro y aplica a todos los puestos expuestos.
+                  </p>
+                </div>
+                <div className="text-xs font-bold text-[#1F7D3E] bg-[#eef7f0] border border-[#d6ebd9] px-3 py-1.5 rounded-xl">
+                  {total5w2hActions} acciones en total
+                </div>
+              </div>
+
+              {planesAccion5w2h.length === 0 ? (
+                <div className="p-12 text-center text-[#7a9182] bg-white rounded-2xl border border-dashed border-[#dfe9e2] space-y-2">
+                  <Sparkles className="size-8 text-[#1F7D3E] mx-auto opacity-50" />
+                  <p className="font-bold text-[#163522]">No hay planes de acción 5W2H configurados para los peligros de esta matriz</p>
+                  <p className="text-xs">Puede configurarlos directamente desde el menú "Plan de Acción" o en el editor de la matriz.</p>
+                </div>
+              ) : (
+                planesAccion5w2h.map((group: any, idx: number) => {
+                  const badge = getClasificacionStyle(group.clasificacion || '')
+                  const plans: any[] = group.planes || []
+
+                  return (
+                    <div
+                      key={group.dangerId || idx}
+                      className="bg-white rounded-2xl border border-[#dfe9e2] p-4 shadow-xs space-y-3"
+                    >
+                      {/* Danger Header */}
+                      <div className="flex items-center justify-between gap-3 border-b border-[#f0f4f1] pb-3">
+                        <div className="flex items-center gap-2.5 flex-wrap">
+                          {group.codigo && (
+                            <span className="font-mono text-[10.5px] font-black px-2 py-0.5 rounded bg-[#163522] text-white">
+                              {group.codigo}
+                            </span>
+                          )}
+                          <span className={`text-[10px] font-black uppercase px-2 py-0.5 rounded border ${badge.bg} ${badge.text} ${badge.border}`}>
+                            {group.clasificacion}
+                          </span>
+                          <span className="text-xs sm:text-sm font-black text-[#163522]">
+                            {group.descripcion}
+                          </span>
+                        </div>
+
+                        <span className="text-xs font-bold text-[#1F7D3E] shrink-0">
+                          {plans.length} {plans.length === 1 ? 'acción' : 'acciones'}
+                        </span>
+                      </div>
+
+                      {/* 5W2H Actions Table */}
+                      {plans.length > 0 ? (
+                        <div className="overflow-x-auto">
+                          <table className="w-full text-xs text-left">
+                            <thead>
+                              <tr className="bg-[#f8faf8] border-y border-[#dfe9e2] text-[10px] uppercase font-black text-[#5e6b62]">
+                                <th className="py-2 px-2.5">#</th>
+                                <th className="py-2 px-2.5">Qué (What)</th>
+                                <th className="py-2 px-2.5">Por qué (Why)</th>
+                                <th className="py-2 px-2.5">Dónde (Where)</th>
+                                <th className="py-2 px-2.5">Cuándo (When)</th>
+                                <th className="py-2 px-2.5">Quién (Who)</th>
+                                <th className="py-2 px-2.5">Cómo (How)</th>
+                                <th className="py-2 px-2.5">Cuánto (How Much)</th>
+                                <th className="py-2 px-2.5">Estado</th>
+                              </tr>
+                            </thead>
+                            <tbody className="divide-y divide-[#f0f4f1]">
+                              {plans.map((p: any, pIdx: number) => {
+                                let stColor = 'bg-slate-100 text-slate-700'
+                                if (p.estado === 'EJECUTADO') stColor = 'bg-emerald-100 text-emerald-800'
+                                else if (p.estado === 'EN_PROCESO') stColor = 'bg-amber-100 text-amber-800'
+
+                                return (
+                                  <tr key={p.id || pIdx} className="hover:bg-[#f9fbf9]">
+                                    <td className="py-2 px-2.5 font-bold text-[#7a9182]">{pIdx + 1}</td>
+                                    <td className="py-2 px-2.5 font-bold text-[#163522] max-w-[200px]">{p.que}</td>
+                                    <td className="py-2 px-2.5 text-[#5e6b62] max-w-[150px]">{p.porQue || '—'}</td>
+                                    <td className="py-2 px-2.5 text-[#5e6b62]">{p.donde || '—'}</td>
+                                    <td className="py-2 px-2.5 whitespace-nowrap text-[#5e6b62]">
+                                      {p.cuandoInicio || p.cuandoFin ? `${p.cuandoInicio || ''} - ${p.cuandoFin || ''}` : '—'}
+                                    </td>
+                                    <td className="py-2 px-2.5 font-medium text-[#163522]">{p.responsable || '—'}</td>
+                                    <td className="py-2 px-2.5 text-[#5e6b62] max-w-[150px]">{p.como || '—'}</td>
+                                    <td className="py-2 px-2.5 text-[#5e6b62]">{p.cuanto || '—'}</td>
+                                    <td className="py-2 px-2.5">
+                                      <span className={`text-[9.5px] font-black px-2 py-0.5 rounded uppercase ${stColor}`}>
+                                        {p.estado || 'PENDIENTE'}
+                                      </span>
+                                    </td>
+                                  </tr>
+                                )
+                              })}
+                            </tbody>
+                          </table>
+                        </div>
+                      ) : (
+                        <p className="text-xs text-[#7a9182] italic py-1">Sin acciones 5W2H formuladas aún.</p>
+                      )}
+                    </div>
+                  )
+                })
+              )}
+            </div>
+          )}
             </main>
           </div>
+
+          {/* 5W2H Preview Modal */}
+          {previewDanger && (
+            <PlanAccionPreviewModal
+              open={previewDangerModalOpen}
+              onOpenChange={(open) => {
+                setPreviewDangerModalOpen(open)
+                if (!open) setPreviewDanger(null)
+              }}
+              danger={previewDanger}
+            />
+          )}
         </div>
       )
     }

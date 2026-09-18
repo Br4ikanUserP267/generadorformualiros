@@ -119,7 +119,19 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
                           criterio: true,
                           evaluacion: true,
                           evaluacionPost: true,
-                          intervencion: true
+                          intervencion: true,
+                          catalogoPeligro: {
+                            include: {
+                              planesAccion: {
+                                where: { deletedAt: null },
+                                orderBy: { orden: 'asc' },
+                              },
+                            },
+                          },
+                          planesAccion: {
+                            where: { deletedAt: null },
+                            orderBy: { orden: 'asc' },
+                          },
                         },
                         orderBy: { orden: 'asc' }
                       }
@@ -166,54 +178,63 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
               tareas: a.tareas || '',
               cargo: a.cargo || '',
               rutinario: !!a.rutinario,
-              peligros: (a.peligros || []).map((pel: any) => ({
-                id: pel.id,
-                descripcion: pel.descripcion || '',
-                clasificacion: pel.clasificacion || '',
-                numero: (typeof pel.numero === 'number' ? pel.numero : (numeroMap[pel.id] || 0)),
-                orden: pel.orden || 0,
-                efectos: pel.efectosPosibles || '',
-                controles: {
-                  fuente: pel.control?.fuente || '',
-                  medio: pel.control?.medio || '',
-                  individuo: pel.control?.individuo || ''
-                },
-                evaluacion: {
-                  nd: pel.evaluacion?.nivelDeficiencia || null,
-                  ne: pel.evaluacion?.nivelExposicion || null,
-                  nc: pel.evaluacion?.nivelConsecuencia || null,
-                  np: pel.evaluacion?.nivelProbabilidad || null,
-                  nr: pel.evaluacion?.nivelRiesgo || null,
-                  interp_np: pel.evaluacion?.interpProbabilidad || '',
-                  interp_nr: pel.evaluacion?.interpRiesgo || '',
-                  aceptabilidad: pel.evaluacion?.aceptabilidad || ''
-                },
-                evaluacionPost: pel.evaluacionPost ? {
-                  nd: pel.evaluacionPost.nivelDeficiencia || null,
-                  ne: pel.evaluacionPost.nivelExposicion || null,
-                  nc: pel.evaluacionPost.nivelConsecuencia || null,
-                  np: pel.evaluacionPost.nivelProbabilidad || null,
-                  nr: pel.evaluacionPost.nivelRiesgo || null,
-                  interp_np: pel.evaluacionPost.interpProbabilidad || '',
-                  interp_nr: pel.evaluacionPost.interpRiesgo || '',
-                  aceptabilidad: pel.evaluacionPost.aceptabilidad || ''
-                } : null,
-                criterios: {
-                  num_expuestos: pel.criterio?.numExpuestos || null,
-                  peor_consecuencia: pel.criterio?.peorConsecuencia || '',
-                  requisito_legal: !!pel.criterio?.requisitoLegal
-                },
-                intervencion: {
-                  eliminacion: pel.intervencion?.eliminacion || '',
-                  sustitucion: pel.intervencion?.sustitucion || '',
-                  controles_ingenieria: pel.intervencion?.controlesIngenieria || '',
-                  controles_administrativos: pel.intervencion?.controlesAdministrativos || '',
-                  epp: pel.intervencion?.epp || '',
-                  responsable: pel.intervencion?.responsable || '',
-                  fecha_ejecucion: pel.intervencion?.fechaEjecucion ? pel.intervencion.fechaEjecucion.toISOString().split('T')[0] : ''
-                },
-                _ui: { expanded: false, activeTab: 0 }
-              }))
+              peligros: (a.peligros || []).map((pel: any) => {
+                const planItems = (pel.planesAccion && pel.planesAccion.length > 0)
+                  ? pel.planesAccion
+                  : (pel.catalogoPeligro?.planesAccion || [])
+
+                return {
+                  id: pel.id,
+                  catalogoPeligroId: pel.catalogoPeligroId || null,
+                  codigo: pel.catalogoPeligro?.codigo || null,
+                  descripcion: pel.descripcion || '',
+                  clasificacion: pel.clasificacion || '',
+                  numero: (typeof pel.numero === 'number' ? pel.numero : (numeroMap[pel.id] || 0)),
+                  orden: pel.orden || 0,
+                  efectos: pel.efectosPosibles || '',
+                  controles: {
+                    fuente: pel.control?.fuente || '',
+                    medio: pel.control?.medio || '',
+                    individuo: pel.control?.individuo || ''
+                  },
+                  evaluacion: {
+                    nd: pel.evaluacion?.nivelDeficiencia || null,
+                    ne: pel.evaluacion?.nivelExposicion || null,
+                    nc: pel.evaluacion?.nivelConsecuencia || null,
+                    np: pel.evaluacion?.nivelProbabilidad || null,
+                    nr: pel.evaluacion?.nivelRiesgo || null,
+                    interp_np: pel.evaluacion?.interpProbabilidad || '',
+                    interp_nr: pel.evaluacion?.interpRiesgo || '',
+                    aceptabilidad: pel.evaluacion?.aceptabilidad || ''
+                  },
+                  evaluacionPost: pel.evaluacionPost ? {
+                    nd: pel.evaluacionPost.nivelDeficiencia || null,
+                    ne: pel.evaluacionPost.nivelExposicion || null,
+                    nc: pel.evaluacionPost.nivelConsecuencia || null,
+                    np: pel.evaluacionPost.nivelProbabilidad || null,
+                    nr: pel.evaluacionPost.nivelRiesgo || null,
+                    interp_np: pel.evaluacionPost.interpProbabilidad || '',
+                    interp_nr: pel.evaluacionPost.interpRiesgo || '',
+                    aceptabilidad: pel.evaluacionPost.aceptabilidad || ''
+                  } : null,
+                  criterios: {
+                    num_expuestos: pel.criterio?.numExpuestos || null,
+                    peor_consecuencia: pel.criterio?.peorConsecuencia || '',
+                    requisito_legal: !!pel.criterio?.requisitoLegal
+                  },
+                  intervencion: {
+                    eliminacion: pel.intervencion?.eliminacion || '',
+                    sustitucion: pel.intervencion?.sustitucion || '',
+                    controles_ingenieria: pel.intervencion?.controlesIngenieria || '',
+                    controles_administrativos: pel.intervencion?.controlesAdministrativos || '',
+                    epp: pel.intervencion?.epp || '',
+                    responsable: pel.intervencion?.responsable || '',
+                    fecha_ejecucion: pel.intervencion?.fechaEjecucion ? pel.intervencion.fechaEjecucion.toISOString().split('T')[0] : ''
+                  },
+                  planesAccion: planItems,
+                  _ui: { expanded: false, activeTab: 0 }
+                }
+              })
             }))
           }))
         }))

@@ -151,6 +151,21 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           clasificacion: true,
           efectosPosibles: true,
           orden: true,
+          catalogoPeligroId: true,
+          catalogoPeligro: {
+            select: {
+              id: true,
+              codigo: true,
+              planesAccion: {
+                where: { deletedAt: null },
+                orderBy: { orden: 'asc' },
+              },
+            },
+          },
+          planesAccion: {
+            where: { deletedAt: null },
+            orderBy: { orden: 'asc' },
+          },
           actividad: {
             select: {
               id: true,
@@ -228,18 +243,77 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         },
         orderBy: [
           { actividad: { zona: { proceso: { orden: 'asc' } } } },
-          { actividad: { zona: { proceso: { id: 'asc' } } } },
           { actividad: { zona: { orden: 'asc' } } },
-          { actividad: { zona: { id: 'asc' } } },
           { actividad: { orden: 'asc' } },
-          { actividad: { id: 'asc' } },
           { orden: 'asc' },
-          { id: 'asc' },
         ],
         skip: (page - 1) * pageSize,
         take: pageSize,
       }),
     ])
+
+    // Query distinct dangers in this matrix to get consolidated 5W2H action plans
+    const allMatrixHazards = await prisma.peligro.findMany({
+      where: baseWhere,
+      select: {
+        id: true,
+        descripcion: true,
+        clasificacion: true,
+        catalogoPeligroId: true,
+        evaluacion: {
+          select: {
+            nivelRiesgo: true,
+            interpRiesgo: true,
+            aceptabilidad: true,
+          },
+        },
+        catalogoPeligro: {
+          select: {
+            id: true,
+            codigo: true,
+            descripcion: true,
+            clasificacion: true,
+            nivelRiesgo: true,
+            interpRiesgo: true,
+            planesAccion: {
+              where: { deletedAt: null },
+              orderBy: { orden: 'asc' },
+            },
+          },
+        },
+        planesAccion: {
+          where: { deletedAt: null },
+          orderBy: { orden: 'asc' },
+        },
+      },
+    })
+
+    // Consolidate 5W2H action plans grouped by danger (ONLY for Muy Alto, Alto, and Moderado)
+    const planesAccion5w2hMap = new Map<string, any>()
+    for (const haz of allMatrixHazards) {
+      const nr = Number(haz.evaluacion?.nivelRiesgo ?? haz.catalogoPeligro?.nivelRiesgo ?? 0)
+      const interp = String(haz.evaluacion?.interpRiesgo || haz.catalogoPeligro?.interpRiesgo || '').toUpperCase()
+      const acept = String(haz.evaluacion?.aceptabilidad || '').toUpperCase()
+      const isBajo = (nr > 0 && nr <= 20) || interp.includes('IV') || interp.includes('BAJO') || (acept === 'ACEPTABLE' && !acept.includes('CONTROL'))
+
+      if (isBajo) continue
+
+      const dangerKey = haz.catalogoPeligroId || haz.descripcion.trim().toLowerCase()
+      if (!planesAccion5w2hMap.has(dangerKey)) {
+        const plans = haz.catalogoPeligro?.planesAccion?.length
+          ? haz.catalogoPeligro.planesAccion
+          : haz.planesAccion || []
+        
+        planesAccion5w2hMap.set(dangerKey, {
+          dangerId: haz.catalogoPeligroId || haz.id,
+          codigo: haz.catalogoPeligro?.codigo || null,
+          descripcion: haz.catalogoPeligro?.descripcion || haz.descripcion,
+          clasificacion: haz.catalogoPeligro?.clasificacion || haz.clasificacion,
+          planes: plans,
+        })
+      }
+    }
+    const planesAccionConsolidados = Array.from(planesAccion5w2hMap.values())
 
     const totalPages = Math.max(1, Math.ceil(totalPeligros / pageSize))
 
@@ -252,6 +326,14 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       const ev = p.evaluacion
       const crit = p.criterio
       const inv = p.intervencion
+
+      const nrNum = Number(ev?.nivelRiesgo ?? p.catalogoPeligro?.nivelRiesgo ?? 0)
+      const interpStr = String(ev?.interpRiesgo || p.catalogoPeligro?.interpRiesgo || '').toUpperCase()
+      const aceptStr = String(ev?.aceptabilidad || '').toUpperCase()
+      const isBajo = (nrNum > 0 && nrNum <= 20) || interpStr.includes('IV') || interpStr.includes('BAJO') || (aceptStr === 'ACEPTABLE' && !aceptStr.includes('CONTROL'))
+
+      const rawPlans = (p.catalogoPeligro?.planesAccion?.length ? p.catalogoPeligro.planesAccion : p.planesAccion) || []
+      const planesAccion = isBajo ? [] : rawPlans
 
       return {
         id: p.id,
@@ -284,6 +366,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         controlAdmin: inv?.controlesAdministrativos || '',
         epp: inv?.epp || '',
         responsable: inv?.responsable || '',
+        planesAccion,
+        catalogoPeligroId: p.catalogoPeligroId || null,
+        codigoPeligro: p.catalogoPeligro?.codigo || null,
         fechaEjecucion: inv?.fechaEjecucion
           ? inv.fechaEjecucion.toISOString().split('T')[0]
           : '',
@@ -313,6 +398,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         bajo: bajoCount,
       },
       records,
+      planesAccion5w2h: planesAccionConsolidados,
       pagination: {
         page,
         pageSize,

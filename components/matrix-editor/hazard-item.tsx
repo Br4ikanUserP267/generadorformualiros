@@ -11,11 +11,19 @@ import {
   ArrowRight,
   TrendingDown,
   AlertCircle,
+  Sparkles,
+  CheckCircle2,
+  Clock,
+  Eye,
+  Edit3,
 } from 'lucide-react'
 import { Textarea } from '@/components/ui/textarea'
 import { Input } from '@/components/ui/input'
 import { Switch } from '@/components/ui/switch'
 import { Button } from '@/components/ui/button'
+import { PlanAccionModal } from '@/components/plan-accion/plan-accion-modal'
+import { PlanAccionPreviewModal } from '@/components/plan-accion/plan-accion-preview-modal'
+import { apiFetch } from '@/lib/utils'
 
 interface HazardItemProps {
   hazard: any
@@ -43,9 +51,113 @@ function interpProbabilidad(np: number) {
 function interpNivelRiesgo(nr: number) {
   if (!nr) return { label: '—', color: '#9CA3AF' }
   if (nr <= 20) return { label: 'IV - Bajo', color: '#16a34a' }
-  if (nr <= 120) return { label: 'III - Mejorable', color: '#16a34a' }
-  if (nr <= 500) return { label: 'II - Alto', color: '#ca8a04' }
-  return { label: 'I - No Aceptable', color: '#dc2626' }
+  if (nr <= 120) return { label: 'III - Moderado', color: '#d97706' }
+  if (nr <= 500) return { label: 'II - Alto', color: '#ea580c' }
+  return { label: 'I - Muy Alto', color: '#dc2626' }
+}
+
+export function getHazardRiskLevel(hazard: any): {
+  level: 'MUY_ALTO' | 'ALTO' | 'MODERADO' | 'BAJO'
+  label: string
+  color: string
+  isEligibleForPlan: boolean
+} {
+  if (!hazard) {
+    return { level: 'BAJO', label: 'Sin evaluar', color: '#9CA3AF', isEligibleForPlan: false }
+  }
+
+  // 1. Check direct matrix evaluation (prefer residual if intervened, else initial)
+  const initialEval = hazard.evaluacion || {}
+  const residualEval = hazard.evaluacionPost || null
+  const activeEval = residualEval && Number(residualEval.nr || 0) > 0 ? residualEval : initialEval
+
+  const nr = Number(activeEval.nr ?? activeEval.nivelRiesgo ?? 0)
+  const interpRiesgo = String(activeEval.interpRiesgo || activeEval.interp_nr || '').toUpperCase().trim()
+  const aceptabilidad = String(activeEval.aceptabilidad || '').toUpperCase().trim()
+
+  // Strict GTC 45 thresholds based on NR
+  if (nr >= 600) {
+    return { level: 'MUY_ALTO', label: 'Nivel I (Muy Alto)', color: '#dc2626', isEligibleForPlan: true }
+  }
+  if (nr >= 150 && nr < 600) {
+    return { level: 'ALTO', label: 'Nivel II (Alto)', color: '#ea580c', isEligibleForPlan: true }
+  }
+  if (nr >= 40 && nr < 150) {
+    return { level: 'MODERADO', label: 'Nivel III (Moderado)', color: '#d97706', isEligibleForPlan: true }
+  }
+  if (nr > 0 && nr <= 20) {
+    return { level: 'BAJO', label: 'Nivel IV (Bajo)', color: '#16a34a', isEligibleForPlan: false }
+  }
+
+  // String interpretation checks
+  if (
+    interpRiesgo.startsWith('I ') ||
+    interpRiesgo === 'I' ||
+    (interpRiesgo.includes('I') && !interpRiesgo.includes('II') && !interpRiesgo.includes('IV'))
+  ) {
+    return { level: 'MUY_ALTO', label: 'Nivel I (Muy Alto)', color: '#dc2626', isEligibleForPlan: true }
+  }
+  if (
+    interpRiesgo.startsWith('II ') ||
+    interpRiesgo === 'II' ||
+    (interpRiesgo.includes('II') && !interpRiesgo.includes('III'))
+  ) {
+    return { level: 'ALTO', label: 'Nivel II (Alto)', color: '#ea580c', isEligibleForPlan: true }
+  }
+  if (
+    interpRiesgo.startsWith('III ') ||
+    interpRiesgo === 'III' ||
+    interpRiesgo.includes('III') ||
+    interpRiesgo.includes('MEJORABLE') ||
+    interpRiesgo.includes('MODERADO')
+  ) {
+    return { level: 'MODERADO', label: 'Nivel III (Moderado)', color: '#d97706', isEligibleForPlan: true }
+  }
+  if (interpRiesgo.includes('IV') || interpRiesgo.includes('BAJO') || interpRiesgo === '4') {
+    return { level: 'BAJO', label: 'Nivel IV (Bajo)', color: '#16a34a', isEligibleForPlan: false }
+  }
+
+  // Acceptability checks
+  if (aceptabilidad.includes('NO ACEPTABLE')) {
+    return { level: 'MUY_ALTO', label: 'Nivel I (Muy Alto)', color: '#dc2626', isEligibleForPlan: true }
+  }
+  if (aceptabilidad.includes('ESPECÍFICO') || aceptabilidad.includes('ESPECIFICO')) {
+    return { level: 'ALTO', label: 'Nivel II (Alto)', color: '#ea580c', isEligibleForPlan: true }
+  }
+  if (aceptabilidad.includes('MEJORABLE')) {
+    return { level: 'MODERADO', label: 'Nivel III (Moderado)', color: '#d97706', isEligibleForPlan: true }
+  }
+  if (aceptabilidad === 'ACEPTABLE' || (aceptabilidad.includes('ACEPTABLE') && !aceptabilidad.includes('CONTROL'))) {
+    return { level: 'BAJO', label: 'Nivel IV (Bajo)', color: '#16a34a', isEligibleForPlan: false }
+  }
+
+  // 2. Check catalog hazard fallback
+  const cat = hazard.catalogoPeligro
+  if (cat) {
+    const catNr = Number(cat.nivelRiesgo || 0)
+    const catInterp = String(cat.interpRiesgo || '').toUpperCase().trim()
+
+    if (catNr >= 600 || catInterp.startsWith('I ') || catInterp === 'I') {
+      return { level: 'MUY_ALTO', label: 'Nivel I (Muy Alto)', color: '#dc2626', isEligibleForPlan: true }
+    }
+    if ((catNr >= 150 && catNr < 600) || catInterp.startsWith('II ') || catInterp === 'II') {
+      return { level: 'ALTO', label: 'Nivel II (Alto)', color: '#ea580c', isEligibleForPlan: true }
+    }
+    if (
+      (catNr >= 40 && catNr < 150) ||
+      catInterp.startsWith('III ') ||
+      catInterp === 'III' ||
+      catInterp.includes('MEJORABLE') ||
+      catInterp.includes('MODERADO')
+    ) {
+      return { level: 'MODERADO', label: 'Nivel III (Moderado)', color: '#d97706', isEligibleForPlan: true }
+    }
+    if ((catNr > 0 && catNr <= 20) || catInterp.includes('IV') || catInterp.includes('BAJO') || catInterp.includes('ACEPTABLE')) {
+      return { level: 'BAJO', label: 'Nivel IV (Bajo)', color: '#16a34a', isEligibleForPlan: false }
+    }
+  }
+
+  return { level: 'BAJO', label: 'Sin evaluar', color: '#9CA3AF', isEligibleForPlan: false }
 }
 
 function aceptabilidadColor(text: string) {
@@ -83,6 +195,58 @@ export function HazardItem({
   const itemRef = React.useRef<HTMLDivElement>(null)
   const isExpanded = isHighlighted || !!hazard?._ui?.expanded
   const activeTab = Number(hazard?._ui?.activeTab || 0)
+
+  // 5W2H Action Plan modal state
+  const [showPlanModal, setShowPlanModal] = React.useState(false)
+  const [showPreviewModal, setShowPreviewModal] = React.useState(false)
+
+  // Retrieve 5W2H actions from hazard (from catalogo or direct hazard association)
+  const existingPlans: any[] = React.useMemo(() => {
+    if (Array.isArray(hazard?.catalogoPeligro?.planesAccion) && hazard.catalogoPeligro.planesAccion.length > 0) {
+      return hazard.catalogoPeligro.planesAccion
+    }
+    if (Array.isArray(hazard?.planesAccion)) {
+      return hazard.planesAccion
+    }
+    return []
+  }, [hazard])
+
+  const has5w2h = existingPlans.length > 0
+
+  // Format danger object for PlanAccionModal
+  const dangerForPlan = React.useMemo(() => {
+    return {
+      id: hazard.catalogoPeligroId || hazard.id,
+      codigo: hazard.codigo || hazard.catalogoPeligro?.codigo || null,
+      descripcion: hazard.descripcion || '',
+      clasificacion: hazard.clasificacion || '',
+      eliminacion: hazard.intervencion?.eliminacion || '',
+      sustitucion: hazard.intervencion?.sustitucion || '',
+      controlesIngenieria: hazard.intervencion?.controles_ingenieria || '',
+      controlesAdministrativos: hazard.intervencion?.controles_administrativos || '',
+      epp: hazard.intervencion?.epp || '',
+      planesAccion: existingPlans,
+    }
+  }, [hazard, existingPlans])
+
+  // Handle plan saved
+  const handlePlanSaved = async () => {
+    try {
+      const targetId = hazard.catalogoPeligroId || hazard.id
+      const res = await apiFetch(`/api/plan-accion/danger/${targetId}`)
+      if (res.ok) {
+        const data = await res.json()
+        if (data?.planesAccion) {
+          onUpdateField(['planesAccion'], data.planesAccion)
+          if (hazard.catalogoPeligro) {
+            onUpdateField(['catalogoPeligro', 'planesAccion'], data.planesAccion)
+          }
+        }
+      }
+    } catch (e) {
+      console.error('Error refreshing danger 5W2H plans:', e)
+    }
+  }
 
   // Auto-scroll to center the hazard card squarely in the viewport when deep-linked/highlighted
   React.useEffect(() => {
@@ -126,7 +290,9 @@ export function HazardItem({
     ? Math.max(0, Math.min(100, Math.round(((initialNr - residualNr) / initialNr) * 100)))
     : null
 
-  const statusColor = interpProbabilidad(Number((residualEval || initialEval)?.np || 0)).color
+  // Risk Level & Action Plan Eligibility
+  const riskInfo = React.useMemo(() => getHazardRiskLevel(hazard), [hazard])
+  const statusColor = riskInfo.color
 
   return (
     <div
@@ -159,11 +325,11 @@ export function HazardItem({
             <GripVertical className="size-4" />
           </div>
 
-          {/* Status Dot */}
+          {/* Risk Level Status Dot */}
           <span
             className="size-2.5 rounded-full shrink-0"
             style={{ backgroundColor: statusColor }}
-            title="Nivel de probabilidad"
+            title={`Nivel de riesgo: ${riskInfo.label}`}
           />
 
           {/* Title & Classification */}
@@ -181,8 +347,28 @@ export function HazardItem({
           </div>
         </div>
 
-        {/* Right Actions: Duplicate, Delete, Expand Chevron */}
+        {/* Right Actions: 5W2H Plan, Duplicate, Delete, Expand Chevron */}
         <div className="flex items-center gap-1.5 shrink-0" onClick={(e) => e.stopPropagation()}>
+          {/* 5W2H Quick Button: ONLY available for Muy Alto, Alto, and Moderado */}
+          {riskInfo.isEligibleForPlan && (
+            <button
+              type="button"
+              onClick={() => {
+                if (has5w2h) setShowPreviewModal(true)
+                else setShowPlanModal(true)
+              }}
+              className={`px-2.5 py-1 rounded-xl text-[11px] font-black flex items-center gap-1.5 transition-all border cursor-pointer ${
+                has5w2h
+                  ? 'bg-emerald-50 text-emerald-800 border-emerald-200 hover:bg-emerald-100 hover:border-emerald-300'
+                  : 'bg-white text-[#5e6b62] border-[#dfe9e2] hover:bg-[#f0f9f1] hover:text-[#1F7D3E]'
+              }`}
+              title="Plan de Acción 5W2H por peligro (sincronizado en matrices)"
+            >
+              <Sparkles className="size-3 text-[#1F7D3E]" />
+              <span>{has5w2h ? `Plan 5W2H (${existingPlans.length})` : '+ Plan 5W2H'}</span>
+            </button>
+          )}
+
           <button
             type="button"
             onClick={onDuplicate}
@@ -812,9 +998,122 @@ export function HazardItem({
                   </div>
                 </div>
               </div>
+
+              {/* Dedicated 5W2H Section in Tab 3 */}
+              <div className="pt-3 border-t border-[#e2e9e4]">
+                <div className="rounded-2xl border border-[#cbe4d1] bg-[linear-gradient(180deg,#fcfdfc_0%,#f4f9f5_100%)] p-4 space-y-3">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                    <div className="flex items-center gap-2">
+                      <span className="size-7 rounded-xl bg-[#1F7D3E] text-white flex items-center justify-center shrink-0 shadow-2xs">
+                        <Sparkles className="size-3.5" />
+                      </span>
+                      <div>
+                        <h4 className="text-xs font-black text-[#163522] uppercase tracking-wider flex items-center gap-1.5">
+                          Plan de Acción Metodológico 5W2H
+                          <span className="text-[9.5px] font-bold text-[#1F7D3E] bg-[#eef7f0] border border-[#d6ebd9] px-2 py-0.2 rounded-full normal-case">
+                            Sincronizado por peligro
+                          </span>
+                        </h4>
+                        <p className="text-[11px] text-[#7a9182]">
+                          Qué, Por qué, Dónde, Cuándo, Quién, Cómo y Cuánto asignados a este peligro clínico.
+                        </p>
+                      </div>
+                    </div>
+
+                    {riskInfo.isEligibleForPlan && (
+                      <div className="flex items-center gap-2">
+                        {has5w2h && (
+                          <button
+                            type="button"
+                            onClick={() => setShowPreviewModal(true)}
+                            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-[#dfe9e2] bg-white hover:bg-[#eef7f0] text-xs font-bold text-[#163522] transition-colors"
+                          >
+                            <Eye className="size-3.5 text-[#1F7D3E]" />
+                            Ver Plan ({existingPlans.length})
+                          </button>
+                        )}
+                        <button
+                          type="button"
+                          onClick={() => setShowPlanModal(true)}
+                          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#1F7D3E] hover:bg-[#186331] text-white text-xs font-bold transition-colors shadow-xs"
+                        >
+                          <Edit3 className="size-3.5" />
+                          {has5w2h ? 'Editar Plan 5W2H' : 'Configurar Plan 5W2H'}
+                        </button>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Existing actions summary preview list OR Non-eligible Notice */}
+                  {!riskInfo.isEligibleForPlan ? (
+                    <div className="bg-white rounded-xl border border-[#dfe9e2] p-4 text-center text-xs text-[#5e6b62] space-y-1">
+                      <p className="font-bold text-[#163522]">
+                        Plan de Acción 5W2H no requerido para Nivel IV (Bajo)
+                      </p>
+                      <p className="text-[11px] text-[#7a9182]">
+                        De acuerdo con los lineamientos institucionales, el Plan de Acción 5W2H solo se formula para peligros con clasificación <strong>Muy Alta, Alta y Moderada</strong> (Niveles I, II y III GTC 45).
+                      </p>
+                    </div>
+                  ) : has5w2h ? (
+                    <div className="space-y-1.5 pt-1">
+                      {existingPlans.map((act: any, idx: number) => {
+                        let statusColor = 'bg-slate-100 text-slate-700'
+                        if (act.estado === 'EJECUTADO') statusColor = 'bg-emerald-100 text-emerald-800'
+                        else if (act.estado === 'EN_PROCESO') statusColor = 'bg-amber-100 text-amber-800'
+
+                        return (
+                          <div
+                            key={act.id || idx}
+                            className="bg-white rounded-xl border border-[#dfe9e2] p-2.5 text-xs flex items-center justify-between gap-3"
+                          >
+                            <div className="min-w-0 flex-1">
+                              <span className="font-bold text-[#163522] mr-2">#{idx + 1}</span>
+                              <span className="font-medium text-[#2d4b37]">{act.que}</span>
+                              {act.responsable && (
+                                <span className="ml-2 text-[10.5px] text-[#7a9182]">
+                                  • Resp: {act.responsable}
+                                </span>
+                              )}
+                            </div>
+                            <span className={`text-[9.5px] font-black px-2 py-0.5 rounded-md shrink-0 uppercase ${statusColor}`}>
+                              {act.estado || 'PENDIENTE'}
+                            </span>
+                          </div>
+                        )
+                      })}
+                    </div>
+                  ) : (
+                    <div className="bg-white/70 rounded-xl border border-dashed border-[#cbe4d1] p-3 text-center text-xs text-[#7a9182]">
+                      Este peligro aún no tiene acciones 5W2H formuladas. Haga clic en <strong>Configurar Plan 5W2H</strong> para generarlas a partir de las medidas de intervención GTC 45.
+                    </div>
+                  )}
+                </div>
+              </div>
             </div>
           )}
         </div>
+      )}
+
+      {/* 5W2H Modals */}
+      {showPlanModal && (
+        <PlanAccionModal
+          open={showPlanModal}
+          onOpenChange={setShowPlanModal}
+          danger={dangerForPlan}
+          onSaved={handlePlanSaved}
+        />
+      )}
+
+      {showPreviewModal && (
+        <PlanAccionPreviewModal
+          open={showPreviewModal}
+          onOpenChange={setShowPreviewModal}
+          danger={dangerForPlan}
+          onEdit={() => {
+            setShowPreviewModal(false)
+            setShowPlanModal(true)
+          }}
+        />
       )}
     </div>
   )

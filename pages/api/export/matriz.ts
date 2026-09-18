@@ -683,7 +683,257 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       }
     }
 
+    // ============================================================================
+    // 3. Create "Plan de Acción 5W2H" Sheet
+    // ============================================================================
+    const allDangers: any[] = []
+    if (Array.isArray(matrizData.procesos)) {
+      for (const proc of matrizData.procesos) {
+        if (Array.isArray(proc.zonas)) {
+          for (const z of proc.zonas) {
+            if (Array.isArray(z.actividades)) {
+              for (const a of z.actividades) {
+                if (Array.isArray(a.peligros)) {
+                  for (const p of a.peligros) {
+                    allDangers.push(p)
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
 
+    const catalogIds = Array.from(
+      new Set(allDangers.map((d: any) => d.catalogoPeligroId || d.catalogo_peligro_id).filter(Boolean))
+    ) as string[]
+
+    const matrixDangerIds = Array.from(
+      new Set(allDangers.map((d: any) => d.id).filter(Boolean))
+    ) as string[]
+
+    const [catalogPlans, directPlans] = await Promise.all([
+      catalogIds.length > 0
+        ? prisma.planAccion5W2H.findMany({
+            where: {
+              peligroCatalogoId: { in: catalogIds },
+              deletedAt: null,
+            },
+            include: {
+              peligroCatalogo: {
+                select: { id: true, codigo: true, clasificacion: true, descripcion: true },
+              },
+            },
+            orderBy: [{ peligroCatalogoId: 'asc' }, { orden: 'asc' }],
+          })
+        : [],
+      matrixDangerIds.length > 0
+        ? prisma.planAccion5W2H.findMany({
+            where: {
+              peligroId: { in: matrixDangerIds },
+              deletedAt: null,
+            },
+            include: {
+              peligro: {
+                select: { id: true, clasificacion: true, descripcion: true },
+              },
+            },
+            orderBy: [{ peligroId: 'asc' }, { orden: 'asc' }],
+          })
+        : [],
+    ])
+
+    // De-duplicate actions
+    const combined5w2h: any[] = []
+    const seenActionIds = new Set<string>()
+
+    for (const cp of catalogPlans) {
+      if (!seenActionIds.has(cp.id)) {
+        seenActionIds.add(cp.id)
+        combined5w2h.push({
+          codigo: cp.peligroCatalogo?.codigo || '',
+          clasificacion: cp.peligroCatalogo?.clasificacion || '',
+          peligro: cp.peligroCatalogo?.descripcion || '',
+          que: cp.que,
+          porQue: cp.porQue || '',
+          donde: cp.donde || matrizData.area || '',
+          cuandoInicio: cp.cuandoInicio ? formatDate(cp.cuandoInicio.toISOString()) : '',
+          cuandoFin: cp.cuandoFin ? formatDate(cp.cuandoFin.toISOString()) : '',
+          responsable: cp.responsable || '',
+          como: cp.como || '',
+          cuanto: cp.cuanto || '',
+          estado: cp.estado || 'PENDIENTE',
+        })
+      }
+    }
+
+    for (const dp of directPlans) {
+      if (!seenActionIds.has(dp.id)) {
+        seenActionIds.add(dp.id)
+        combined5w2h.push({
+          codigo: '',
+          clasificacion: dp.peligro?.clasificacion || '',
+          peligro: dp.peligro?.descripcion || '',
+          que: dp.que,
+          porQue: dp.porQue || '',
+          donde: dp.donde || matrizData.area || '',
+          cuandoInicio: dp.cuandoInicio ? formatDate(dp.cuandoInicio.toISOString()) : '',
+          cuandoFin: dp.cuandoFin ? formatDate(dp.cuandoFin.toISOString()) : '',
+          responsable: dp.responsable || '',
+          como: dp.como || '',
+          cuanto: dp.cuanto || '',
+          estado: dp.estado || 'PENDIENTE',
+        })
+      }
+    }
+
+    // Always create worksheet
+    const planSheet = wb.addWorksheet('Plan de Acción 5W2H')
+
+    // Set widths
+    planSheet.columns = [
+      { key: 'codigo', width: 14 },
+      { key: 'clasificacion', width: 20 },
+      { key: 'peligro', width: 32 },
+      { key: 'que', width: 34 },
+      { key: 'porQue', width: 26 },
+      { key: 'donde', width: 22 },
+      { key: 'cuando', width: 22 },
+      { key: 'quien', width: 24 },
+      { key: 'como', width: 26 },
+      { key: 'cuanto', width: 20 },
+      { key: 'estado', width: 16 },
+    ]
+
+    // Title rows
+    planSheet.mergeCells('A1:K1')
+    const tCell = planSheet.getCell('A1')
+    tCell.value = 'CLÍNICA SANTA MARÍA S.A.S. - SISTEMA DE GESTIÓN DE SEGURIDAD Y SALUD EN EL TRABAJO'
+    tCell.font = { name: 'Arial', size: 12, bold: true, color: { argb: 'FFFFFFFF' } }
+    tCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF163522' } }
+    tCell.alignment = { horizontal: 'center', vertical: 'middle' }
+    planSheet.getRow(1).height = 28
+
+    planSheet.mergeCells('A2:K2')
+    const subCell = planSheet.getCell('A2')
+    subCell.value = `PLAN DE ACCIÓN 5W2H VINCULADO - ÁREA: ${(matrizData.area || 'GENERAL').toUpperCase()}`
+    subCell.font = { name: 'Arial', size: 10, bold: true, color: { argb: 'FFFFFFFF' } }
+    subCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF1F7D3E' } }
+    subCell.alignment = { horizontal: 'center', vertical: 'middle' }
+    planSheet.getRow(2).height = 22
+
+    // Header row
+    const headers5w2h = [
+      'CÓDIGO',
+      'CLASIFICACIÓN',
+      'PELIGRO ASOCIADO',
+      'QUÉ (WHAT) - Acción',
+      'POR QUÉ (WHY) - Justificación',
+      'DÓNDE (WHERE) - Área/Lugar',
+      'CUÁNDO (WHEN) - Fechas',
+      'QUIÉN (WHO) - Responsable',
+      'CÓMO (HOW) - Procedimiento',
+      'CUÁNTO (HOW MUCH) - Recursos',
+      'ESTADO',
+    ]
+
+    const hRow = planSheet.getRow(4)
+    hRow.height = 26
+    headers5w2h.forEach((h, idx) => {
+      const cell = hRow.getCell(idx + 1)
+      cell.value = h
+      cell.font = { name: 'Arial', size: 9, bold: true, color: { argb: 'FFFFFFFF' } }
+      cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF1F7D3E' } }
+      cell.alignment = { horizontal: 'center', vertical: 'middle', wrapText: true }
+      applyStandardBorder(cell)
+    })
+
+    let pRowIdx = 5
+    if (combined5w2h.length === 0) {
+      planSheet.getRow(pRowIdx).height = 24
+      planSheet.mergeCells(`A${pRowIdx}:K${pRowIdx}`)
+      const emptyCell = planSheet.getCell(`A${pRowIdx}`)
+      emptyCell.value = 'No se registran acciones 5W2H formuladas aún para los peligros de esta matriz.'
+      emptyCell.font = { name: 'Arial', size: 10, italic: true, color: { argb: 'FF777777' } }
+      emptyCell.alignment = { horizontal: 'center', vertical: 'middle' }
+      applyStandardBorder(emptyCell)
+    } else {
+      for (const item of combined5w2h) {
+        const row = planSheet.getRow(pRowIdx)
+        row.height = 24
+
+        const c1 = row.getCell(1)
+        c1.value = item.codigo
+        c1.alignment = { horizontal: 'center', vertical: 'middle' }
+        c1.font = { name: 'Arial', size: 9, bold: true }
+
+        const c2 = row.getCell(2)
+        c2.value = item.clasificacion
+        c2.alignment = { horizontal: 'left', vertical: 'middle' }
+        c2.font = { name: 'Arial', size: 9 }
+
+        const c3 = row.getCell(3)
+        c3.value = item.peligro
+        c3.alignment = { horizontal: 'left', vertical: 'middle', wrapText: true }
+        c3.font = { name: 'Arial', size: 9, bold: true }
+
+        const c4 = row.getCell(4)
+        c4.value = item.que
+        c4.alignment = { horizontal: 'left', vertical: 'middle', wrapText: true }
+        c4.font = { name: 'Arial', size: 9 }
+
+        const c5 = row.getCell(5)
+        c5.value = item.porQue
+        c5.alignment = { horizontal: 'left', vertical: 'middle', wrapText: true }
+        c5.font = { name: 'Arial', size: 9 }
+
+        const c6 = row.getCell(6)
+        c6.value = item.donde
+        c6.alignment = { horizontal: 'left', vertical: 'middle' }
+        c6.font = { name: 'Arial', size: 9 }
+
+        const c7 = row.getCell(7)
+        c7.value = item.cuandoInicio || item.cuandoFin ? `${item.cuandoInicio} - ${item.cuandoFin}` : ''
+        c7.alignment = { horizontal: 'center', vertical: 'middle' }
+        c7.font = { name: 'Arial', size: 9 }
+
+        const c8 = row.getCell(8)
+        c8.value = item.responsable
+        c8.alignment = { horizontal: 'left', vertical: 'middle' }
+        c8.font = { name: 'Arial', size: 9 }
+
+        const c9 = row.getCell(9)
+        c9.value = item.como
+        c9.alignment = { horizontal: 'left', vertical: 'middle', wrapText: true }
+        c9.font = { name: 'Arial', size: 9 }
+
+        const c10 = row.getCell(10)
+        c10.value = item.cuanto
+        c10.alignment = { horizontal: 'left', vertical: 'middle' }
+        c10.font = { name: 'Arial', size: 9 }
+
+        const c11 = row.getCell(11)
+        c11.value = item.estado
+        c11.alignment = { horizontal: 'center', vertical: 'middle' }
+        if (item.estado === 'EJECUTADO') {
+          c11.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFD1E7DD' } }
+          c11.font = { name: 'Arial', size: 9, bold: true, color: { argb: 'FF0F5132' } }
+        } else if (item.estado === 'EN_PROCESO') {
+          c11.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFFFF3CD' } }
+          c11.font = { name: 'Arial', size: 9, bold: true, color: { argb: 'FF664D03' } }
+        } else {
+          c11.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF8F9FA' } }
+          c11.font = { name: 'Arial', size: 9, bold: true, color: { argb: 'FF495057' } }
+        }
+
+        for (let c = 1; c <= 11; c++) {
+          applyStandardBorder(row.getCell(c))
+        }
+
+        pRowIdx++
+      }
+    }
 
     const buf = await wb.xlsx.writeBuffer()
     const sanitizedArea = (matrizData.area || 'Matriz').toUpperCase().replace(/\s+/g, '_').replace(/[^\w-]/g, '')

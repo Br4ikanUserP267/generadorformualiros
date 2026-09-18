@@ -63,36 +63,39 @@ export function HazardSection({
             <Button
               type="button"
               onClick={onOpenCatalog}
-              className="rounded-xl bg-[#eef7f0] hover:bg-[#d9ebd9] text-[#1F7D3E] border border-[#d6ebd9] text-xs font-black h-8.5 px-3 shadow-2xs cursor-pointer"
+              className="rounded-xl bg-[#1F7D3E] hover:bg-[#186331] text-xs font-black text-white h-8.5 px-3.5 shadow-md shadow-[#1F7D3E]/20 cursor-pointer"
             >
-              <Flame className="size-3.5 mr-1.5 text-[#1F7D3E]" />
+              <Flame className="size-3.5 mr-1.5 text-white" />
               Seleccionar del Catálogo
             </Button>
           )}
-
-          <Button
-            type="button"
-            onClick={onAddPeligro}
-            className="rounded-xl bg-[#1F7D3E] hover:bg-[#186331] text-xs font-black text-white h-8.5 px-3.5 shadow-md shadow-[#1F7D3E]/20 cursor-pointer"
-          >
-            <Plus className="size-3.5 mr-1.5" />
-            Nuevo peligro
-          </Button>
         </div>
       </div>
 
       {/* Hazards List */}
       {peligros.length === 0 ? (
-        <div className="rounded-2xl border border-dashed border-[#dfe9e2] bg-white p-8 text-center space-y-2">
+        <div className="rounded-2xl border border-dashed border-[#dfe9e2] bg-white p-8 text-center space-y-3">
           <div className="size-10 rounded-2xl bg-[#f8faf9] text-[#a3b8aa] flex items-center justify-center mx-auto border border-[#dfe9e2]">
             <ShieldAlert className="size-5" />
           </div>
-          <p className="text-xs font-bold text-[#355244]">
-            No hay peligros registrados en esta actividad
-          </p>
-          <p className="text-[11px] text-[#7a9182]">
-            Haz clic en "Agregar peligro" para registrar la identificación y evaluación del primer riesgo.
-          </p>
+          <div>
+            <p className="text-xs font-bold text-[#355244]">
+              No hay peligros registrados en esta actividad
+            </p>
+            <p className="text-[11px] text-[#7a9182] mt-0.5">
+              Los peligros institucionales se vinculan seleccionándolos directamente desde el catálogo maestro.
+            </p>
+          </div>
+          {onOpenCatalog && (
+            <Button
+              type="button"
+              onClick={onOpenCatalog}
+              className="rounded-xl bg-[#1F7D3E] hover:bg-[#186331] text-xs font-black text-white h-8.5 px-3.5 shadow-md shadow-[#1F7D3E]/20 cursor-pointer mx-auto"
+            >
+              <Flame className="size-3.5 mr-1.5" />
+              Seleccionar del Catálogo
+            </Button>
+          )}
         </div>
       ) : (
         <div

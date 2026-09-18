@@ -7,6 +7,7 @@ import {
   ShieldAlert,
   BarChart3,
   Flame,
+  ClipboardCheck,
   Settings,
   ChevronLeft,
   ChevronRight,
@@ -44,6 +45,11 @@ const navItems: NavItem[] = [
     label: 'Reporte de Peligros',
     href: '/dashboard/reporte',
     icon: BarChart3,
+  },
+  {
+    label: 'Plan de Acción',
+    href: '/dashboard/plan-accion',
+    icon: ClipboardCheck,
   },
   {
     label: 'Catálogo de Peligros',

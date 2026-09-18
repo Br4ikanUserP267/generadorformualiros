@@ -533,52 +533,9 @@ export default function MatrixEditor({ id }: { id?: string }) {
     })
   }
 
-  // Hazard Handlers
+  // Hazard Handlers - Dangers can only be added from the institutional catalog
   function handleAddPeligro() {
-    if (!selected.procesoId || !selected.zonaId || !selected.actividadId) return
-    updateMatrix((m: any) => {
-      const a = m.procesos
-        .find((x: any) => x.id === selected.procesoId)
-        ?.zonas?.find((y: any) => y.id === selected.zonaId)
-        ?.actividades?.find((aa: any) => aa.id === selected.actividadId)
-      if (a) {
-        a.peligros = a.peligros || []
-        const nextNumero =
-          Math.max(0, ...(a.peligros || []).map((p: any) => Number(p.numero) || 0)) + 1
-        const stableLabel = `Peligro ${nextNumero}`
-        a.peligros.push({
-          id: makeId('r-'),
-          numero: nextNumero,
-          descripcion: '',
-          clasificacion: '',
-          efectos: '',
-          controles: { fuente: '', medio: '', individuo: '' },
-          evaluacion: {
-            nd: null,
-            ne: null,
-            nc: null,
-            np: null,
-            nr: null,
-            interp_np: '',
-            interp_nr: '',
-            nivel_riesgo: '',
-            aceptabilidad: '',
-          },
-          criterios: { num_expuestos: null, peor_consecuencia: '', requisito_legal: false },
-          intervencion: {
-            eliminacion: '',
-            sustitucion: '',
-            controles_ingenieria: '',
-            controles_administrativos: '',
-            epp: '',
-            responsable: '',
-            fecha_ejecucion: '',
-          },
-          _ui: { expanded: true, activeTab: 0, stableLabel },
-        })
-      }
-      return m
-    })
+    setShowCatalogModal(true)
   }
 
   function handleSelectFromCatalog(selectedCatalogItems: any[]) {
