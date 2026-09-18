@@ -1,7 +1,7 @@
 "use client"
 
 import React from 'react'
-import { Plus, ShieldAlert } from 'lucide-react'
+import { Plus, ShieldAlert, Flame } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { HazardItem } from './hazard-item'
 
@@ -11,6 +11,7 @@ interface HazardSectionProps {
   dragOverPeligroId?: string | null
   dragOverPeligroEdge?: 'before' | 'after' | null
   onAddPeligro: () => void
+  onOpenCatalog?: () => void
   onToggleExpand: (peligroId: string) => void
   onChangeTab: (peligroId: string, tabIndex: number) => void
   onUpdateField: (peligroId: string, path: string[], value: any) => void
@@ -29,6 +30,7 @@ export function HazardSection({
   dragOverPeligroId = null,
   dragOverPeligroEdge = null,
   onAddPeligro,
+  onOpenCatalog,
   onToggleExpand,
   onChangeTab,
   onUpdateField,
@@ -42,28 +44,41 @@ export function HazardSection({
 }: HazardSectionProps) {
   return (
     <div className="space-y-4">
-      {/* Header bar: Title + Count + Add Button (NO global dot legend) */}
-      <div className="flex items-center justify-between gap-3 pb-1 border-b border-[#dfe9e2]">
+      {/* Header bar: Title + Count + Add Buttons */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-2 border-b border-[#dfe9e2]">
         <div className="flex items-center gap-2.5">
           <span className="size-6 rounded-lg bg-[#eef7f0] text-[#1F7D3E] flex items-center justify-center shrink-0">
             <ShieldAlert className="size-3.5" />
           </span>
           <h3 className="text-sm font-black text-[#163522] tracking-tight">
-            Peligros
+            Peligros Identificados
           </h3>
           <span className="inline-flex items-center justify-center min-w-5 h-5 px-1.5 rounded-full bg-[#eef7f0] text-[#1F7D3E] border border-[#d1e2d6] text-xs font-black">
             {peligros.length}
           </span>
         </div>
 
-        <Button
-          type="button"
-          onClick={onAddPeligro}
-          className="rounded-xl bg-[#1F7D3E] hover:bg-[#186331] text-xs font-black text-white h-8.5 px-3.5 shadow-md shadow-[#1F7D3E]/20"
-        >
-          <Plus className="size-3.5 mr-1.5" />
-          Agregar peligro
-        </Button>
+        <div className="flex items-center gap-2">
+          {onOpenCatalog && (
+            <Button
+              type="button"
+              onClick={onOpenCatalog}
+              className="rounded-xl bg-[#eef7f0] hover:bg-[#d9ebd9] text-[#1F7D3E] border border-[#d6ebd9] text-xs font-black h-8.5 px-3 shadow-2xs cursor-pointer"
+            >
+              <Flame className="size-3.5 mr-1.5 text-[#1F7D3E]" />
+              Seleccionar del Catálogo
+            </Button>
+          )}
+
+          <Button
+            type="button"
+            onClick={onAddPeligro}
+            className="rounded-xl bg-[#1F7D3E] hover:bg-[#186331] text-xs font-black text-white h-8.5 px-3.5 shadow-md shadow-[#1F7D3E]/20 cursor-pointer"
+          >
+            <Plus className="size-3.5 mr-1.5" />
+            Nuevo peligro
+          </Button>
+        </div>
       </div>
 
       {/* Hazards List */}

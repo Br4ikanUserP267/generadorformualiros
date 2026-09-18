@@ -6,7 +6,7 @@ import { toast } from '@/hooks/use-toast'
 import { exportMatrizToExcel } from '@/lib/matriz-excel-export'
 import ConfirmModal from '@/components/confirm-modal'
 import { apiFetch } from '@/lib/utils'
-import { FolderTree } from 'lucide-react'
+import { FolderTree, ShieldAlert, FileSpreadsheet } from 'lucide-react'
 
 // Modular Matrix Editor Subcomponents
 import { MatrixGeneralInfoHeader } from './matrix-editor/matrix-general-info-header'
@@ -22,6 +22,7 @@ import { EditProcesoModal } from './matrix-editor/modals/edit-proceso-modal'
 import { EditZonaModal } from './matrix-editor/modals/edit-zona-modal'
 import { EditActividadModal } from './matrix-editor/modals/edit-actividad-modal'
 import { FilesModal } from './matrix-editor/modals/files-modal'
+import { SelectPeligroCatalogModal } from './matrix-editor/modals/select-peligro-catalog-modal'
 
 function makeId(prefix = '') {
   return prefix + Math.random().toString(36).slice(2, 9)
@@ -102,6 +103,8 @@ export default function MatrixEditor({ id }: { id?: string }) {
   } | null>(null)
 
   const [showFilesModal, setShowFilesModal] = useState(false)
+  const [showCatalogModal, setShowCatalogModal] = useState(false)
+  const [editorView, setEditorView] = useState<'matriz' | 'plan_accion'>('matriz')
 
   // Confirmation Modal State
   const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false)
@@ -575,6 +578,81 @@ export default function MatrixEditor({ id }: { id?: string }) {
         })
       }
       return m
+    })
+  }
+
+  function handleSelectFromCatalog(selectedCatalogItems: any[]) {
+    if (!selected.procesoId || !selected.zonaId || !selected.actividadId) return
+    if (!selectedCatalogItems || selectedCatalogItems.length === 0) return
+
+    updateMatrix((m: any) => {
+      const a = m.procesos
+        .find((x: any) => x.id === selected.procesoId)
+        ?.zonas?.find((y: any) => y.id === selected.zonaId)
+        ?.actividades?.find((aa: any) => aa.id === selected.actividadId)
+      if (a) {
+        a.peligros = a.peligros || []
+        let baseNumero = Math.max(0, ...(a.peligros || []).map((p: any) => Number(p.numero) || 0))
+
+        selectedCatalogItems.forEach((catItem) => {
+          baseNumero += 1
+          const stableLabel = `Peligro ${baseNumero}`
+          const nd = catItem.nivelDeficiencia ?? null
+          const ne = catItem.nivelExposicion ?? null
+          const nc = catItem.nivelConsecuencia ?? null
+          const np = catItem.nivelProbabilidad ?? (nd && ne ? nd * ne : null)
+          const nr = catItem.nivelRiesgo ?? (np && nc ? np * nc : null)
+
+          a.peligros.push({
+            id: makeId('r-'),
+            catalogoPeligroId: catItem.id,
+            numero: baseNumero,
+            codigo: catItem.codigo || '',
+            descripcion: catItem.descripcion || '',
+            clasificacion: catItem.clasificacion || '',
+            efectos: catItem.efectosPosibles || '',
+            controles: {
+              fuente: catItem.controlFuente || '',
+              medio: catItem.controlMedio || '',
+              individuo: catItem.controlIndividuo || '',
+            },
+            evaluacion: {
+              nd,
+              ne,
+              nc,
+              np,
+              nr,
+              interp_np: catItem.interpProbabilidad || (np ? interpProbabilidad(np).label : ''),
+              interp_nr: catItem.interpRiesgo || (nr ? interpNivelRiesgo(nr).label : ''),
+              nivel_riesgo: catItem.interpRiesgo || (nr ? interpNivelRiesgo(nr).label : ''),
+              aceptabilidad:
+                catItem.aceptabilidad ||
+                (nr ? aceptabilidadFromNivel(interpNivelRiesgo(nr).label) : ''),
+            },
+            criterios: {
+              num_expuestos: catItem.numExpuestos ?? null,
+              peor_consecuencia: catItem.peorConsecuencia || '',
+              requisito_legal: Boolean(catItem.requisitoLegal),
+            },
+            intervencion: {
+              eliminacion: catItem.eliminacion || '',
+              sustitucion: catItem.sustitucion || '',
+              controles_ingenieria: catItem.controlesIngenieria || '',
+              controles_administrativos: catItem.controlesAdministrativos || '',
+              epp: catItem.epp || '',
+              responsable: '',
+              fecha_ejecucion: '',
+            },
+            _ui: { expanded: true, activeTab: 0, stableLabel },
+          })
+        })
+      }
+      return m
+    })
+
+    toast({
+      title: 'Peligros agregados',
+      description: `Se ${selectedCatalogItems.length === 1 ? 'agregó 1 peligro' : `agregaron ${selectedCatalogItems.length} peligros`} desde el Catálogo Maestro.`,
     })
   }
 
@@ -1188,119 +1266,126 @@ export default function MatrixEditor({ id }: { id?: string }) {
 
         {/* Layout: Organizational Sidebar + Activity View */}
         <div className="flex flex-col lg:flex-row items-stretch lg:items-start gap-6 lg:gap-7">
-          {/* Left: Organizational Sidebar + Documents Panel */}
-          <OrganizationalSidebar
-            procesos={matrix.procesos || []}
-            filteredProcesos={filteredProcesos}
-            searchTerm={searchTerm}
-            onSearchTermChange={setSearchTerm}
-            searchResults={searchResults}
-            selected={selected}
-            expandedZonaIds={expandedZonaIds}
-            dragOverActividadId={dragOverActividadId}
-            dragOverActividadEdge={dragOverActividadEdge}
-            files={matrix.files || []}
-            onSelectActividad={(pId, zId, aId) =>
-              setSelected({ procesoId: pId, zonaId: zId, actividadId: aId })
-            }
-            onToggleExpandZona={(zId) =>
-              setExpandedZonaIds((prev) => ({ ...prev, [zId]: !prev[zId] }))
-            }
-            onAddProceso={handleAddProceso}
-            onEditProceso={handleEditProceso}
-          onDeleteProceso={handleDeleteProceso}
-          onAddZona={handleAddZona}
-          onEditZona={handleEditZona}
-          onDeleteZona={handleDeleteZona}
-          onAddActividad={handleAddActividad}
-          onEditActividad={handleEditActividad}
-          onDeleteActividad={handleDeleteActividad}
-          onActividadDragStart={onActividadDragStart}
-          onActividadDragOver={onActividadDragOver}
-          onActividadDragLeave={onActividadDragLeave}
-          onActividadDrop={onActividadDrop}
-          onOpenAddFiles={() => setShowFilesModal(true)}
-          onDeleteFile={handleDeleteFile}
-        />
+            {/* Left: Organizational Sidebar + Documents Panel */}
+            <OrganizationalSidebar
+              procesos={matrix.procesos || []}
+              filteredProcesos={filteredProcesos}
+              searchTerm={searchTerm}
+              onSearchTermChange={setSearchTerm}
+              searchResults={searchResults}
+              selected={selected}
+              expandedZonaIds={expandedZonaIds}
+              dragOverActividadId={dragOverActividadId}
+              dragOverActividadEdge={dragOverActividadEdge}
+              files={matrix.files || []}
+              onSelectActividad={(pId, zId, aId) =>
+                setSelected({ procesoId: pId, zonaId: zId, actividadId: aId })
+              }
+              onToggleExpandZona={(zId) =>
+                setExpandedZonaIds((prev) => ({ ...prev, [zId]: !prev[zId] }))
+              }
+              onAddProceso={handleAddProceso}
+              onEditProceso={handleEditProceso}
+              onDeleteProceso={handleDeleteProceso}
+              onAddZona={handleAddZona}
+              onEditZona={handleEditZona}
+              onDeleteZona={handleDeleteZona}
+              onAddActividad={handleAddActividad}
+              onEditActividad={handleEditActividad}
+              onDeleteActividad={handleDeleteActividad}
+              onActividadDragStart={onActividadDragStart}
+              onActividadDragOver={onActividadDragOver}
+              onActividadDragLeave={onActividadDragLeave}
+              onActividadDrop={onActividadDrop}
+              onOpenAddFiles={() => setShowFilesModal(true)}
+              onDeleteFile={handleDeleteFile}
+            />
 
-        {/* Right: Selected Activity View */}
-        <main className="flex-1 min-w-0 space-y-6">
-          {!currentActividad ? (
-            <div className="h-96 flex flex-col items-center justify-center border-2 border-dashed border-[#dfe9e2] rounded-3xl bg-white p-8 text-center space-y-3 shadow-2xs">
-              <div className="size-12 rounded-2xl bg-[#eef7f0] text-[#1F7D3E] flex items-center justify-center">
-                <FolderTree className="size-6" />
-              </div>
-              <div className="text-base font-bold text-[#163522]">
-                Selecciona una actividad para comenzar a editar
-              </div>
-              <p className="text-xs text-[#7a9182] max-w-sm">
-                Explora el árbol organizacional en el panel izquierdo y haz clic en cualquier actividad para gestionar sus tareas, descripción y evaluación de peligros.
-              </p>
-            </div>
-          ) : (
-            <div className="space-y-6">
-              {/* 3. Activity Header */}
-              <ActivityHeader
-                activity={currentActividad}
-                activityIndex={currentActividadIndex >= 0 ? currentActividadIndex : 0}
-                matrixArea={matrix.area || 'Matriz'}
-                procesoNombre={currentProceso?.nombre || 'Proceso'}
-                zonaNombre={currentZona?.nombre || 'Zona'}
-                tasksCount={tasksCount}
-                onUpdateField={handleUpdateActivityField}
-                onDeleteActivity={() =>
-                  handleDeleteActividad(
-                    currentProceso.id,
-                    currentZona.id,
-                    currentActividad.id
-                  )
-                }
-              />
+            {/* Right: Selected Activity View */}
+            <main className="flex-1 min-w-0 space-y-6">
+              {!currentActividad ? (
+                <div className="h-96 flex flex-col items-center justify-center border-2 border-dashed border-[#dfe9e2] rounded-3xl bg-white p-8 text-center space-y-3 shadow-2xs">
+                  <div className="size-12 rounded-2xl bg-[#eef7f0] text-[#1F7D3E] flex items-center justify-center">
+                    <FolderTree className="size-6" />
+                  </div>
+                  <div className="text-base font-bold text-[#163522]">
+                    Selecciona una actividad para comenzar a editar
+                  </div>
+                  <p className="text-xs text-[#7a9182] max-w-sm">
+                    Explora el árbol organizacional en el panel izquierdo y haz clic en cualquier actividad para gestionar sus tareas, descripción y evaluación de peligros.
+                  </p>
+                </div>
+              ) : (
+                <div className="space-y-6">
+                  {/* 3. Activity Header */}
+                  <ActivityHeader
+                    activity={currentActividad}
+                    activityIndex={currentActividadIndex >= 0 ? currentActividadIndex : 0}
+                    matrixArea={matrix.area || 'Matriz'}
+                    procesoNombre={currentProceso?.nombre || 'Proceso'}
+                    zonaNombre={currentZona?.nombre || 'Zona'}
+                    tasksCount={tasksCount}
+                    onUpdateField={handleUpdateActivityField}
+                    onDeleteActivity={() =>
+                      handleDeleteActividad(
+                        currentProceso.id,
+                        currentZona.id,
+                        currentActividad.id
+                      )
+                    }
+                  />
 
-              {/* 4. Collapsible Activity Detail (Description + Tasks inline) */}
-              <ActivityDetailPanel
-                description={currentActividad.descripcion || ''}
-                tasksString={currentActividad.tareas || ''}
-                cargo={currentActividad.cargo || ''}
-                onUpdateDescription={(desc) => handleUpdateActivityField('descripcion', desc)}
-                onUpdateTasks={(tasks) => handleUpdateActivityField('tareas', tasks)}
-              />
+                  {/* 4. Collapsible Activity Detail (Description + Tasks inline) */}
+                  <ActivityDetailPanel
+                    description={currentActividad.descripcion || ''}
+                    tasksString={currentActividad.tareas || ''}
+                    cargo={currentActividad.cargo || ''}
+                    onUpdateDescription={(desc) => handleUpdateActivityField('descripcion', desc)}
+                    onUpdateTasks={(tasks) => handleUpdateActivityField('tareas', tasks)}
+                  />
 
-              {/* 5. Activity Risk Summary (3 animated cards: Inherent, Impact, Residual) */}
-              <ActivityRiskSummary peligros={currentActividad.peligros || []} />
+                  {/* 5. Activity Risk Summary (3 animated cards: Inherent, Impact, Residual) */}
+                  <ActivityRiskSummary peligros={currentActividad.peligros || []} />
 
-              {/* 6. Hazards Section */}
-              <HazardSection
-                peligros={currentActividad.peligros || []}
-                highlightPeligroId={highlightedPeligroId}
-                dragOverPeligroId={dragOverPeligroId}
-                dragOverPeligroEdge={dragOverPeligroEdge}
-                onAddPeligro={handleAddPeligro}
-                onToggleExpand={handleToggleExpandPeligro}
-                onChangeTab={handleChangeTabPeligro}
-                onUpdateField={handleUpdatePeligroField}
-                onDuplicate={handleDuplicatePeligro}
-                onDelete={handleDeletePeligro}
-                onDragStart={onPeligroDragStart}
-                onDragEnd={() => {
-                  setDragOverPeligroId(null)
-                  setDragOverPeligroEdge(null)
-                  peligroDragSourceRef.current = null
-                  setTimeout(() => {
-                    isDraggingPeligroRef.current = false
-                  }, 0)
-                }}
-                onDragOver={onPeligroDragOver}
-                onDragLeave={onPeligroDragLeave}
-                onDrop={onPeligroDrop}
-              />
-            </div>
-          )}
-        </main>
-        </div>
+                  {/* 6. Hazards Section */}
+                  <HazardSection
+                    peligros={currentActividad.peligros || []}
+                    highlightPeligroId={highlightedPeligroId}
+                    dragOverPeligroId={dragOverPeligroId}
+                    dragOverPeligroEdge={dragOverPeligroEdge}
+                    onAddPeligro={handleAddPeligro}
+                    onOpenCatalog={() => setShowCatalogModal(true)}
+                    onToggleExpand={handleToggleExpandPeligro}
+                    onChangeTab={handleChangeTabPeligro}
+                    onUpdateField={handleUpdatePeligroField}
+                    onDuplicate={handleDuplicatePeligro}
+                    onDelete={handleDeletePeligro}
+                    onDragStart={onPeligroDragStart}
+                    onDragEnd={() => {
+                      setDragOverPeligroId(null)
+                      setDragOverPeligroEdge(null)
+                      peligroDragSourceRef.current = null
+                      setTimeout(() => {
+                        isDraggingPeligroRef.current = false
+                      }, 0)
+                    }}
+                    onDragOver={onPeligroDragOver}
+                    onDragLeave={onPeligroDragLeave}
+                    onDrop={onPeligroDrop}
+                  />
+                </div>
+              )}
+            </main>
+          </div>
       </div>
 
       {/* Auxiliary Modals */}
+      <SelectPeligroCatalogModal
+        open={showCatalogModal}
+        onOpenChange={setShowCatalogModal}
+        onSelectPeligros={handleSelectFromCatalog}
+      />
+
       <EditProcesoModal
         open={showProcesoModal}
         onOpenChange={setShowProcesoModal}

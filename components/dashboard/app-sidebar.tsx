@@ -6,6 +6,7 @@ import {
   LayoutDashboard,
   ShieldAlert,
   BarChart3,
+  Flame,
   Settings,
   ChevronLeft,
   ChevronRight,
@@ -43,6 +44,11 @@ const navItems: NavItem[] = [
     label: 'Reporte de Peligros',
     href: '/dashboard/reporte',
     icon: BarChart3,
+  },
+  {
+    label: 'Catálogo de Peligros',
+    href: '/dashboard/peligros',
+    icon: Flame,
   },
   {
     label: 'Configuración',

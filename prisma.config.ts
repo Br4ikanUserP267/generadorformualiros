@@ -1,6 +1,4 @@
-import { Config } from '@prisma/internals'
-
-const config: Config = {
+const config = {
   datasources: {
     db: {
       url: process.env.DATABASE_URL,
@@ -9,3 +7,4 @@ const config: Config = {
 }
 
 export default config
+

@@ -12,7 +12,7 @@ const prismaClientSingleton = () => {
   return client.$extends({
     query: {
       $allModels: {
-        async $allOperations({ model, operation, args, query }) {
+        async $allOperations({ model, operation, args, query }: any) {
           if (model === 'ActivityLog' || model === 'LoginLog' || model === 'Notification') {
             return query(args);
           }

@@ -168,6 +168,7 @@ export function MatrixPreview({ matrizId, onClose }: MatrixPreviewProps) {
   const [tableError, setTableError] = useState<string | null>(null)
   const [isExporting, setIsExporting] = useState(false)
   const [density, setDensity] = useState<TableDensity>('standard')
+  const [previewTab, setPreviewTab] = useState<'tabla' | 'plan_accion'>('tabla')
 
   const [columnWidths, setColumnWidths] = useState<ColumnWidths>({
     proceso: 140,
@@ -790,13 +791,10 @@ export function MatrixPreview({ matrizId, onClose }: MatrixPreviewProps) {
         <main className="flex-1 min-h-0 bg-white rounded-2xl border border-[#dfe9e2] shadow-sm flex flex-col overflow-hidden">
           {/* Table Header Utility Bar */}
           <div className="px-5 py-2.5 border-b border-[#dfe9e2] bg-[#fcfdfc] flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3 shrink-0">
-            <div>
-              <div className="text-[10px] font-black uppercase tracking-[0.16em] text-[#7a9182]">
-                DETALLE COMPLETO
-              </div>
-              <h2 className="text-sm font-black text-[#163522] tracking-tight">
-                Tabla consolidada de peligros y controles
-              </h2>
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-black text-[#163522] uppercase tracking-wider">
+                Matriz Consolidada de Riesgos (GTC 45)
+              </span>
             </div>
 
             <div className="flex items-center gap-2 flex-wrap shrink-0">
@@ -868,261 +866,261 @@ export function MatrixPreview({ matrizId, onClose }: MatrixPreviewProps) {
             ref={tableContainerRef}
             className="flex-1 min-h-0 overflow-auto bg-white scrollbar-thin scrollbar-thumb-[#cbd5cf] scrollbar-track-transparent relative"
           >
-            {tableLoading && (
-              <div className="absolute inset-0 bg-white/70 backdrop-blur-[1px] z-30 flex items-center justify-center">
-                <div className="flex items-center gap-2 px-4 py-2 rounded-xl bg-white border border-[#dfe9e2] shadow-md text-xs font-bold text-[#163522]">
-                  <Loader2 className="size-4 animate-spin text-[#1F7D3E]" />
-                  <span>Cargando página {pagination.page}...</span>
-                </div>
-              </div>
-            )}
+                {tableLoading && (
+                  <div className="absolute inset-0 bg-white/70 backdrop-blur-[1px] z-30 flex items-center justify-center">
+                    <div className="flex items-center gap-2 px-4 py-2 rounded-xl bg-white border border-[#dfe9e2] shadow-md text-xs font-bold text-[#163522]">
+                      <Loader2 className="size-4 animate-spin text-[#1F7D3E]" />
+                      <span>Cargando página {pagination.page}...</span>
+                    </div>
+                  </div>
+                )}
 
-            {tableError ? (
-              <div className="h-64 flex flex-col items-center justify-center text-center p-6 space-y-3">
-                <div className="size-10 rounded-xl bg-[#fef2f2] text-[#dc2626] flex items-center justify-center">
-                  <AlertTriangle className="size-5" />
-                </div>
-                <div className="text-sm font-bold text-[#163522]">{tableError}</div>
-                <button
-                  type="button"
-                  onClick={() => fetchPreviewData(pagination.page, pagination.pageSize, false)}
-                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#1F7D3E] text-white text-xs font-bold hover:bg-[#186331] transition-colors"
-                >
-                  <RefreshCw className="size-3.5" />
-                  <span>Reintentar</span>
-                </button>
-              </div>
-            ) : (
-              <table className="w-full border-collapse table-fixed text-xs font-sans">
-                <thead className="sticky top-0 z-20 bg-[#f4f8f5] shadow-xs">
-                  <tr>
-                    {columns.map((col) => (
-                      <HeaderCell
-                        key={col.key}
-                        column={col}
-                        width={columnWidths[col.key] || 120}
-                        densityClass={densityClasses.header}
-                        onLabelChange={(newLabel) => handleLabelChange(col.key, newLabel)}
-                        onResizeStart={(e) => {
-                          e.preventDefault()
-                          setResizingColumn(col.key)
-                          setResizeStartX(e.clientX)
-                          try {
-                            document.body.style.userSelect = 'none'
-                          } catch {}
-                          try {
-                            document.body.style.cursor = 'col-resize'
-                          } catch {}
-                        }}
-                      />
-                    ))}
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-[#e2e9e4]">
-                  {records.length === 0 ? (
-                    <tr>
-                      <td
-                        colSpan={columns.length}
-                        className="px-8 py-20 text-center text-[#7a9182] font-medium italic bg-[#fbfdfb]"
-                      >
-                        Esta matriz no tiene registros para mostrar
-                      </td>
-                    </tr>
-                  ) : (
-                    (() => {
-                      const elements: any[] = []
-                      for (let r = 0; r < records.length; r++) {
-                        const row = records[r]
-                        elements.push(
-                          <tr
-                            key={`row-${row.id || r}`}
-                            className={`${
-                              r % 2 === 0 ? 'bg-white' : 'bg-[#fafcfa]'
-                            } hover:bg-[#f0f7f2] transition-colors`}
+                {tableError ? (
+                  <div className="h-64 flex flex-col items-center justify-center text-center p-6 space-y-3">
+                    <div className="size-10 rounded-xl bg-[#fef2f2] text-[#dc2626] flex items-center justify-center">
+                      <AlertTriangle className="size-5" />
+                    </div>
+                    <div className="text-sm font-bold text-[#163522]">{tableError}</div>
+                    <button
+                      type="button"
+                      onClick={() => fetchPreviewData(pagination.page, pagination.pageSize, false)}
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#1F7D3E] text-white text-xs font-bold hover:bg-[#186331] transition-colors"
+                    >
+                      <RefreshCw className="size-3.5" />
+                      <span>Reintentar</span>
+                    </button>
+                  </div>
+                ) : (
+                  <table className="w-full border-collapse table-fixed text-xs font-sans">
+                    <thead className="sticky top-0 z-20 bg-[#f4f8f5] shadow-xs">
+                      <tr>
+                        {columns.map((col) => (
+                          <HeaderCell
+                            key={col.key}
+                            column={col}
+                            width={columnWidths[col.key] || 120}
+                            densityClass={densityClasses.header}
+                            onLabelChange={(newLabel) => handleLabelChange(col.key, newLabel)}
+                            onResizeStart={(e) => {
+                              e.preventDefault()
+                              setResizingColumn(col.key)
+                              setResizeStartX(e.clientX)
+                              try {
+                                document.body.style.userSelect = 'none'
+                              } catch {}
+                              try {
+                                document.body.style.cursor = 'col-resize'
+                              } catch {}
+                            }}
+                          />
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-[#e2e9e4]">
+                      {records.length === 0 ? (
+                        <tr>
+                          <td
+                            colSpan={columns.length}
+                            className="px-8 py-20 text-center text-[#7a9182] font-medium italic bg-[#fbfdfb]"
                           >
-                            {columns.map((col) => {
-                              const value = row[col.key as keyof typeof row]
-                              const isNumeric = [
-                                'nd',
-                                'ne',
-                                'np',
-                                'nc',
-                                'nr',
-                                'numExpuestos',
-                              ].includes(col.key)
-                              const isEvaluationField = [
-                                'nd',
-                                'ne',
-                                'np',
-                                'interpNp',
-                                'nc',
-                                'nr',
-                                'interpNr',
-                                'aceptabilidad',
-                              ].includes(col.key)
+                            Esta matriz no tiene registros para mostrar
+                          </td>
+                        </tr>
+                      ) : (
+                        (() => {
+                          const elements: any[] = []
+                          for (let r = 0; r < records.length; r++) {
+                            const row = records[r]
+                            elements.push(
+                              <tr
+                                key={`row-${row.id || r}`}
+                                className={`${
+                                  r % 2 === 0 ? 'bg-white' : 'bg-[#fafcfa]'
+                                } hover:bg-[#f0f7f2] transition-colors`}
+                              >
+                                {columns.map((col) => {
+                                  const value = row[col.key as keyof typeof row]
+                                  const isNumeric = [
+                                    'nd',
+                                    'ne',
+                                    'np',
+                                    'nc',
+                                    'nr',
+                                    'numExpuestos',
+                                  ].includes(col.key)
+                                  const isEvaluationField = [
+                                    'nd',
+                                    'ne',
+                                    'np',
+                                    'interpNp',
+                                    'nc',
+                                    'nr',
+                                    'interpNr',
+                                    'aceptabilidad',
+                                  ].includes(col.key)
 
-                              if (mergeKeys.includes(col.key)) {
-                                const span = rowSpans[col.key]?.[r] ?? 1
-                                if (span === 0) return null
+                                  if (mergeKeys.includes(col.key)) {
+                                    const span = rowSpans[col.key]?.[r] ?? 1
+                                    if (span === 0) return null
 
-                                return (
-                                  <td
-                                    key={col.key}
-                                    rowSpan={span}
-                                    className={`${densityClasses.cell} ${densityClasses.lineHeight} border-r border-[#e2e9e4] last:border-r-0 align-top text-[#2c3630] font-medium break-words ${
-                                      col.key === 'zona' || col.key === 'proceso'
-                                        ? 'font-bold text-[#163522]'
-                                        : ''
-                                    } ${isNumeric ? 'text-center font-bold' : 'text-left'}`}
-                                  >
-                                    {value}
-                                  </td>
-                                )
-                              }
+                                    return (
+                                      <td
+                                        key={col.key}
+                                        rowSpan={span}
+                                        className={`${densityClasses.cell} ${densityClasses.lineHeight} border-r border-[#e2e9e4] last:border-r-0 align-top text-[#2c3630] font-medium break-words ${
+                                          col.key === 'zona' || col.key === 'proceso'
+                                            ? 'font-bold text-[#163522]'
+                                            : ''
+                                        } ${isNumeric ? 'text-center font-bold' : 'text-left'}`}
+                                      >
+                                        {value}
+                                      </td>
+                                    )
+                                  }
 
-                              const evalStyle = isEvaluationField
-                                ? getEvalFieldStyle(col.key, row)
-                                : {}
+                                  const evalStyle = isEvaluationField
+                                    ? getEvalFieldStyle(col.key, row)
+                                    : {}
 
-                              return (
-                                <td
-                                  key={col.key}
-                                  className={`${densityClasses.cell} ${densityClasses.lineHeight} border-r border-[#e2e9e4] last:border-r-0 align-top text-[#2c3630] ${
-                                    isEvaluationField
-                                      ? 'whitespace-nowrap text-center font-bold'
-                                      : 'break-words font-normal'
-                                  } ${isNumeric ? 'text-center font-bold' : 'text-left'}`}
-                                  style={evalStyle}
-                                >
-                                  {col.key === 'requisitoLegal' ? (
-                                    <span
-                                      className={`inline-block px-2 py-0.5 rounded-full text-[10px] font-black ${
-                                        value === 'Sí' || value === 'SI'
-                                          ? 'bg-[#eef7f0] text-[#1F7D3E] border border-[#d6ebd9]'
-                                          : 'bg-gray-100 text-gray-500'
-                                      }`}
+                                  return (
+                                    <td
+                                      key={col.key}
+                                      className={`${densityClasses.cell} ${densityClasses.lineHeight} border-r border-[#e2e9e4] last:border-r-0 align-top text-[#2c3630] ${
+                                        isEvaluationField
+                                          ? 'whitespace-nowrap text-center font-bold'
+                                          : 'break-words font-normal'
+                                      } ${isNumeric ? 'text-center font-bold' : 'text-left'}`}
+                                      style={evalStyle}
                                     >
-                                      {value}
-                                    </span>
-                                  ) : (
-                                    value
-                                  )}
-                                </td>
-                              )
-                            })}
-                          </tr>
-                        )
-                      }
-                      return elements
-                    })()
-                  )}
-                </tbody>
-              </table>
-            )}
+                                      {col.key === 'requisitoLegal' ? (
+                                        <span
+                                          className={`inline-block px-2 py-0.5 rounded-full text-[10px] font-black ${
+                                            value === 'Sí' || value === 'SI'
+                                              ? 'bg-[#eef7f0] text-[#1F7D3E] border border-[#d6ebd9]'
+                                              : 'bg-gray-100 text-gray-500'
+                                          }`}
+                                        >
+                                          {value}
+                                        </span>
+                                      ) : (
+                                        value
+                                      )}
+                                    </td>
+                                  )
+                                })}
+                              </tr>
+                            )
+                          }
+                          return elements
+                        })()
+                      )}
+                    </tbody>
+                  </table>
+                )}
+              </div>
+
+              {/* Pagination Footer */}
+              <footer className="px-5 py-2.5 border-t border-[#dfe9e2] bg-[#fcfdfc] flex flex-col sm:flex-row items-center justify-between gap-3 shrink-0">
+                {/* Showing items indicator */}
+                <div className="text-xs font-medium text-[#5e6b62]">
+                  Mostrando <span className="font-bold text-[#163522]">{startItem}–{endItem}</span> de{' '}
+                  <span className="font-bold text-[#163522]">{pagination.total}</span> registros
+                </div>
+
+                {/* Page navigation buttons */}
+                <div className="flex items-center gap-1">
+                  {/* Prev Button */}
+                  <button
+                    type="button"
+                    disabled={pagination.page <= 1 || tableLoading}
+                    onClick={() => handlePageChange(pagination.page - 1)}
+                    className="size-8 rounded-lg border border-[#dfe9e2] bg-white hover:bg-[#f0f5f1] hover:border-[#b9d2bf] text-[#163522] flex items-center justify-center transition-all disabled:opacity-40 disabled:pointer-events-none cursor-pointer shadow-2xs"
+                    title="Página anterior"
+                  >
+                    <ChevronLeft className="size-4" />
+                  </button>
+
+                  {/* Page Number Buttons */}
+                  {getPageNumbers().map((num, idx) => {
+                    if (num === '...') {
+                      return (
+                        <span
+                          key={`dots-${idx}`}
+                          className="size-8 flex items-center justify-center text-xs text-[#7a9182] font-bold"
+                        >
+                          ...
+                        </span>
+                      )
+                    }
+
+                    const pageNum = num as number
+                    const isActive = pageNum === pagination.page
+
+                    return (
+                      <button
+                        key={`page-${pageNum}`}
+                        type="button"
+                        disabled={tableLoading}
+                        onClick={() => handlePageChange(pageNum)}
+                        className={`size-8 rounded-lg text-xs font-bold transition-all cursor-pointer shadow-2xs ${
+                          isActive
+                            ? 'bg-[#1F7D3E] text-white border border-[#1F7D3E] font-black'
+                            : 'border border-[#dfe9e2] bg-white text-[#163522] hover:bg-[#f0f5f1] hover:border-[#b9d2bf]'
+                        }`}
+                      >
+                        {pageNum}
+                      </button>
+                    )
+                  })}
+
+                  {/* Next Button */}
+                  <button
+                    type="button"
+                    disabled={pagination.page >= pagination.totalPages || tableLoading}
+                    onClick={() => handlePageChange(pagination.page + 1)}
+                    className="size-8 rounded-lg border border-[#dfe9e2] bg-white hover:bg-[#f0f5f1] hover:border-[#b9d2bf] text-[#163522] flex items-center justify-center transition-all disabled:opacity-40 disabled:pointer-events-none cursor-pointer shadow-2xs"
+                    title="Página siguiente"
+                  >
+                    <ChevronRight className="size-4" />
+                  </button>
+                </div>
+
+                {/* Page Size Selector */}
+                <div className="flex items-center gap-2">
+                  <span className="text-xs text-[#7a9182] font-medium hidden md:inline">Mostrar:</span>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <button
+                        type="button"
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-[#dfe9e2] bg-white hover:bg-[#f0f5f1] text-[#163522] text-xs font-bold transition-colors cursor-pointer shadow-2xs"
+                      >
+                        <span>{pagination.pageSize} por página</span>
+                        <ChevronDown className="size-3 text-[#7a9182]" />
+                      </button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end" className="w-36 bg-white border border-[#dfe9e2] shadow-lg rounded-xl p-1 z-[10000]">
+                      {[10, 20, 50].map((size) => (
+                        <DropdownMenuItem
+                          key={size}
+                          onClick={() => handlePageSizeChange(size)}
+                          className={`cursor-pointer text-xs font-bold rounded-lg px-2.5 py-1.5 ${
+                            pagination.pageSize === size
+                              ? 'bg-[#eef7f0] text-[#1F7D3E]'
+                              : 'text-[#355244]'
+                          }`}
+                        >
+                          {size} por página
+                        </DropdownMenuItem>
+                      ))}
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </div>
+              </footer>
+            </main>
           </div>
-
-          {/* Pagination Footer */}
-          <footer className="px-5 py-2.5 border-t border-[#dfe9e2] bg-[#fcfdfc] flex flex-col sm:flex-row items-center justify-between gap-3 shrink-0">
-            {/* Showing items indicator */}
-            <div className="text-xs font-medium text-[#5e6b62]">
-              Mostrando <span className="font-bold text-[#163522]">{startItem}–{endItem}</span> de{' '}
-              <span className="font-bold text-[#163522]">{pagination.total}</span> registros
-            </div>
-
-            {/* Page navigation buttons */}
-            <div className="flex items-center gap-1">
-              {/* Prev Button */}
-              <button
-                type="button"
-                disabled={pagination.page <= 1 || tableLoading}
-                onClick={() => handlePageChange(pagination.page - 1)}
-                className="size-8 rounded-lg border border-[#dfe9e2] bg-white hover:bg-[#f0f5f1] hover:border-[#b9d2bf] text-[#163522] flex items-center justify-center transition-all disabled:opacity-40 disabled:pointer-events-none cursor-pointer shadow-2xs"
-                title="Página anterior"
-              >
-                <ChevronLeft className="size-4" />
-              </button>
-
-              {/* Page Number Buttons */}
-              {getPageNumbers().map((num, idx) => {
-                if (num === '...') {
-                  return (
-                    <span
-                      key={`dots-${idx}`}
-                      className="size-8 flex items-center justify-center text-xs text-[#7a9182] font-bold"
-                    >
-                      ...
-                    </span>
-                  )
-                }
-
-                const pageNum = num as number
-                const isActive = pageNum === pagination.page
-
-                return (
-                  <button
-                    key={`page-${pageNum}`}
-                    type="button"
-                    disabled={tableLoading}
-                    onClick={() => handlePageChange(pageNum)}
-                    className={`size-8 rounded-lg text-xs font-bold transition-all cursor-pointer shadow-2xs ${
-                      isActive
-                        ? 'bg-[#1F7D3E] text-white border border-[#1F7D3E] font-black'
-                        : 'border border-[#dfe9e2] bg-white text-[#163522] hover:bg-[#f0f5f1] hover:border-[#b9d2bf]'
-                    }`}
-                  >
-                    {pageNum}
-                  </button>
-                )
-              })}
-
-              {/* Next Button */}
-              <button
-                type="button"
-                disabled={pagination.page >= pagination.totalPages || tableLoading}
-                onClick={() => handlePageChange(pagination.page + 1)}
-                className="size-8 rounded-lg border border-[#dfe9e2] bg-white hover:bg-[#f0f5f1] hover:border-[#b9d2bf] text-[#163522] flex items-center justify-center transition-all disabled:opacity-40 disabled:pointer-events-none cursor-pointer shadow-2xs"
-                title="Página siguiente"
-              >
-                <ChevronRight className="size-4" />
-              </button>
-            </div>
-
-            {/* Page Size Selector */}
-            <div className="flex items-center gap-2">
-              <span className="text-xs text-[#7a9182] font-medium hidden md:inline">Mostrar:</span>
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <button
-                    type="button"
-                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-[#dfe9e2] bg-white hover:bg-[#f0f5f1] text-[#163522] text-xs font-bold transition-colors cursor-pointer shadow-2xs"
-                  >
-                    <span>{pagination.pageSize} por página</span>
-                    <ChevronDown className="size-3 text-[#7a9182]" />
-                  </button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-36 bg-white border border-[#dfe9e2] shadow-lg rounded-xl p-1 z-[10000]">
-                  {[10, 20, 50].map((size) => (
-                    <DropdownMenuItem
-                      key={size}
-                      onClick={() => handlePageSizeChange(size)}
-                      className={`cursor-pointer text-xs font-bold rounded-lg px-2.5 py-1.5 ${
-                        pagination.pageSize === size
-                          ? 'bg-[#eef7f0] text-[#1F7D3E]'
-                          : 'text-[#355244]'
-                      }`}
-                    >
-                      {size} por página
-                    </DropdownMenuItem>
-                  ))}
-                </DropdownMenuContent>
-              </DropdownMenu>
-            </div>
-          </footer>
-        </main>
-      </div>
-    </div>
-  )
-}
+        </div>
+      )
+    }
 
 // Header Cell component for column resizing and renaming
 const HeaderCell = ({

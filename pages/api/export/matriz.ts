@@ -2,6 +2,7 @@ import { NextApiRequest, NextApiResponse } from 'next'
 import ExcelJS from 'exceljs'
 import fs from 'fs/promises'
 import path from 'path'
+import prisma from '@/lib/prisma'
 
 // ============================================================================
 // Type Definitions for Nested Matrix Structure
@@ -681,6 +682,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         photoRow++
       }
     }
+
+
 
     const buf = await wb.xlsx.writeBuffer()
     const sanitizedArea = (matrizData.area || 'Matriz').toUpperCase().replace(/\s+/g, '_').replace(/[^\w-]/g, '')

@@ -244,7 +244,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const totalPages = Math.max(1, Math.ceil(totalPeligros / pageSize))
 
     // Map paged dangers to 30 flat columns
-    const records = pagedPeligros.map((p) => {
+    const records = pagedPeligros.map((p: any) => {
       const a = p.actividad
       const z = a?.zona
       const proc = z?.proceso

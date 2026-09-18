@@ -27,10 +27,11 @@ model Matriz {
   fechaActualizacion DateTime? @map("fecha_actualizacion")
   createdAt          DateTime  @default(now()) @map("created_at")
   updatedAt          DateTime  @updatedAt @map("updated_at")
-  deletedAt          DateTime? @map("deleted_at")
+  deletedAt          DateTime?     @map("deleted_at")
   archivos           Archivo[]
-  usuario            Usuario   @relation(fields: [usuarioId], references: [id])
+  usuario            Usuario       @relation(fields: [usuarioId], references: [id])
   procesos           Proceso[]
+  planesAccion       PlanAccion5W2H[]
 
   @@index([usuarioId])
   @@map("matrices")
@@ -80,22 +81,89 @@ model Actividad {
 }
 
 model Peligro {
-  id              String        @id @default(uuid())
-  actividadId     String        @map("actividad_id")
-  descripcion     String?
-  clasificacion   String?
-  efectosPosibles String?       @map("efectos_posibles")
-  orden           Int           @default(0)
-  deletedAt       DateTime?     @map("deleted_at")
-  control         Control?
-  criterio        Criterio?
-  evaluacion       Evaluacion?
-  evaluacionPost   EvaluacionPost?
-  intervencion     Intervencion?
-  actividad       Actividad     @relation(fields: [actividadId], references: [id], onDelete: Cascade)
+  id                String           @id @default(uuid())
+  actividadId       String           @map("actividad_id")
+  catalogoPeligroId String?          @map("catalogo_peligro_id")
+  descripcion       String?
+  clasificacion     String?
+  efectosPosibles   String?          @map("efectos_posibles")
+  orden             Int              @default(0)
+  deletedAt         DateTime?        @map("deleted_at")
+  control           Control?
+  criterio          Criterio?
+  evaluacion        Evaluacion?
+  evaluacionPost    EvaluacionPost?
+  intervencion      Intervencion?
+  actividad         Actividad        @relation(fields: [actividadId], references: [id], onDelete: Cascade)
+  catalogoPeligro   PeligroCatalogo? @relation(fields: [catalogoPeligroId], references: [id])
+  planesAccion      PlanAccion5W2H[]
 
   @@index([actividadId])
+  @@index([catalogoPeligroId])
   @@map("peligros")
+}
+
+model PeligroCatalogo {
+  id                       String            @id @default(uuid())
+  codigo                   String?
+  clasificacion            String
+  descripcion              String
+  efectosPosibles          String?           @map("efectos_posibles")
+  controlFuente            String?           @map("control_fuente")
+  controlMedio             String?           @map("control_medio")
+  controlIndividuo         String?           @map("control_individuo")
+  nivelDeficiencia         Int?              @map("nivel_deficiencia")
+  nivelExposicion          Int?              @map("nivel_exposicion")
+  nivelProbabilidad        Int?              @map("nivel_probabilidad")
+  interpProbabilidad       String?           @map("interp_probabilidad")
+  nivelConsecuencia        Int?              @map("nivel_consecuencia")
+  nivelRiesgo              Int?              @map("nivel_riesgo")
+  interpRiesgo             String?           @map("interp_riesgo")
+  aceptabilidad            String?
+  numExpuestos             Int?              @map("num_expuestos")
+  peorConsecuencia         String?           @map("peor_consecuencia")
+  requisitoLegal           Boolean           @default(false) @map("requisito_legal")
+  eliminacion              String?
+  sustitucion              String?
+  controlesIngenieria      String?           @map("controles_ingenieria")
+  controlesAdministrativos String?           @map("controles_administrativos")
+  epp                      String?
+  createdAt                DateTime          @default(now()) @map("created_at")
+  updatedAt                DateTime          @updatedAt @map("updated_at")
+  deletedAt                DateTime?         @map("deleted_at")
+  peligrosMatriz           Peligro[]
+  planesAccion             PlanAccion5W2H[]
+
+  @@map("peligros_catalogo")
+}
+
+model PlanAccion5W2H {
+  id                String           @id @default(uuid())
+  peligroCatalogoId String?          @map("peligro_catalogo_id")
+  peligroId         String?          @map("peligro_id")
+  matrizId          String?          @map("matriz_id")
+  que               String
+  porQue            String?          @map("por_que")
+  donde             String?
+  cuandoInicio      DateTime?        @map("cuando_inicio")
+  cuandoFin         DateTime?        @map("cuando_fin")
+  como              String?
+  cuanto            String?
+  responsable       String?
+  estado            String           @default("PENDIENTE")
+  orden             Int              @default(0)
+  createdAt         DateTime         @default(now()) @map("created_at")
+  updatedAt         DateTime         @updatedAt @map("updated_at")
+  deletedAt         DateTime?        @map("deleted_at")
+
+  peligroCatalogo   PeligroCatalogo? @relation(fields: [peligroCatalogoId], references: [id], onDelete: Cascade)
+  peligro           Peligro?         @relation(fields: [peligroId], references: [id], onDelete: Cascade)
+  matriz            Matriz?          @relation(fields: [matrizId], references: [id], onDelete: Cascade)
+
+  @@index([peligroCatalogoId])
+  @@index([peligroId])
+  @@index([matrizId])
+  @@map("planes_accion_5w2h")
 }
 
 model Control {

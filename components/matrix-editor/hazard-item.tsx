@@ -281,36 +281,39 @@ export function HazardItem({
               </div>
 
               {/* Controles Existentes */}
-              <div className="rounded-xl border border-[#dfe9e2] bg-white p-4 space-y-3">
+              <div className="rounded-2xl border border-[#dfe9e2] bg-white p-4 sm:p-5 space-y-3.5 shadow-2xs">
                 <div className="text-xs font-black text-[#1F7D3E] uppercase tracking-wider">
                   Controles Existentes
                 </div>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                  <div className="space-y-1">
-                    <label className="text-[11px] font-bold text-[#5e6b62]">En la Fuente</label>
-                    <Input
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-3.5">
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-bold text-[#355244]">En la Fuente</label>
+                    <textarea
+                      rows={3}
                       value={hazard.controles?.fuente || ''}
                       onChange={(e) => onUpdateField(['controles', 'fuente'], e.target.value)}
-                      placeholder="Ej: Mantenimiento preventivo..."
-                      className="h-8 text-xs rounded-lg border-[#d1e2d6] bg-[#fbfdfb]"
+                      placeholder="Ej: Mantenimiento preventivo, aislamiento de equipos..."
+                      className="w-full text-xs font-medium rounded-xl border border-[#d1e2d6] bg-[#fbfdfb] focus:bg-white focus:border-[#1F7D3E] focus:outline-none p-2.5 resize-y leading-relaxed min-h-[68px]"
                     />
                   </div>
-                  <div className="space-y-1">
-                    <label className="text-[11px] font-bold text-[#5e6b62]">En el Medio</label>
-                    <Input
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-bold text-[#355244]">En el Medio</label>
+                    <textarea
+                      rows={3}
                       value={hazard.controles?.medio || ''}
                       onChange={(e) => onUpdateField(['controles', 'medio'], e.target.value)}
-                      placeholder="Ej: Ventilación, señalización..."
-                      className="h-8 text-xs rounded-lg border-[#d1e2d6] bg-[#fbfdfb]"
+                      placeholder="Ej: Ventilación forzada, señalización, barreras..."
+                      className="w-full text-xs font-medium rounded-xl border border-[#d1e2d6] bg-[#fbfdfb] focus:bg-white focus:border-[#1F7D3E] focus:outline-none p-2.5 resize-y leading-relaxed min-h-[68px]"
                     />
                   </div>
-                  <div className="space-y-1">
-                    <label className="text-[11px] font-bold text-[#5e6b62]">En el Individuo</label>
-                    <Input
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-bold text-[#355244]">En el Individuo</label>
+                    <textarea
+                      rows={3}
                       value={hazard.controles?.individuo || ''}
                       onChange={(e) => onUpdateField(['controles', 'individuo'], e.target.value)}
-                      placeholder="Ej: Capacitación, EPP..."
-                      className="h-8 text-xs rounded-lg border-[#d1e2d6] bg-[#fbfdfb]"
+                      placeholder="Ej: Capacitación, esquema de vacunación, EPP..."
+                      className="w-full text-xs font-medium rounded-xl border border-[#d1e2d6] bg-[#fbfdfb] focus:bg-white focus:border-[#1F7D3E] focus:outline-none p-2.5 resize-y leading-relaxed min-h-[68px]"
                     />
                   </div>
                 </div>
