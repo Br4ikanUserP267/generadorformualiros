@@ -223,15 +223,15 @@ export function PeligroModal({
 
   return (
     <div className="fixed inset-0 z-[10000] flex items-center justify-center bg-black/60 backdrop-blur-sm p-3 sm:p-4 animate-in fade-in duration-200">
-      <div className="bg-white rounded-3xl border border-[#dfe9e2] shadow-2xl w-full max-w-3xl overflow-hidden flex flex-col my-auto max-h-[88vh]">
+      <div className="bg-white rounded-3xl border border-[#dfe9e2] shadow-2xl w-full max-w-4xl overflow-hidden flex flex-col my-auto max-h-[88vh]">
         {/* Header */}
-        <header className="px-5 py-3 bg-[linear-gradient(180deg,#fcfdfc_0%,#f4f8f5_100%)] border-b border-[#dfe9e2] flex items-center justify-between gap-4 shrink-0">
-          <div className="flex items-center gap-3 min-w-0">
-            <div className="size-9 rounded-xl bg-[#1F7D3E] text-white flex items-center justify-center shrink-0 shadow-sm shadow-[#1F7D3E]/20">
-              <Flame className="size-4.5" />
+        <header className="px-6 py-3.5 bg-[linear-gradient(180deg,#fcfdfc_0%,#f4f8f5_100%)] border-b border-[#dfe9e2] flex items-center justify-between gap-4 shrink-0">
+          <div className="flex items-center gap-3.5 min-w-0">
+            <div className="size-9 sm:size-10 rounded-2xl bg-[#1F7D3E] text-white flex items-center justify-center shrink-0 shadow-sm shadow-[#1F7D3E]/20">
+              <Flame className="size-4.5 sm:size-5" />
             </div>
             <div className="min-w-0">
-              <span className="text-[9px] font-black uppercase tracking-wider text-[#1F7D3E] bg-[#eef7f0] border border-[#d6ebd9] px-2 py-0.5 rounded-full inline-block">
+              <span className="text-[9.5px] font-black uppercase tracking-wider text-[#1F7D3E] bg-[#eef7f0] border border-[#d6ebd9] px-2.5 py-0.5 rounded-full inline-block">
                 CATÁLOGO MAESTRO DE PELIGROS
               </span>
               <h2 className="text-sm sm:text-base font-black text-[#163522] tracking-tight truncate">
@@ -243,14 +243,14 @@ export function PeligroModal({
           <button
             type="button"
             onClick={() => onOpenChange(false)}
-            className="size-8 rounded-xl border border-[#dfe9e2] bg-white hover:bg-[#f0f5f1] text-[#7a9182] hover:text-[#163522] flex items-center justify-center transition-all cursor-pointer shadow-2xs"
+            className="size-8 sm:size-9 rounded-xl border border-[#dfe9e2] bg-white hover:bg-[#f0f5f1] text-[#7a9182] hover:text-[#163522] flex items-center justify-center transition-all cursor-pointer shadow-2xs"
           >
             <X className="size-4" />
           </button>
         </header>
 
         {/* Tab Selector */}
-        <div className="px-5 pt-2 bg-white border-b border-[#dfe9e2] flex gap-1.5 overflow-x-auto shrink-0 scrollbar-none">
+        <div className="px-6 pt-2 bg-white border-b border-[#dfe9e2] flex gap-2 overflow-x-auto shrink-0 scrollbar-none">
           {tabs.map((t) => {
             const Icon = t.icon
             const isActive = activeTab === t.id
@@ -259,13 +259,13 @@ export function PeligroModal({
                 key={t.id}
                 type="button"
                 onClick={() => setActiveTab(t.id)}
-                className={`inline-flex items-center gap-1.5 px-3.5 py-2 rounded-t-xl text-xs font-bold transition-all border-b-2 whitespace-nowrap cursor-pointer ${
+                className={`inline-flex items-center gap-2 px-4 py-2.5 rounded-t-xl text-xs sm:text-sm font-bold transition-all border-b-2 whitespace-nowrap cursor-pointer ${
                   isActive
                     ? 'border-[#1F7D3E] text-[#1F7D3E] bg-[#eef7f0]/60'
                     : 'border-transparent text-[#7a9182] hover:text-[#163522] hover:bg-[#f4f8f5]'
                 }`}
               >
-                <Icon className="size-3.5" />
+                <Icon className="size-4" />
                 <span>{t.label}</span>
               </button>
             )
@@ -275,14 +275,14 @@ export function PeligroModal({
         {/* Form Container */}
         <form onSubmit={handleSave} className="flex flex-col min-h-0">
           {/* Content Body - Hugs content with max-height to avoid empty void */}
-          <div className="overflow-y-auto max-h-[62vh] p-5 space-y-4">
+          <div className="overflow-y-auto max-h-[66vh] p-6 space-y-4">
             {/* TAB 0: Identificación y Criterios */}
             {activeTab === 0 && (
-              <div className="space-y-3.5">
+              <div className="space-y-4">
                 {/* Código + Clasificación */}
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-4 gap-3.5">
                   {/* Código de Peligro (Referencia no editable) */}
-                  <div className="space-y-1">
+                  <div className="sm:col-span-1 space-y-1">
                     <div className="flex items-center justify-between">
                       <label className="text-[11px] font-bold text-[#163522]">Código de Peligro</label>
                       <span className="text-[9.5px] font-semibold text-[#5a7c65]">Referencia</span>
@@ -294,7 +294,7 @@ export function PeligroModal({
                         readOnly
                         tabIndex={-1}
                         title="Código generado automáticamente para referencia interna"
-                        className="w-full text-xs font-bold font-mono uppercase rounded-xl border border-[#dfe9e2] bg-[#f2f6f3] text-[#163522] cursor-not-allowed select-all px-3 py-2 focus:outline-none"
+                        className="w-full text-xs font-bold font-mono uppercase rounded-xl border border-[#dfe9e2] bg-[#f2f6f3] text-[#163522] cursor-not-allowed select-all px-3 py-2.5 focus:outline-none"
                       />
                       {generatingCode && (
                         <Loader2 className="size-3.5 animate-spin text-[#1F7D3E] absolute right-2.5 top-1/2 -translate-y-1/2" />
@@ -303,7 +303,7 @@ export function PeligroModal({
                   </div>
 
                   {/* Clasificación del Factor de Riesgo */}
-                  <div className="sm:col-span-2 space-y-1">
+                  <div className="sm:col-span-3 space-y-1">
                     <div className="flex items-center justify-between">
                       <label className="text-[11px] font-bold text-[#163522]">
                         Clasificación del Factor de Riesgo *
@@ -325,11 +325,11 @@ export function PeligroModal({
                     Descripción del Peligro *
                   </label>
                   <textarea
-                    rows={2}
+                    rows={3}
                     value={descripcion}
                     onChange={(e) => setDescripcion(e.target.value)}
                     placeholder="Describe detalladamente la condición, fuente o situación de peligro..."
-                    className="w-full text-xs font-medium rounded-xl border border-[#dfe9e2] bg-[#fcfdfc] focus:bg-white px-3 py-2 focus:border-[#1F7D3E] focus:outline-none resize-y min-h-[55px] leading-relaxed"
+                    className="w-full text-xs sm:text-sm font-medium rounded-xl border border-[#dfe9e2] bg-[#fcfdfc] focus:bg-white px-3.5 py-2.5 focus:border-[#1F7D3E] focus:outline-none resize-y min-h-[68px] leading-relaxed"
                     required
                   />
                 </div>
@@ -342,40 +342,42 @@ export function PeligroModal({
                     value={efectosPosibles}
                     onChange={(e) => setEfectosPosibles(e.target.value)}
                     placeholder="Enfermedades, lesiones, consecuencias inmediatas..."
-                    className="w-full text-xs font-medium rounded-xl border border-[#dfe9e2] bg-[#fcfdfc] focus:bg-white px-3 py-2 focus:border-[#1F7D3E] focus:outline-none resize-y min-h-[50px] leading-relaxed"
+                    className="w-full text-xs sm:text-sm font-medium rounded-xl border border-[#dfe9e2] bg-[#fcfdfc] focus:bg-white px-3.5 py-2.5 focus:border-[#1F7D3E] focus:outline-none resize-y min-h-[56px] leading-relaxed"
                   />
                 </div>
 
                 {/* Criterios Base de Severidad */}
-                <div className="p-3 rounded-2xl bg-[#f8faf9] border border-[#dfe9e2] space-y-2.5">
+                <div className="p-4 rounded-2xl bg-[#f8faf9] border border-[#dfe9e2] space-y-3">
                   <div className="flex items-center justify-between">
-                    <div className="text-[11px] font-black text-[#163522] flex items-center gap-1.5">
-                      <Sliders className="size-3 text-[#1F7D3E]" />
+                    <div className="text-xs font-black text-[#163522] flex items-center gap-2">
+                      <Sliders className="size-3.5 text-[#1F7D3E]" />
                       <span>Criterios para Establecer Controles (GTC 45)</span>
                     </div>
-                    <span className="text-[9.5px] font-bold text-[#7a9182]">Numeral 3.3</span>
+                    <span className="text-[9.5px] font-bold text-[#7a9182] bg-white border border-[#dfe9e2] px-2 py-0.5 rounded-md">
+                      Numeral 3.3
+                    </span>
                   </div>
 
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
-                    <div className="space-y-1">
+                  <div className="grid grid-cols-1 sm:grid-cols-4 gap-3">
+                    <div className="sm:col-span-1 space-y-1">
                       <label className="text-[10.5px] font-bold text-[#163522]">Nº Expuestos Base</label>
                       <input
                         type="number"
                         value={numExpuestos}
                         onChange={(e) => setNumExpuestos(e.target.value === '' ? '' : Number(e.target.value))}
                         placeholder="Ej: 5"
-                        className="w-full text-xs font-medium rounded-xl border border-[#dfe9e2] bg-white px-2.5 py-1.5 focus:border-[#1F7D3E] focus:outline-none"
+                        className="w-full text-xs sm:text-sm font-medium rounded-xl border border-[#dfe9e2] bg-white px-3 py-2 focus:border-[#1F7D3E] focus:outline-none"
                       />
                     </div>
 
-                    <div className="sm:col-span-2 space-y-1">
+                    <div className="sm:col-span-3 space-y-1">
                       <label className="text-[10.5px] font-bold text-[#163522]">Peor Consecuencia Esperada</label>
                       <input
                         type="text"
                         value={peorConsecuencia}
                         onChange={(e) => setPeorConsecuencia(e.target.value)}
                         placeholder="Ej: Muerte, invalidez permanente, amputación..."
-                        className="w-full text-xs font-medium rounded-xl border border-[#dfe9e2] bg-white px-2.5 py-1.5 focus:border-[#1F7D3E] focus:outline-none"
+                        className="w-full text-xs sm:text-sm font-medium rounded-xl border border-[#dfe9e2] bg-white px-3 py-2 focus:border-[#1F7D3E] focus:outline-none"
                       />
                     </div>
                   </div>
@@ -386,9 +388,9 @@ export function PeligroModal({
                       id="reqLegalTab0"
                       checked={requisitoLegal}
                       onChange={(e) => setRequisitoLegal(e.target.checked)}
-                      className="size-3.5 text-[#1F7D3E] rounded border-[#dfe9e2] focus:ring-[#1F7D3E]"
+                      className="size-4 text-[#1F7D3E] rounded border-[#dfe9e2] focus:ring-[#1F7D3E] cursor-pointer"
                     />
-                    <label htmlFor="reqLegalTab0" className="text-[11px] font-bold text-[#163522] cursor-pointer select-none">
+                    <label htmlFor="reqLegalTab0" className="text-xs font-bold text-[#163522] cursor-pointer select-none">
                       Existe Requisito Legal Específico Asociado (Resolución, Decreto o Norma Técnica)
                     </label>
                   </div>
@@ -398,26 +400,26 @@ export function PeligroModal({
 
             {/* TAB 1: Controles Base (Pestaña propia - diseño idéntico a Image 2) */}
             {activeTab === 1 && (
-              <div className="p-4 rounded-2xl bg-[#fcfdfc] border border-[#d6ebd9] shadow-2xs space-y-3.5">
+              <div className="p-5 rounded-2xl bg-[#fcfdfc] border border-[#d6ebd9] shadow-2xs space-y-4">
                 <div className="flex items-center justify-between gap-2">
-                  <div className="flex items-center gap-2">
-                    <Shield className="size-4.5 text-[#1F7D3E]" />
-                    <h3 className="text-xs sm:text-sm font-black text-[#163522]">
+                  <div className="flex items-center gap-2.5">
+                    <Shield className="size-5 text-[#1F7D3E]" />
+                    <h3 className="text-sm sm:text-base font-black text-[#163522]">
                       Controles Base Existentes
                     </h3>
                   </div>
-                  <span className="text-[9.5px] font-black uppercase tracking-wider text-[#1F7D3E] bg-[#eef7f0] border border-[#d6ebd9] px-2.5 py-0.5 rounded-full">
+                  <span className="text-[10px] font-black uppercase tracking-wider text-[#1F7D3E] bg-[#eef7f0] border border-[#d6ebd9] px-2.5 py-0.5 rounded-full">
                     RECOMENDADOS
                   </span>
                 </div>
 
-                <p className="text-[11.5px] text-[#5e6b62] font-medium leading-relaxed">
+                <p className="text-xs sm:text-[13px] text-[#5e6b62] font-medium leading-relaxed">
                   Controles estándar sugeridos por defecto cuando este peligro sea seleccionado en matrices.
                 </p>
 
                 {/* Control en la Fuente */}
-                <div className="space-y-1">
-                  <label className="text-[11px] font-bold text-[#163522] flex items-center gap-1.5">
+                <div className="space-y-1.5">
+                  <label className="text-[11.5px] font-bold text-[#163522] flex items-center gap-1.5">
                     <span className="size-2 rounded-full bg-[#1F7D3E]" />
                     <span>Control en la Fuente</span>
                   </label>
@@ -426,13 +428,13 @@ export function PeligroModal({
                     value={controlFuente}
                     onChange={(e) => setControlFuente(e.target.value)}
                     placeholder="Ej: Mantenimiento preventivo, aislamiento, guardas..."
-                    className="w-full text-xs font-medium rounded-xl border border-[#dfe9e2] bg-white focus:bg-[#fcfdfc] px-3 py-2 focus:border-[#1F7D3E] focus:outline-none resize-y min-h-[50px] leading-relaxed"
+                    className="w-full text-xs sm:text-sm font-medium rounded-xl border border-[#dfe9e2] bg-white focus:bg-[#fcfdfc] px-3.5 py-2.5 focus:border-[#1F7D3E] focus:outline-none resize-y min-h-[58px] leading-relaxed"
                   />
                 </div>
 
                 {/* Control en el Medio */}
-                <div className="space-y-1">
-                  <label className="text-[11px] font-bold text-[#163522] flex items-center gap-1.5">
+                <div className="space-y-1.5">
+                  <label className="text-[11.5px] font-bold text-[#163522] flex items-center gap-1.5">
                     <span className="size-2 rounded-full bg-[#0284c7]" />
                     <span>Control en el Medio</span>
                   </label>
@@ -441,13 +443,13 @@ export function PeligroModal({
                     value={controlMedio}
                     onChange={(e) => setControlMedio(e.target.value)}
                     placeholder="Ej: Ventilación forzada, señalización, barreras..."
-                    className="w-full text-xs font-medium rounded-xl border border-[#dfe9e2] bg-white focus:bg-[#fcfdfc] px-3 py-2 focus:border-[#1F7D3E] focus:outline-none resize-y min-h-[50px] leading-relaxed"
+                    className="w-full text-xs sm:text-sm font-medium rounded-xl border border-[#dfe9e2] bg-white focus:bg-[#fcfdfc] px-3.5 py-2.5 focus:border-[#1F7D3E] focus:outline-none resize-y min-h-[58px] leading-relaxed"
                   />
                 </div>
 
                 {/* Control en el Individuo */}
-                <div className="space-y-1">
-                  <label className="text-[11px] font-bold text-[#163522] flex items-center gap-1.5">
+                <div className="space-y-1.5">
+                  <label className="text-[11.5px] font-bold text-[#163522] flex items-center gap-1.5">
                     <span className="size-2 rounded-full bg-[#7c3aed]" />
                     <span>Control en el Individuo</span>
                   </label>
@@ -456,7 +458,7 @@ export function PeligroModal({
                     value={controlIndividuo}
                     onChange={(e) => setControlIndividuo(e.target.value)}
                     placeholder="Ej: Capacitación, vacunación, pausas activas..."
-                    className="w-full text-xs font-medium rounded-xl border border-[#dfe9e2] bg-white focus:bg-[#fcfdfc] px-3 py-2 focus:border-[#1F7D3E] focus:outline-none resize-y min-h-[50px] leading-relaxed"
+                    className="w-full text-xs sm:text-sm font-medium rounded-xl border border-[#dfe9e2] bg-white focus:bg-[#fcfdfc] px-3.5 py-2.5 focus:border-[#1F7D3E] focus:outline-none resize-y min-h-[58px] leading-relaxed"
                   />
                 </div>
               </div>
@@ -464,15 +466,15 @@ export function PeligroModal({
 
             {/* TAB 2: Evaluación GTC 45 Base */}
             {activeTab === 2 && (
-              <div className="space-y-3.5">
-                <div className="p-3 rounded-2xl bg-[#f0f7ff] border border-[#d8eaff] flex items-start gap-2.5">
-                  <Calculator className="size-4.5 text-[#0284c7] shrink-0 mt-0.5" />
-                  <p className="text-xs text-[#0369a1] font-medium leading-relaxed">
+              <div className="space-y-4">
+                <div className="p-4 rounded-2xl bg-[#f0f7ff] border border-[#d8eaff] flex items-start gap-3">
+                  <Calculator className="size-5 text-[#0284c7] shrink-0 mt-0.5" />
+                  <p className="text-xs sm:text-[13px] text-[#0369a1] font-medium leading-relaxed">
                     Ingresa los valores base de la evaluación cualitativa GTC 45 (Deficiencia, Exposición y Consecuencia). El sistema calcula en tiempo real el Nivel de Probabilidad (NP), Nivel de Riesgo (NR) y Aceptabilidad.
                   </p>
                 </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
                   {/* ND */}
                   <div className="space-y-1">
                     <label className="text-[11px] font-bold text-[#163522]">
@@ -481,7 +483,7 @@ export function PeligroModal({
                     <select
                       value={nivelDeficiencia}
                       onChange={(e) => setNivelDeficiencia(e.target.value === '' ? '' : Number(e.target.value))}
-                      className="w-full text-xs font-bold text-[#163522] rounded-xl border border-[#dfe9e2] bg-[#fcfdfc] focus:bg-white px-3 py-2 focus:border-[#1F7D3E] focus:outline-none"
+                      className="w-full text-xs sm:text-sm font-bold text-[#163522] rounded-xl border border-[#dfe9e2] bg-[#fcfdfc] focus:bg-white px-3 py-2.5 focus:border-[#1F7D3E] focus:outline-none"
                     >
                       <option value="">Sin evaluar</option>
                       <option value="10">10 - Muy Alto</option>
@@ -499,7 +501,7 @@ export function PeligroModal({
                     <select
                       value={nivelExposicion}
                       onChange={(e) => setNivelExposicion(e.target.value === '' ? '' : Number(e.target.value))}
-                      className="w-full text-xs font-bold text-[#163522] rounded-xl border border-[#dfe9e2] bg-[#fcfdfc] focus:bg-white px-3 py-2 focus:border-[#1F7D3E] focus:outline-none"
+                      className="w-full text-xs sm:text-sm font-bold text-[#163522] rounded-xl border border-[#dfe9e2] bg-[#fcfdfc] focus:bg-white px-3 py-2.5 focus:border-[#1F7D3E] focus:outline-none"
                     >
                       <option value="">Sin evaluar</option>
                       <option value="4">4 - Continua</option>
@@ -517,7 +519,7 @@ export function PeligroModal({
                     <select
                       value={nivelConsecuencia}
                       onChange={(e) => setNivelConsecuencia(e.target.value === '' ? '' : Number(e.target.value))}
-                      className="w-full text-xs font-bold text-[#163522] rounded-xl border border-[#dfe9e2] bg-[#fcfdfc] focus:bg-white px-3 py-2 focus:border-[#1F7D3E] focus:outline-none"
+                      className="w-full text-xs sm:text-sm font-bold text-[#163522] rounded-xl border border-[#dfe9e2] bg-[#fcfdfc] focus:bg-white px-3 py-2.5 focus:border-[#1F7D3E] focus:outline-none"
                     >
                       <option value="">Sin evaluar</option>
                       <option value="100">100 - Mortal / Catastrófico</option>
@@ -529,43 +531,43 @@ export function PeligroModal({
                 </div>
 
                 {/* Calculated Results Summary Cards */}
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 pt-1">
-                  <div className="p-3 rounded-2xl border border-[#dfe9e2] bg-[#fbfdfb] shadow-2xs">
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-1">
+                  <div className="p-3.5 rounded-2xl border border-[#dfe9e2] bg-[#fbfdfb] shadow-2xs">
                     <div className="text-[9.5px] font-black uppercase tracking-wider text-[#7a9182]">Nivel Probabilidad (NP)</div>
-                    <div className="text-xl font-black text-[#163522] mt-1">
+                    <div className="text-xl sm:text-2xl font-black text-[#163522] mt-1">
                       {evalCalc.np ?? '—'}
                     </div>
-                    <div className="text-[10px] font-bold text-[#5e6b62] truncate mt-0.5">
+                    <div className="text-[10.5px] font-bold text-[#5e6b62] truncate mt-0.5">
                       {evalCalc.interpNp || 'Sin cálculo'}
                     </div>
                   </div>
 
-                  <div className="p-3 rounded-2xl border border-[#dfe9e2] bg-[#fbfdfb] shadow-2xs">
+                  <div className="p-3.5 rounded-2xl border border-[#dfe9e2] bg-[#fbfdfb] shadow-2xs">
                     <div className="text-[9.5px] font-black uppercase tracking-wider text-[#7a9182]">Nivel Riesgo (NR)</div>
-                    <div className="text-xl font-black text-[#163522] mt-1">
+                    <div className="text-xl sm:text-2xl font-black text-[#163522] mt-1">
                       {evalCalc.nr ?? '—'}
                     </div>
-                    <div className="text-[10px] font-bold text-[#5e6b62] truncate mt-0.5">
+                    <div className="text-[10.5px] font-bold text-[#5e6b62] truncate mt-0.5">
                       {evalCalc.interpNr || 'Sin cálculo'}
                     </div>
                   </div>
 
-                  <div className="p-3 rounded-2xl border border-[#dfe9e2] bg-[#fbfdfb] shadow-2xs">
+                  <div className="p-3.5 rounded-2xl border border-[#dfe9e2] bg-[#fbfdfb] shadow-2xs">
                     <div className="text-[9.5px] font-black uppercase tracking-wider text-[#7a9182]">Clasificación GTC 45</div>
-                    <div className="text-xl font-black text-[#163522] mt-1">
+                    <div className="text-xl sm:text-2xl font-black text-[#163522] mt-1">
                       {evalCalc.nivelRiesgo ? `Nivel ${evalCalc.nivelRiesgo}` : '—'}
                     </div>
-                    <div className="text-[10px] font-bold text-[#7a9182] mt-0.5 truncate">
+                    <div className="text-[10.5px] font-bold text-[#7a9182] mt-0.5 truncate">
                       {evalCalc.nivelRiesgo === 'I' ? 'Crítico / No Aceptable' : evalCalc.nivelRiesgo === 'II' ? 'Alto / Corregir' : evalCalc.nivelRiesgo === 'III' ? 'Medio / Mejorable' : evalCalc.nivelRiesgo === 'IV' ? 'Bajo / Mantener' : 'Estándar'}
                     </div>
                   </div>
 
-                  <div className="p-3 rounded-2xl border border-[#dfe9e2] bg-[#fbfdfb] shadow-2xs">
+                  <div className="p-3.5 rounded-2xl border border-[#dfe9e2] bg-[#fbfdfb] shadow-2xs">
                     <div className="text-[9.5px] font-black uppercase tracking-wider text-[#7a9182]">Aceptabilidad</div>
-                    <div className="text-xs font-black text-[#163522] mt-1.5 truncate">
+                    <div className="text-sm font-black text-[#163522] mt-1.5 truncate">
                       {evalCalc.aceptabilidad || '—'}
                     </div>
-                    <div className="text-[9.5px] font-bold text-[#7a9182] mt-0.5">Valoración del Riesgo</div>
+                    <div className="text-[10px] font-bold text-[#7a9182] mt-0.5">Valoración del Riesgo</div>
                   </div>
                 </div>
               </div>
@@ -573,11 +575,11 @@ export function PeligroModal({
 
             {/* TAB 3: Medidas de Intervención */}
             {activeTab === 3 && (
-              <div className="space-y-3.5">
+              <div className="space-y-4">
                 {/* 1. Eliminación */}
-                <div className="space-y-1">
-                  <label className="text-[11px] font-bold text-[#163522] flex items-center gap-1.5">
-                    <span className="text-[9px] font-black px-1.5 py-0.5 rounded bg-red-100 text-red-700">1</span>
+                <div className="space-y-1.5">
+                  <label className="text-[11.5px] font-bold text-[#163522] flex items-center gap-1.5">
+                    <span className="text-[9.5px] font-black px-1.5 py-0.5 rounded bg-red-100 text-red-700">1</span>
                     <span>Eliminación</span>
                   </label>
                   <textarea
@@ -585,14 +587,14 @@ export function PeligroModal({
                     value={eliminacion}
                     onChange={(e) => setEliminacion(e.target.value)}
                     placeholder="Medidas para suprimir totalmente el peligro..."
-                    className="w-full text-xs font-medium rounded-xl border border-[#dfe9e2] bg-white focus:bg-[#fcfdfc] px-3 py-2 focus:border-[#1F7D3E] focus:outline-none resize-y min-h-[50px] leading-relaxed"
+                    className="w-full text-xs sm:text-sm font-medium rounded-xl border border-[#dfe9e2] bg-white focus:bg-[#fcfdfc] px-3.5 py-2.5 focus:border-[#1F7D3E] focus:outline-none resize-y min-h-[58px] leading-relaxed"
                   />
                 </div>
 
                 {/* 2. Sustitución */}
-                <div className="space-y-1">
-                  <label className="text-[11px] font-bold text-[#163522] flex items-center gap-1.5">
-                    <span className="text-[9px] font-black px-1.5 py-0.5 rounded bg-orange-100 text-orange-700">2</span>
+                <div className="space-y-1.5">
+                  <label className="text-[11.5px] font-bold text-[#163522] flex items-center gap-1.5">
+                    <span className="text-[9.5px] font-black px-1.5 py-0.5 rounded bg-orange-100 text-orange-700">2</span>
                     <span>Sustitución</span>
                   </label>
                   <textarea
@@ -600,14 +602,14 @@ export function PeligroModal({
                     value={sustitucion}
                     onChange={(e) => setSustitucion(e.target.value)}
                     placeholder="Sustituir por insumo, químico o proceso menos riesgoso..."
-                    className="w-full text-xs font-medium rounded-xl border border-[#dfe9e2] bg-white focus:bg-[#fcfdfc] px-3 py-2 focus:border-[#1F7D3E] focus:outline-none resize-y min-h-[50px] leading-relaxed"
+                    className="w-full text-xs sm:text-sm font-medium rounded-xl border border-[#dfe9e2] bg-white focus:bg-[#fcfdfc] px-3.5 py-2.5 focus:border-[#1F7D3E] focus:outline-none resize-y min-h-[58px] leading-relaxed"
                   />
                 </div>
 
                 {/* 3. Controles de Ingeniería */}
-                <div className="space-y-1">
-                  <label className="text-[11px] font-bold text-[#163522] flex items-center gap-1.5">
-                    <span className="text-[9px] font-black px-1.5 py-0.5 rounded bg-amber-100 text-amber-700">3</span>
+                <div className="space-y-1.5">
+                  <label className="text-[11.5px] font-bold text-[#163522] flex items-center gap-1.5">
+                    <span className="text-[9.5px] font-black px-1.5 py-0.5 rounded bg-amber-100 text-amber-700">3</span>
                     <span>Controles de Ingeniería</span>
                   </label>
                   <textarea
@@ -615,14 +617,14 @@ export function PeligroModal({
                     value={controlesIngenieria}
                     onChange={(e) => setControlesIngenieria(e.target.value)}
                     placeholder="Cabinas de bioseguridad, extractores, sensores..."
-                    className="w-full text-xs font-medium rounded-xl border border-[#dfe9e2] bg-white focus:bg-[#fcfdfc] px-3 py-2 focus:border-[#1F7D3E] focus:outline-none resize-y min-h-[50px] leading-relaxed"
+                    className="w-full text-xs sm:text-sm font-medium rounded-xl border border-[#dfe9e2] bg-white focus:bg-[#fcfdfc] px-3.5 py-2.5 focus:border-[#1F7D3E] focus:outline-none resize-y min-h-[58px] leading-relaxed"
                   />
                 </div>
 
                 {/* 4. Controles Administrativos */}
-                <div className="space-y-1">
-                  <label className="text-[11px] font-bold text-[#163522] flex items-center gap-1.5">
-                    <span className="text-[9px] font-black px-1.5 py-0.5 rounded bg-blue-100 text-blue-700">4</span>
+                <div className="space-y-1.5">
+                  <label className="text-[11.5px] font-bold text-[#163522] flex items-center gap-1.5">
+                    <span className="text-[9.5px] font-black px-1.5 py-0.5 rounded bg-blue-100 text-blue-700">4</span>
                     <span>Controles Administrativos</span>
                   </label>
                   <textarea
@@ -630,14 +632,14 @@ export function PeligroModal({
                     value={controlesAdministrativos}
                     onChange={(e) => setControlesAdministrativos(e.target.value)}
                     placeholder="Capacitaciones, rotación de personal, señalización..."
-                    className="w-full text-xs font-medium rounded-xl border border-[#dfe9e2] bg-white focus:bg-[#fcfdfc] px-3 py-2 focus:border-[#1F7D3E] focus:outline-none resize-y min-h-[50px] leading-relaxed"
+                    className="w-full text-xs sm:text-sm font-medium rounded-xl border border-[#dfe9e2] bg-white focus:bg-[#fcfdfc] px-3.5 py-2.5 focus:border-[#1F7D3E] focus:outline-none resize-y min-h-[58px] leading-relaxed"
                   />
                 </div>
 
                 {/* 5. Equipos y Elementos de Protección Personal (EPP) */}
-                <div className="space-y-1">
-                  <label className="text-[11px] font-bold text-[#163522] flex items-center gap-1.5">
-                    <span className="text-[9px] font-black px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-700">5</span>
+                <div className="space-y-1.5">
+                  <label className="text-[11.5px] font-bold text-[#163522] flex items-center gap-1.5">
+                    <span className="text-[9.5px] font-black px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-700">5</span>
                     <span>Equipos y Elementos de Protección Personal (EPP)</span>
                   </label>
                   <textarea
@@ -645,7 +647,7 @@ export function PeligroModal({
                     value={epp}
                     onChange={(e) => setEpp(e.target.value)}
                     placeholder="Guantes de nitrilo, mascarilla N95, protección ocular, bata impermeable..."
-                    className="w-full text-xs font-medium rounded-xl border border-[#dfe9e2] bg-white focus:bg-[#fcfdfc] px-3 py-2 focus:border-[#1F7D3E] focus:outline-none resize-y min-h-[50px] leading-relaxed"
+                    className="w-full text-xs sm:text-sm font-medium rounded-xl border border-[#dfe9e2] bg-white focus:bg-[#fcfdfc] px-3.5 py-2.5 focus:border-[#1F7D3E] focus:outline-none resize-y min-h-[58px] leading-relaxed"
                   />
                 </div>
               </div>
@@ -653,21 +655,21 @@ export function PeligroModal({
           </div>
 
           {/* Action Footer */}
-          <footer className="px-5 py-3 bg-[#fcfdfc] border-t border-[#dfe9e2] flex items-center justify-between gap-3 shrink-0">
+          <footer className="px-6 py-3.5 bg-[#fcfdfc] border-t border-[#dfe9e2] flex items-center justify-between gap-3 shrink-0">
             <button
               type="button"
               onClick={() => onOpenChange(false)}
-              className="px-4 py-2 rounded-xl border border-[#dfe9e2] bg-white hover:bg-[#f0f5f1] text-[#5e6b62] text-xs font-bold transition-colors cursor-pointer"
+              className="px-4.5 py-2.5 rounded-xl border border-[#dfe9e2] bg-white hover:bg-[#f0f5f1] text-[#5e6b62] text-xs sm:text-sm font-bold transition-colors cursor-pointer"
             >
               Cancelar
             </button>
 
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2.5">
               {activeTab > 0 && (
                 <button
                   type="button"
                   onClick={() => setActiveTab((prev) => prev - 1)}
-                  className="px-3.5 py-2 rounded-xl border border-[#dfe9e2] bg-white hover:bg-[#f0f5f1] text-[#163522] text-xs font-bold transition-colors cursor-pointer"
+                  className="px-4 py-2.5 rounded-xl border border-[#dfe9e2] bg-white hover:bg-[#f0f5f1] text-[#163522] text-xs sm:text-sm font-bold transition-colors cursor-pointer"
                 >
                   ← Anterior
                 </button>
@@ -677,7 +679,7 @@ export function PeligroModal({
                 <button
                   type="button"
                   onClick={() => setActiveTab((prev) => prev + 1)}
-                  className="px-3.5 py-2 rounded-xl border border-[#cbe5cf] bg-[#eef7f0] hover:bg-[#e0f1e3] text-[#1F7D3E] text-xs font-black transition-colors cursor-pointer"
+                  className="px-4 py-2.5 rounded-xl border border-[#cbe5cf] bg-[#eef7f0] hover:bg-[#e0f1e3] text-[#1F7D3E] text-xs sm:text-sm font-black transition-colors cursor-pointer"
                 >
                   Siguiente Pestaña →
                 </button>
@@ -686,7 +688,7 @@ export function PeligroModal({
               <button
                 type="submit"
                 disabled={saving}
-                className="inline-flex items-center gap-2 px-4.5 py-2 rounded-xl bg-[#1F7D3E] hover:bg-[#186331] text-white text-xs font-black shadow-sm shadow-[#1F7D3E]/20 transition-all disabled:opacity-50 cursor-pointer"
+                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-[#1F7D3E] hover:bg-[#186331] text-white text-xs sm:text-sm font-black shadow-sm shadow-[#1F7D3E]/20 transition-all disabled:opacity-50 cursor-pointer"
               >
                 {saving ? <Loader2 className="size-4 animate-spin" /> : <Save className="size-4" />}
                 <span>{peligro?.id ? 'Actualizar Peligro' : 'Guardar Peligro en Catálogo'}</span>
