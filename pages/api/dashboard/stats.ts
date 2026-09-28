@@ -2,17 +2,17 @@ import type { NextApiRequest, NextApiResponse } from 'next'
 import prisma from '@/lib/prisma'
 import { getAuthUser } from '@/lib/auth-server'
 
-function classifyRiskLevel(interpRiesgo: string | null | undefined, nivelRiesgo: number | null | undefined): 'MUY_ALTO' | 'ALTO' | 'MODERADO' | 'BAJO' {
-  const interp = (interpRiesgo || '').toUpperCase()
-  const nr = Number(nivelRiesgo || 0)
+function classifyRiskLevel(interpNp: string | null | undefined, nivelProbabilidad: number | null | undefined): 'MUY_ALTO' | 'ALTO' | 'MODERADO' | 'BAJO' {
+  const interp = (interpNp || '').toUpperCase().trim()
+  const np = Number(nivelProbabilidad || 0)
 
-  if (interp.startsWith('I ') || interp === 'I' || (interp.includes('I') && !interp.includes('II') && !interp.includes('IV')) || nr >= 600) {
+  if (interp.includes('MUY ALTO') || interp === 'MA' || interp === 'EXTREMO' || np >= 24) {
     return 'MUY_ALTO'
   }
-  if (interp.startsWith('II ') || interp === 'II' || (interp.includes('II') && !interp.includes('III')) || (nr >= 150 && nr < 600)) {
+  if ((interp.includes('ALTO') && !interp.includes('MUY ALTO')) || interp === 'A' || (np >= 10 && np < 24)) {
     return 'ALTO'
   }
-  if (interp.startsWith('III ') || interp === 'III' || interp.includes('III') || interp.includes('MEJORABLE') || interp.includes('MODERADO') || (nr >= 40 && nr < 150)) {
+  if (interp.includes('MEDIO') || interp.includes('MODERADO') || interp === 'M' || (np >= 6 && np < 10)) {
     return 'MODERADO'
   }
   return 'BAJO'
@@ -33,137 +33,151 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const { area } = req.query
     const selectedArea = area && String(area).trim() !== 'TODAS' ? String(area).trim() : null
 
-    // 1. Fetch all active catalog hazards with their matrix occurrences and action plans
-    const catalogHazards = await prisma.peligroCatalogo.findMany({
-      where: { deletedAt: null },
-      include: {
-        planesAccion: {
-          where: { deletedAt: null },
-          select: { id: true, estado: true },
+    // 1. Concurrently fetch catalog hazards, active matrices, total registered risks count, and aggregated SQL statistics
+    const [
+      catalogHazards,
+      activeMatrices,
+      totalRiesgosRegistrados,
+      hazardOccurrencesAgg,
+      areaOccurrencesAgg
+    ] = await Promise.all([
+      // Lean catalog query with plan count only
+      prisma.peligroCatalogo.findMany({
+        where: { deletedAt: null },
+        select: {
+          id: true,
+          codigo: true,
+          descripcion: true,
+          clasificacion: true,
+          nivelProbabilidad: true,
+          interpProbabilidad: true,
+          nivelRiesgo: true,
+          interpRiesgo: true,
+          _count: {
+            select: {
+              planesAccion: { where: { deletedAt: null } }
+            }
+          }
         },
-        peligrosMatriz: {
-          where: {
-            deletedAt: null,
-            actividad: {
-              zona: {
-                proceso: {
-                  matriz: {
-                    deletedAt: null,
-                  },
-                },
-              },
-            },
-          },
-          select: {
-            id: true,
-            evaluacion: {
-              select: {
-                nivelRiesgo: true,
-                interpRiesgo: true,
-              },
-            },
-            actividad: {
-              select: {
-                nombre: true,
+        orderBy: [
+          { nivelProbabilidad: 'desc' },
+          { clasificacion: 'asc' },
+          { codigo: 'asc' },
+        ],
+      }),
+
+      // Active matrices
+      prisma.matriz.findMany({
+        where: { deletedAt: null },
+        select: {
+          id: true,
+          area: true,
+          responsable: true,
+          fechaActualizacion: true,
+        },
+        orderBy: { area: 'asc' },
+      }),
+
+      // Total active registered risks count
+      selectedArea
+        ? prisma.peligro.count({
+            where: {
+              deletedAt: null,
+              actividad: {
                 zona: {
-                  select: {
-                    nombre: true,
-                    proceso: {
-                      select: {
-                        nombre: true,
-                        matriz: {
-                          select: {
-                            id: true,
-                            area: true,
-                            responsable: true,
-                          },
-                        },
-                      },
+                  proceso: {
+                    matriz: {
+                      deletedAt: null,
+                      area: { equals: selectedArea, mode: 'insensitive' },
                     },
                   },
                 },
               },
             },
-          },
-        },
-      },
-      orderBy: [
-        { nivelRiesgo: 'desc' },
-        { clasificacion: 'asc' },
-        { codigo: 'asc' },
-      ],
-    })
-
-    // 2. Fetch all active matrices to build area overview
-    const activeMatrices = await prisma.matriz.findMany({
-      where: { deletedAt: null },
-      select: {
-        id: true,
-        area: true,
-        responsable: true,
-        fechaActualizacion: true,
-      },
-      orderBy: { area: 'asc' },
-    })
-
-    const totalCatalogDangers = catalogHazards.length
-
-    // Count all active danger occurrences in matrices (regardless of catalog linkage)
-    const totalRiesgosRegistrados = await prisma.peligro.count({
-      where: {
-        deletedAt: null,
-        actividad: {
-          zona: {
-            proceso: {
-              matriz: {
-                deletedAt: null,
-              },
-            },
-          },
-        },
-      },
-    })
-
-    const totalRiesgosArea = selectedArea
-      ? await prisma.peligro.count({
-          where: {
-            deletedAt: null,
-            actividad: {
-              zona: {
-                proceso: {
-                  matriz: {
-                    deletedAt: null,
-                    area: { equals: selectedArea, mode: 'insensitive' },
+          })
+        : prisma.peligro.count({
+            where: {
+              deletedAt: null,
+              actividad: {
+                zona: {
+                  proceso: {
+                    matriz: {
+                      deletedAt: null,
+                    },
                   },
                 },
               },
             },
-          },
-        })
-      : totalRiesgosRegistrados
+          }),
 
-    // Structure for Catalog Unique Dangers stats
-    const catalogoUnico = {
-      total: totalCatalogDangers,
-      muyAlto: 0,
-      alto: 0,
-      moderado: 0,
-      bajo: 0,
+      // SQL Aggregation: occurrences per catalog hazard (count, distinct matrices, distinct areas)
+      (prisma as any).$queryRawUnsafe(`
+        SELECT 
+          p.catalogo_peligro_id,
+          COUNT(p.id)::int AS total_ocurrencias,
+          COUNT(DISTINCT pr.matriz_id)::int AS matrices_count,
+          COUNT(DISTINCT TRIM(m.area))::int AS areas_count
+        FROM peligros p
+        JOIN actividades a ON p.actividad_id = a.id AND a.deleted_at IS NULL
+        JOIN zonas z ON a.zona_id = z.id AND z.deleted_at IS NULL
+        JOIN procesos pr ON z.proceso_id = pr.id AND pr.deleted_at IS NULL
+        JOIN matrices m ON pr.matriz_id = m.id AND m.deleted_at IS NULL
+        WHERE p.deleted_at IS NULL AND p.catalogo_peligro_id IS NOT NULL
+        GROUP BY p.catalogo_peligro_id;
+      `),
+
+      // SQL Aggregation: Occurrences with area and risk evaluation
+      (prisma as any).$queryRawUnsafe(`
+        WITH occ_data AS (
+          SELECT 
+            m.id AS matriz_id,
+            TRIM(COALESCE(m.area, 'Sin Área')) AS area_name,
+            COALESCE(m.responsable, 'No asignado') AS responsable,
+            p.catalogo_peligro_id,
+            COALESCE(
+              NULLIF(TRIM(ep.interp_probabilidad), ''), 
+              NULLIF(TRIM(e.interp_probabilidad), ''), 
+              TRIM(pc.interp_probabilidad), 
+              ''
+            ) AS interp_probabilidad,
+            CASE 
+              WHEN ep.nivel_probabilidad IS NOT NULL AND ep.nivel_probabilidad > 0 THEN ep.nivel_probabilidad
+              WHEN e.nivel_probabilidad IS NOT NULL AND e.nivel_probabilidad > 0 THEN e.nivel_probabilidad
+              ELSE COALESCE(pc.nivel_probabilidad, 0)
+            END AS nivel_probabilidad
+          FROM peligros p
+          JOIN actividades a ON p.actividad_id = a.id AND a.deleted_at IS NULL
+          JOIN zonas z ON a.zona_id = z.id AND z.deleted_at IS NULL
+          JOIN procesos pr ON z.proceso_id = pr.id AND pr.deleted_at IS NULL
+          JOIN matrices m ON pr.matriz_id = m.id AND m.deleted_at IS NULL
+          LEFT JOIN evaluaciones e ON e.peligro_id = p.id
+          LEFT JOIN evaluaciones_post ep ON ep.peligro_id = p.id
+          LEFT JOIN peligros_catalogo pc ON pc.id = p.catalogo_peligro_id
+          WHERE p.deleted_at IS NULL
+        )
+        SELECT 
+          matriz_id,
+          area_name,
+          responsable,
+          catalogo_peligro_id,
+          interp_probabilidad,
+          nivel_probabilidad
+        FROM occ_data;
+      `)
+    ])
+
+    const totalRiesgosArea = totalRiesgosRegistrados
+
+    // Index hazard occurrences aggregation by catalog hazard id
+    const occMap = new Map<string, { total_ocurrencias: number; matrices_count: number; areas_count: number }>()
+    for (const row of hazardOccurrencesAgg) {
+      occMap.set(row.catalogo_peligro_id, row)
     }
 
-    // Structure for Repetitions / Occurrences stats
-    const ocurrenciasGlobales = {
-      total: 0,
-      muyAlto: 0,
-      alto: 0,
-      moderado: 0,
-      bajo: 0,
-    }
-
-    // Classification distribution map
+    const totalCatalogDangers = catalogHazards.length
+    const catalogoUnico = { total: totalCatalogDangers, muyAlto: 0, alto: 0, moderado: 0, bajo: 0 }
+    const ocurrenciasGlobales = { total: 0, muyAlto: 0, alto: 0, moderado: 0, bajo: 0 }
     const clasificacionesMap = new Map<string, { uniqueCount: number; occurrencesCount: number; altoCount: number; moderadoCount: number; bajoCount: number; muyAltoCount: number }>()
-
-    // Area distribution map: areaName -> { matrizId, area, responsable, totalOcurrencias, peligrosUnicos: Set, muyAlto, alto, moderado, bajo }
     const areasMap = new Map<string, {
       matrizId: string
       area: string
@@ -194,32 +208,14 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       }
     })
 
-    // List of dangers with repetition metrics
-    const topPeligrosRepetidos: any[] = []
-
-    // Filtered data when a specific area is selected
-    const areaFilteredStats = selectedArea
-      ? {
-          area: selectedArea,
-          totalPeligrosUnicos: 0,
-          totalOcurrencias: 0,
-          muyAlto: 0,
-          alto: 0,
-          moderado: 0,
-          bajo: 0,
-          peligros: [] as any[],
-        }
-      : null
-
+    // Calculate catalog stats and classification unique counts
     for (const h of catalogHazards) {
-      const catRisk = classifyRiskLevel(h.interpRiesgo, h.nivelRiesgo)
-
+      const catRisk = classifyRiskLevel(h.interpProbabilidad, h.nivelProbabilidad)
       if (catRisk === 'MUY_ALTO') catalogoUnico.muyAlto++
       else if (catRisk === 'ALTO') catalogoUnico.alto++
       else if (catRisk === 'MODERADO') catalogoUnico.moderado++
       else catalogoUnico.bajo++
 
-      // Classification aggregation
       const clasifName = (h.clasificacion || 'OTRO').toUpperCase().trim()
       if (!clasificacionesMap.has(clasifName)) {
         clasificacionesMap.set(clasifName, {
@@ -237,99 +233,119 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       else if (catRisk === 'ALTO') clasifItem.altoCount++
       else if (catRisk === 'MODERADO') clasifItem.moderadoCount++
       else clasifItem.bajoCount++
+    }
 
-      const matricesSet = new Set<string>()
-      const areasSet = new Set<string>()
-      let hazardOccurrencesInSelectedArea = 0
+    // Catalog hazard to classification lookup
+    const catClasifMap = new Map<string, string>()
+    for (const h of catalogHazards) {
+      catClasifMap.set(h.id, (h.clasificacion || 'OTRO').toUpperCase().trim())
+    }
 
-      for (const pm of h.peligrosMatriz) {
-        const matriz = pm.actividad?.zona?.proceso?.matriz
-        if (matriz) {
-          matricesSet.add(matriz.id)
-          const areaName = matriz.area?.trim() || 'Sin Área'
-          areasSet.add(areaName)
+    // Area filtered stats if selectedArea
+    const areaFilteredStats = selectedArea
+      ? {
+          area: selectedArea,
+          totalPeligrosUnicos: 0,
+          totalOcurrencias: 0,
+          muyAlto: 0,
+          alto: 0,
+          moderado: 0,
+          bajo: 0,
+          peligros: [] as any[],
+        }
+      : null
 
-          // Evaluate risk level of this specific occurrence (prefer matrix eval, fallback to catalog)
-          const occRisk = pm.evaluacion
-            ? classifyRiskLevel(pm.evaluacion.interpRiesgo, pm.evaluacion.nivelRiesgo)
-            : catRisk
+    const areaHazardCounts = selectedArea ? new Map<string, number>() : null
 
-          ocurrenciasGlobales.total++
-          if (occRisk === 'MUY_ALTO') ocurrenciasGlobales.muyAlto++
-          else if (occRisk === 'ALTO') ocurrenciasGlobales.alto++
-          else if (occRisk === 'MODERADO') ocurrenciasGlobales.moderado++
-          else ocurrenciasGlobales.bajo++
+    // Process aggregated occurrences
+    for (const occ of areaOccurrencesAgg) {
+      const occRisk = classifyRiskLevel(occ.interp_probabilidad, occ.nivel_probabilidad)
 
-          clasifItem.occurrencesCount++
+      ocurrenciasGlobales.total++
+      if (occRisk === 'MUY_ALTO') ocurrenciasGlobales.muyAlto++
+      else if (occRisk === 'ALTO') ocurrenciasGlobales.alto++
+      else if (occRisk === 'MODERADO') ocurrenciasGlobales.moderado++
+      else ocurrenciasGlobales.bajo++
 
-          // Accumulate area stats
-          let areaData = areasMap.get(areaName)
-          if (!areaData) {
-            areaData = {
-              matrizId: matriz.id,
-              area: areaName,
-              responsable: matriz.responsable || 'No asignado',
-              totalOcurrencias: 0,
-              peligrosUnicosSet: new Set(),
-              muyAlto: 0,
-              alto: 0,
-              moderado: 0,
-              bajo: 0,
-            }
-            areasMap.set(areaName, areaData)
-          }
+      const clasifName = catClasifMap.get(occ.catalogo_peligro_id) || 'OTRO'
+      const clasifItem = clasificacionesMap.get(clasifName)
+      if (clasifItem) {
+        clasifItem.occurrencesCount++
+      }
 
-          areaData.totalOcurrencias++
-          areaData.peligrosUnicosSet.add(h.id)
-          if (occRisk === 'MUY_ALTO') areaData.muyAlto++
-          else if (occRisk === 'ALTO') areaData.alto++
-          else if (occRisk === 'MODERADO') areaData.moderado++
-          else areaData.bajo++
+      let areaData = areasMap.get(occ.area_name)
+      if (!areaData) {
+        areaData = {
+          matrizId: occ.matriz_id,
+          area: occ.area_name,
+          responsable: occ.responsable,
+          totalOcurrencias: 0,
+          peligrosUnicosSet: new Set(),
+          muyAlto: 0,
+          alto: 0,
+          moderado: 0,
+          bajo: 0,
+        }
+        areasMap.set(occ.area_name, areaData)
+      }
 
-          // If selected area matches
-          if (selectedArea && areaName.toLowerCase() === selectedArea.toLowerCase()) {
-            hazardOccurrencesInSelectedArea++
-            areaFilteredStats!.totalOcurrencias++
-            if (occRisk === 'MUY_ALTO') areaFilteredStats!.muyAlto++
-            else if (occRisk === 'ALTO') areaFilteredStats!.alto++
-            else if (occRisk === 'MODERADO') areaFilteredStats!.moderado++
-            else areaFilteredStats!.bajo++
-          }
+      areaData.totalOcurrencias++
+      areaData.peligrosUnicosSet.add(occ.catalogo_peligro_id)
+      if (occRisk === 'MUY_ALTO') areaData.muyAlto++
+      else if (occRisk === 'ALTO') areaData.alto++
+      else if (occRisk === 'MODERADO') areaData.moderado++
+      else areaData.bajo++
+
+      if (selectedArea && occ.area_name.toLowerCase() === selectedArea.toLowerCase()) {
+        areaFilteredStats!.totalOcurrencias++
+        if (occRisk === 'MUY_ALTO') areaFilteredStats!.muyAlto++
+        else if (occRisk === 'ALTO') areaFilteredStats!.alto++
+        else if (occRisk === 'MODERADO') areaFilteredStats!.moderado++
+        else areaFilteredStats!.bajo++
+
+        const currentCount = areaHazardCounts!.get(occ.catalogo_peligro_id) || 0
+        areaHazardCounts!.set(occ.catalogo_peligro_id, currentCount + 1)
+      }
+    }
+
+    if (selectedArea) {
+      areaFilteredStats!.totalPeligrosUnicos = areaHazardCounts!.size
+      for (const h of catalogHazards) {
+        const occCount = areaHazardCounts!.get(h.id)
+        if (occCount && occCount > 0) {
+          areaFilteredStats!.peligros.push({
+            id: h.id,
+            codigo: h.codigo,
+            descripcion: h.descripcion,
+            clasificacion: h.clasificacion,
+            nivelRiesgo: classifyRiskLevel(h.interpProbabilidad, h.nivelProbabilidad),
+            ocurrenciasEnArea: occCount,
+            planesCount: h._count.planesAccion,
+          })
         }
       }
+    }
 
-      if (selectedArea && hazardOccurrencesInSelectedArea > 0) {
-        areaFilteredStats!.totalPeligrosUnicos++
-        areaFilteredStats!.peligros.push({
-          id: h.id,
-          codigo: h.codigo,
-          descripcion: h.descripcion,
-          clasificacion: h.clasificacion,
-          nivelRiesgo: catRisk,
-          ocurrenciasEnArea: hazardOccurrencesInSelectedArea,
-          planesCount: h.planesAccion.length,
-        })
-      }
-
-      topPeligrosRepetidos.push({
+    // Build topPeligrosRepetidos
+    const topPeligrosRepetidos = catalogHazards.map((h: any) => {
+      const agg = occMap.get(h.id) || { total_ocurrencias: 0, matrices_count: 0, areas_count: 0 }
+      return {
         id: h.id,
         codigo: h.codigo,
         descripcion: h.descripcion,
         clasificacion: h.clasificacion,
-        nivelRiesgo: catRisk,
+        nivelRiesgo: classifyRiskLevel(h.interpProbabilidad, h.nivelProbabilidad),
         interpRiesgo: h.interpRiesgo,
-        totalOcurrencias: h.peligrosMatriz.length,
-        matricesCount: matricesSet.size,
-        areasCount: areasSet.size,
-        porcentajeMatrices: activeMatrices.length > 0
-          ? Math.round((matricesSet.size / activeMatrices.length) * 100)
-          : 0,
-        planesCount: h.planesAccion.length,
-      })
-    }
+        totalOcurrencias: agg.total_ocurrencias,
+        matricesCount: agg.matrices_count,
+        areasCount: agg.areas_count,
+        porcentajeMatrices: activeMatrices.length > 0 ? Math.round((agg.matrices_count / activeMatrices.length) * 100) : 0,
+        planesCount: h._count.planesAccion,
+      }
+    })
 
     // Sort top repeated hazards descending
-    topPeligrosRepetidos.sort((a, b) => b.totalOcurrencias - a.totalOcurrencias)
+    topPeligrosRepetidos.sort((a: any, b: any) => b.totalOcurrencias - a.totalOcurrencias)
 
     // Sort areas by total occurrences descending
     const areasRanking = Array.from(areasMap.values())

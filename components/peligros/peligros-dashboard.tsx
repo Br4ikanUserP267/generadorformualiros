@@ -16,6 +16,8 @@ import {
   AlertOctagon,
   Clock,
   Loader2,
+  ChevronLeft,
+  ChevronRight,
 } from 'lucide-react'
 import { AppSidebar } from '@/components/dashboard/app-sidebar'
 import { DashboardHeader } from '@/components/dashboard/dashboard-header'
@@ -55,6 +57,12 @@ export function PeligrosDashboard() {
   const [selectedClasificacion, setSelectedClasificacion] = useState('TODOS')
   const [selectedNivelRiesgo, setSelectedNivelRiesgo] = useState('TODOS')
 
+  // Pagination
+  const [currentPage, setCurrentPage] = useState(1)
+  const [pageSize, setPageSize] = useState(10)
+  const [totalItems, setTotalItems] = useState(0)
+  const [totalPages, setTotalPages] = useState(1)
+
   // Modals state
   const [showPeligroModal, setShowPeligroModal] = useState(false)
   const [editingPeligro, setEditingPeligro] = useState<any | null>(null)
@@ -89,10 +97,12 @@ export function PeligrosDashboard() {
     loadClassifications()
   }, [])
 
-  const fetchCatalog = async () => {
+  const fetchCatalog = async (pageToFetch = currentPage, sizeToFetch = pageSize) => {
     setLoading(true)
     try {
       const params = new URLSearchParams()
+      params.append('page', String(pageToFetch))
+      params.append('pageSize', String(sizeToFetch))
       if (searchTerm.trim()) params.append('q', searchTerm.trim())
       if (selectedClasificacion !== 'TODOS') params.append('clasificacion', selectedClasificacion)
       if (selectedNivelRiesgo !== 'TODOS') params.append('nivelRiesgo', selectedNivelRiesgo)
@@ -101,6 +111,9 @@ export function PeligrosDashboard() {
       if (res.ok) {
         const data = await res.json()
         setItems(data.items || [])
+        setTotalItems(Number(data.total || 0))
+        setTotalPages(Number(data.totalPages || 1))
+        setCurrentPage(Number(data.page || pageToFetch))
         if (data.summary) {
           setSummary({
             totalCatalog: Number(data.summary.totalCatalog || 0),
@@ -125,13 +138,18 @@ export function PeligrosDashboard() {
     }
   }
 
+  // Reset to page 1 whenever filters change
+  useEffect(() => {
+    setCurrentPage(1)
+  }, [searchTerm, selectedClasificacion, selectedNivelRiesgo])
+
   useEffect(() => {
     const delayDebounce = setTimeout(() => {
-      fetchCatalog()
+      fetchCatalog(currentPage, pageSize)
     }, 250)
 
     return () => clearTimeout(delayDebounce)
-  }, [searchTerm, selectedClasificacion, selectedNivelRiesgo])
+  }, [searchTerm, selectedClasificacion, selectedNivelRiesgo, currentPage, pageSize])
 
   // Sync / Extract from matrices
   const handleSyncFromMatrices = async () => {
@@ -405,13 +423,27 @@ export function PeligrosDashboard() {
 
           {/* Catalog Items List / Table */}
           <div className="bg-white border border-[#dfe9e2] rounded-3xl shadow-xs overflow-hidden flex flex-col">
-            <div className="px-6 py-4 bg-[linear-gradient(180deg,#fcfdfc_0%,#f4f8f5_100%)] border-b border-[#dfe9e2] flex items-center justify-between">
+            <div className="px-6 py-4 bg-[linear-gradient(180deg,#fcfdfc_0%,#f4f8f5_100%)] border-b border-[#dfe9e2] flex flex-col sm:flex-row sm:items-center justify-between gap-3">
               <div>
                 <h3 className="text-sm font-black text-[#163522]">Peligros Registrados en el Catálogo</h3>
                 <p className="text-xs text-[#7a9182] font-medium">
-                  Mostrando {items.length} {items.length === 1 ? 'peligro' : 'peligros'}
+                  {totalItems > 0 ? (
+                    <>
+                      Mostrando <span className="font-bold text-[#1F7D3E] tabular-nums">{(currentPage - 1) * pageSize + 1}</span> –{' '}
+                      <span className="font-bold text-[#1F7D3E] tabular-nums">{Math.min(totalItems, currentPage * pageSize)}</span> de{' '}
+                      <span className="font-bold text-[#1F7D3E] tabular-nums">{totalItems}</span> peligros
+                    </>
+                  ) : (
+                    '0 peligros encontrados'
+                  )}
                 </p>
               </div>
+
+              {totalPages > 1 && (
+                <div className="text-xs font-bold text-[#5e6b62]">
+                  Página <span className="text-[#1F7D3E] font-black">{currentPage}</span> de <span className="text-[#163522]">{totalPages}</span>
+                </div>
+              )}
             </div>
 
             {loading ? (
@@ -573,6 +605,93 @@ export function PeligrosDashboard() {
                     </div>
                   )
                 })}
+              </div>
+            )}
+
+            {/* Pagination Controls Bar */}
+            {!loading && totalItems > 0 && (
+              <div className="px-6 py-4 bg-[linear-gradient(180deg,#fcfdfc_0%,#f4f8f5_100%)] border-t border-[#dfe9e2] flex flex-col sm:flex-row items-center justify-between gap-4">
+                {/* Left: Range text */}
+                <div className="text-xs font-semibold text-[#5e6b62]">
+                  Mostrando{' '}
+                  <span className="font-bold text-[#1F7D3E] tabular-nums">
+                    {(currentPage - 1) * pageSize + 1}
+                  </span>{' '}
+                  –{' '}
+                  <span className="font-bold text-[#1F7D3E] tabular-nums">
+                    {Math.min(totalItems, currentPage * pageSize)}
+                  </span>{' '}
+                  de{' '}
+                  <span className="font-bold text-[#1F7D3E] tabular-nums">{totalItems}</span> peligros
+                </div>
+
+                {/* Center: Numeric page buttons */}
+                {totalPages > 1 && (
+                  <div className="flex items-center gap-1.5">
+                    <button
+                      type="button"
+                      disabled={currentPage <= 1}
+                      onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                      aria-label="Página anterior"
+                      className="size-8 rounded-xl border border-[#dfe9e2] bg-white flex items-center justify-center text-[#5e6b62] hover:bg-[#eef7f0] hover:border-[#cbdad0] hover:text-[#1F7D3E] disabled:opacity-40 disabled:pointer-events-none transition-all cursor-pointer shadow-2xs"
+                    >
+                      <ChevronLeft className="size-4" />
+                    </button>
+
+                    {Array.from({ length: totalPages }, (_, i) => i + 1)
+                      .filter((p) => p === 1 || p === totalPages || Math.abs(p - currentPage) <= 1)
+                      .map((p, index, array) => {
+                        const showEllipsis = index > 0 && p - array[index - 1] > 1
+
+                        return (
+                          <React.Fragment key={p}>
+                            {showEllipsis && (
+                              <span className="px-1 text-xs text-[#8aa08f]">...</span>
+                            )}
+                            <button
+                              type="button"
+                              onClick={() => setCurrentPage(p)}
+                              className={`size-8 rounded-xl text-xs font-black transition-all cursor-pointer ${
+                                currentPage === p
+                                  ? 'bg-[#1F7D3E] text-white shadow-xs'
+                                  : 'border border-[#dfe9e2] bg-white text-[#5e6b62] hover:bg-[#eef7f0] hover:border-[#cbdad0] hover:text-[#1F7D3E] shadow-2xs'
+                              }`}
+                            >
+                              {p}
+                            </button>
+                          </React.Fragment>
+                        )
+                      })}
+
+                    <button
+                      type="button"
+                      disabled={currentPage >= totalPages}
+                      onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+                      aria-label="Página siguiente"
+                      className="size-8 rounded-xl border border-[#dfe9e2] bg-white flex items-center justify-center text-[#5e6b62] hover:bg-[#eef7f0] hover:border-[#cbdad0] hover:text-[#1F7D3E] disabled:opacity-40 disabled:pointer-events-none transition-all cursor-pointer shadow-2xs"
+                    >
+                      <ChevronRight className="size-4" />
+                    </button>
+                  </div>
+                )}
+
+                {/* Right: Page Size Selector */}
+                <div className="flex items-center gap-2">
+                  <span className="text-xs font-bold text-[#5e6b62]">Mostrar:</span>
+                  <select
+                    value={pageSize}
+                    onChange={(e) => {
+                      setPageSize(Number(e.target.value))
+                      setCurrentPage(1)
+                    }}
+                    className="py-1 px-2.5 rounded-xl text-xs font-bold text-[#163522] bg-[#fbfdfb] border border-[#d1e2d6] focus:outline-none focus:border-[#1F7D3E] cursor-pointer shadow-2xs"
+                  >
+                    <option value={10}>10 por página</option>
+                    <option value={20}>20 por página</option>
+                    <option value={50}>50 por página</option>
+                    <option value={100}>100 por página</option>
+                  </select>
+                </div>
               </div>
             )}
           </div>

@@ -2,12 +2,20 @@ import { NextApiRequest } from 'next'
 import prisma from './prisma'
 
 export async function getAuthUser(req: NextApiRequest) {
+  if ((req as any)._authUser !== undefined) {
+    return (req as any)._authUser
+  }
+
   const token = req.cookies['auth_token']
-  if (!token) return null
+  if (!token) {
+    (req as any)._authUser = null
+    return null
+  }
 
   try {
     const decoded = JSON.parse(Buffer.from(token, 'base64').toString())
     if (!decoded?.email || !decoded?.exp || decoded.exp < Date.now()) {
+      (req as any)._authUser = null
       return null
     }
 
@@ -16,15 +24,21 @@ export async function getAuthUser(req: NextApiRequest) {
       where: { email: decoded.email }
     })
 
-    if (!user) return null
+    if (!user) {
+      (req as any)._authUser = null
+      return null
+    }
 
     // Inject role from token (since Risks DB doesn't have roles)
-    return {
+    const authUser = {
       ...user,
       role: decoded.role,
       cargo: decoded.cargo
-    }
+    };
+    (req as any)._authUser = authUser
+    return authUser
   } catch (error) {
+    (req as any)._authUser = null
     return null
   }
 }

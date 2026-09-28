@@ -9,6 +9,7 @@ import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { apiFetch } from '@/lib/utils'
 import { useAuth } from '@/lib/auth-context'
+import { aceptabilidadColor } from '@/lib/gtc45-utils'
 
 type PeligroReporteItem = {
   id: string
@@ -38,26 +39,18 @@ type CountsResponse = {
 }
 
 const ACEPTABILIDAD_LEVELS = [
-  { key: 'Muy Alto', color: '#a50000', icon: '🔴' },
-  { key: 'Alto', color: '#ef4444', icon: '🔴' },
-  { key: 'Medio', color: '#EAB308', icon: '🟡' },
-  { key: 'Bajo', color: '#198754', icon: '🟢' },
+  { key: 'Muy Alto', color: '#b91c1c', icon: '🔴' },
+  { key: 'Alto', color: '#f87171', icon: '🔴' },
+  { key: 'Medio', color: '#eab308', icon: '🟡' },
+  { key: 'Bajo', color: '#16a34a', icon: '🟢' },
 ] as const
 
 function levelColor(label: string) {
-  const norm = label.toLowerCase().trim()
-  if (norm === 'muy alto') return '#a50000'              // NP: Muy Alto = Deep Red
-  if (norm === 'alto' || norm === 'i') return '#ef4444'   // NP: Alto = Red, NR: I = Red
-  if (norm === 'medio' || norm === 'ii') return '#EAB308' // NP: Medio = Yellow, NR: II = Yellow
-  if (norm === 'bajo' || norm === 'iii' || norm === 'iv') return '#198754' // Green
-  return '#64748b'
-}
-
-function aceptabilidadColor(aceptabilidad: string) {
-  if (aceptabilidad === 'No Aceptable') return '#ef4444'                    // Red
-  if (aceptabilidad === 'Aceptable con Control Especifico') return '#EAB308' // Yellow
-  if (aceptabilidad === 'Mejorable') return '#198754'                        // Green
-  if (aceptabilidad === 'Aceptable') return '#198754'                       // Green
+  const norm = (label || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim()
+  if (norm === 'muy alto' || norm === 'i') return '#b91c1c'              // Muy Alto / I = Dark Red
+  if (norm === 'alto') return '#f87171'                                  // Alto = Pastel Red
+  if (norm === 'medio' || norm === 'ii') return '#eab308'                // Medio / II = Yellow
+  if (norm === 'bajo' || norm === 'iii' || norm === 'iv') return '#16a34a' // Bajo / III / IV = Green
   return '#64748b'
 }
 

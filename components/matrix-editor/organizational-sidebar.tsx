@@ -56,7 +56,44 @@ function getStableActividadLabel(actividad: any, fallbackIndex: number) {
   return baseLabel
 }
 
-export function OrganizationalSidebar({
+function areProcesosStructureEqual(a: any[], b: any[]): boolean {
+  if (a === b) return true
+  if (!a || !b || a.length !== b.length) return false
+  for (let i = 0; i < a.length; i++) {
+    const pA = a[i]
+    const pB = b[i]
+    if (pA.id !== pB.id || pA.nombre !== pB.nombre || pA.orden !== pB.orden) return false
+    const zA = pA.zonas || []
+    const zB = pB.zonas || []
+    if (zA.length !== zB.length) return false
+    for (let j = 0; j < zA.length; j++) {
+      const z1 = zA[j]
+      const z2 = zB[j]
+      if (z1.id !== z2.id || z1.nombre !== z2.nombre || z1.orden !== z2.orden) return false
+      const actA = z1.actividades || []
+      const actB = z2.actividades || []
+      if (actA.length !== actB.length) return false
+      for (let k = 0; k < actA.length; k++) {
+        const a1 = actA[k]
+        const a2 = actB[k]
+        if (
+          a1.id !== a2.id ||
+          a1.nombre !== a2.nombre ||
+          a1.descripcion !== a2.descripcion ||
+          a1.tareas !== a2.tareas ||
+          a1.cargo !== a2.cargo ||
+          a1.rutinario !== a2.rutinario ||
+          a1.orden !== a2.orden
+        ) {
+          return false
+        }
+      }
+    }
+  }
+  return true
+}
+
+export const OrganizationalSidebar = React.memo(function OrganizationalSidebar({
   procesos,
   filteredProcesos,
   searchTerm,
@@ -399,4 +436,23 @@ export function OrganizationalSidebar({
       />
     </aside>
   )
-}
+}, (prev, next) => {
+  if (prev.searchTerm !== next.searchTerm) return false
+  if (prev.selected?.procesoId !== next.selected?.procesoId) return false
+  if (prev.selected?.zonaId !== next.selected?.zonaId) return false
+  if (prev.selected?.actividadId !== next.selected?.actividadId) return false
+  if (prev.dragOverActividadId !== next.dragOverActividadId) return false
+  if (prev.dragOverActividadEdge !== next.dragOverActividadEdge) return false
+  if (prev.files !== next.files && ((prev.files?.length || 0) !== (next.files?.length || 0))) return false
+  if (prev.expandedZonaIds !== next.expandedZonaIds) {
+    const prevKeys = Object.keys(prev.expandedZonaIds || {})
+    const nextKeys = Object.keys(next.expandedZonaIds || {})
+    if (prevKeys.length !== nextKeys.length) return false
+    for (const k of prevKeys) {
+      if (prev.expandedZonaIds[k] !== next.expandedZonaIds[k]) return false
+    }
+  }
+  if (!areProcesosStructureEqual(prev.procesos, next.procesos)) return false
+  return true
+})
+

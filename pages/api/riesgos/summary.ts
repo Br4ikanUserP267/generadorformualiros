@@ -60,21 +60,14 @@ function parseDate(value: unknown) {
 function classifyRiskLevelForCounts(evalObj: any): 0 | 1 | 2 | 3 {
   if (!evalObj) return 3 // Bajo
 
-  // 1. Prioritize Nivel de Riesgo (NR / interpRiesgo) according to GTC 45
-  const interpNr = String(evalObj.interpRiesgo || evalObj.interp_nr || evalObj.interpNivelRiesgo || '').toUpperCase()
-  if (interpNr.startsWith('I ') || interpNr === 'I' || (interpNr.includes('I') && !interpNr.includes('II') && !interpNr.includes('IV'))) return 0
-  if (interpNr.startsWith('II ') || interpNr === 'II' || (interpNr.includes('II') && !interpNr.includes('III'))) return 1
-  if (interpNr.startsWith('III ') || interpNr === 'III' || interpNr.includes('III') || interpNr.includes('MEJORABLE') || interpNr.includes('MODERADO')) return 2
-  if (interpNr.startsWith('IV ') || interpNr === 'IV' || interpNr.includes('IV') || interpNr.includes('ACEPTABLE') || interpNr.includes('BAJO')) return 3
+  // 1. Prioritize Interpretación (NP) / Nivel de Probabilidad
+  const interpNp = String(evalObj.interpProbabilidad || evalObj.interp_np || '').toUpperCase().trim()
+  if (interpNp.includes('MUY ALTO') || interpNp === 'MA' || interpNp === 'EXTREMO') return 0
+  if (interpNp.includes('ALTO') || interpNp === 'A') return 1
+  if (interpNp.includes('MEDIO') || interpNp.includes('MODERADO') || interpNp === 'M') return 2
+  if (interpNp.includes('BAJO') || interpNp === 'B') return 3
 
-  // 2. Numeric NR (Nivel de Riesgo GTC 45)
-  const nr = Number(evalObj.nivelRiesgo ?? evalObj.nr ?? 0)
-  if (nr >= 600) return 0     // Nivel I (Muy Alto)
-  if (nr >= 150) return 1     // Nivel II (Alto)
-  if (nr >= 40) return 2      // Nivel III (Medio / Moderado)
-  if (nr > 0) return 3       // Nivel IV (Bajo)
-
-  // 3. Fallback to NP (Nivel de Probabilidad) if NR is missing
+  // 2. Numeric NP (Nivel de Probabilidad)
   const np = Number(evalObj.nivelProbabilidad ?? evalObj.np ?? 0)
   if (np >= 24) return 0
   if (np >= 10) return 1
@@ -82,6 +75,22 @@ function classifyRiskLevelForCounts(evalObj: any): 0 | 1 | 2 | 3 {
   if (np > 0) return 3
 
   return 3 // Default to Bajo
+}
+
+function getEffectiveEvaluation(peligro: any) {
+  const post = peligro?.evaluacionPost
+  const isPostActive = Boolean(
+    post && (
+      (post.interpProbabilidad && String(post.interpProbabilidad).trim() !== '') ||
+      (post.interp_np && String(post.interp_np).trim() !== '') ||
+      (post.nivelProbabilidad !== null && post.nivelProbabilidad !== undefined && Number(post.nivelProbabilidad) > 0) ||
+      (post.np !== null && post.np !== undefined && Number(post.np) > 0) ||
+      (post.nivelRiesgo !== null && post.nivelRiesgo !== undefined && Number(post.nivelRiesgo) > 0) ||
+      (post.nr !== null && post.nr !== undefined && Number(post.nr) > 0) ||
+      (post.aceptabilidad && String(post.aceptabilidad).trim() !== '')
+    )
+  )
+  return isPostActive ? post : peligro?.evaluacion
 }
 
 function computeCountsFromSummary(summary: any) {
@@ -100,7 +109,7 @@ function computeCountsFromSummary(summary: any) {
         const peligros = actividad?.peligros || []
         totalPeligros += peligros.length
         for (const peligro of peligros) {
-          const evalActual = peligro?.evaluacionPost || peligro?.evaluacion
+          const evalActual = getEffectiveEvaluation(peligro)
           const lvlIdx = classifyRiskLevelForCounts(evalActual)
           counts[lvlIdx] += 1
         }
@@ -231,7 +240,126 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const queryConditions = [...baseConditions, ...searchConditions]
     const where: Prisma.MatrizWhereInput = queryConditions.length > 1 ? { AND: queryConditions } : { deletedAt: null }
 
-    const [total, matrices, totalsSource] = await Promise.all([
+    const fetchTotalsPromise: Promise<SummaryTotals | null> = search
+      ? Promise.resolve(null)
+      : (async () => {
+          const hasCustomFilters = Boolean(tipo || clasificacion || dateDesde || dateHasta)
+          if (!hasCustomFilters) {
+            try {
+              const [countsResult, matrixCounts] = await Promise.all([
+                (prisma as any).$queryRawUnsafe(`
+                  WITH active_data AS (
+                    SELECT 
+                      p.id,
+                      COALESCE(NULLIF(TRIM(ep.interp_probabilidad), ''), NULLIF(TRIM(e.interp_probabilidad), ''), '') as interp_np,
+                      CASE 
+                        WHEN ep.nivel_probabilidad IS NOT NULL AND ep.nivel_probabilidad > 0 THEN ep.nivel_probabilidad
+                        WHEN e.nivel_probabilidad IS NOT NULL AND e.nivel_probabilidad > 0 THEN e.nivel_probabilidad
+                        ELSE 0
+                      END as np
+                    FROM peligros p
+                    JOIN actividades a ON p.actividad_id = a.id AND a.deleted_at IS NULL
+                    JOIN zonas z ON a.zona_id = z.id AND z.deleted_at IS NULL
+                    JOIN procesos pr ON z.proceso_id = pr.id AND pr.deleted_at IS NULL
+                    JOIN matrices m ON pr.matriz_id = m.id AND m.deleted_at IS NULL
+                    LEFT JOIN evaluaciones e ON e.peligro_id = p.id
+                    LEFT JOIN evaluaciones_post ep ON ep.peligro_id = p.id
+                    WHERE p.deleted_at IS NULL
+                  )
+                  SELECT 
+                    COUNT(*)::int AS total_peligros,
+                    COUNT(*) FILTER (
+                      WHERE np >= 24 OR UPPER(interp_np) LIKE '%MUY ALTO%' OR UPPER(interp_np) = 'MA' OR UPPER(interp_np) = 'EXTREMO'
+                    )::int AS ma_count,
+                    COUNT(*) FILTER (
+                      WHERE (np >= 10 AND np < 24) OR (UPPER(interp_np) LIKE '%ALTO%' AND UPPER(interp_np) NOT LIKE '%MUY ALTO%') OR UPPER(interp_np) = 'A'
+                    )::int AS al_count,
+                    COUNT(*) FILTER (
+                      WHERE (np >= 6 AND np < 10) OR UPPER(interp_np) LIKE '%MEDIO%' OR UPPER(interp_np) LIKE '%MODERADO%' OR UPPER(interp_np) = 'M'
+                    )::int AS me_count
+                  FROM active_data;
+                `) as Promise<Array<{
+                  total_peligros: number
+                  ma_count: number
+                  al_count: number
+                  me_count: number
+                }>>,
+                (prisma as any).$queryRawUnsafe(`
+                  SELECT 
+                    (SELECT COUNT(*)::int FROM matrices WHERE deleted_at IS NULL) as total_matrices,
+                    (SELECT COUNT(*)::int FROM procesos p JOIN matrices m ON p.matriz_id = m.id WHERE p.deleted_at IS NULL AND m.deleted_at IS NULL) as total_procesos,
+                    (SELECT COUNT(*)::int FROM zonas z JOIN procesos p ON z.proceso_id = p.id JOIN matrices m ON p.matriz_id = m.id WHERE z.deleted_at IS NULL AND p.deleted_at IS NULL AND m.deleted_at IS NULL) as total_zonas,
+                    (SELECT COUNT(*)::int FROM actividades a JOIN zonas z ON a.zona_id = z.id JOIN procesos p ON z.proceso_id = p.id JOIN matrices m ON p.matriz_id = m.id WHERE a.deleted_at IS NULL AND z.deleted_at IS NULL AND p.deleted_at IS NULL AND m.deleted_at IS NULL) as total_actividades;
+                `) as Promise<Array<{
+                  total_matrices: number
+                  total_procesos: number
+                  total_zonas: number
+                  total_actividades: number
+                }>>
+              ])
+
+              const cr = countsResult[0] || { total_peligros: 0, ma_count: 0, al_count: 0, me_count: 0 }
+              const mc = matrixCounts[0] || { total_matrices: 0, total_procesos: 0, total_zonas: 0, total_actividades: 0 }
+              const baCount = cr.total_peligros - cr.ma_count - cr.al_count - cr.me_count
+
+              return {
+                totalMatrices: mc.total_matrices,
+                totalProcesos: mc.total_procesos,
+                totalZonas: mc.total_zonas,
+                totalActividades: mc.total_actividades,
+                totalPeligros: cr.total_peligros,
+                counts: [cr.ma_count, cr.al_count, cr.me_count, baCount]
+              }
+            } catch (err) {
+              console.warn('Fallback to Prisma for summary totals:', err)
+            }
+          }
+
+          const fallbackTotalsSource = await (prisma.matriz.findMany as any)({
+            where: whereBase,
+            select: {
+              procesos: {
+                where: { deletedAt: null },
+                select: {
+                  zonas: {
+                    where: { deletedAt: null },
+                    select: {
+                      actividades: {
+                        where: { deletedAt: null },
+                        select: {
+                          peligros: {
+                            where: { deletedAt: null },
+                            select: {
+                              evaluacion: {
+                                select: {
+                                  nivelRiesgo: true,
+                                  nivelProbabilidad: true,
+                                  interpProbabilidad: true,
+                                  interpRiesgo: true,
+                                },
+                              },
+                              evaluacionPost: {
+                                select: {
+                                  nivelRiesgo: true,
+                                  nivelProbabilidad: true,
+                                  interpProbabilidad: true,
+                                  interpRiesgo: true,
+                                },
+                              },
+                            },
+                          },
+                        },
+                      },
+                    },
+                  },
+                },
+              },
+            },
+          })
+          return computeTotalsFromMatrices(fallbackTotalsSource)
+        })()
+
+    const [total, matrices, totals] = await Promise.all([
       prisma.matriz.count({ where }),
       (prisma.matriz.findMany as any)({
         where,
@@ -243,15 +371,19 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           fechaActualizacion: true,
           _count: { select: { procesos: true } },
           procesos: {
+            where: { deletedAt: null },
             select: {
               nombre: true,
               zonas: {
+                where: { deletedAt: null },
                 select: {
                   nombre: true,
                   actividades: {
+                    where: { deletedAt: null },
                     select: {
                       _count: { select: { peligros: true } },
                       peligros: {
+                        where: { deletedAt: null },
                         select: {
                           clasificacion: true,
                           evaluacion: {
@@ -285,50 +417,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         take: pageSize,
         skip,
       }),
-      search ? Promise.resolve(null) : (prisma.matriz.findMany as any)({
-        where: whereBase,
-        select: {
-          procesos: {
-            select: {
-              zonas: {
-                select: {
-                  actividades: {
-                    select: {
-                      peligros: {
-                        select: {
-                          evaluacion: {
-                            select: {
-                              nivelRiesgo: true,
-                              nivelProbabilidad: true,
-                              interpProbabilidad: true,
-                              interpRiesgo: true,
-                              aceptabilidad: true,
-                            },
-                          },
-                          evaluacionPost: {
-                            select: {
-                              nivelRiesgo: true,
-                              nivelProbabilidad: true,
-                              interpProbabilidad: true,
-                              interpRiesgo: true,
-                              aceptabilidad: true,
-                            },
-                          },
-                        },
-                      },
-                    },
-                  },
-                },
-              },
-            },
-          },
-        } as any,
-      }),
+      fetchTotalsPromise,
     ])
 
     const totalPages = Math.max(1, Math.ceil(total / pageSize))
     const safePage = Math.min(page, totalPages)
-    const totals = totalsSource ? computeTotalsFromMatrices(totalsSource) : null
 
     const items: SummaryMatrixRow[] = matrices.map((matrix: any) => {
       const computed = computeCountsFromSummary(matrix)

@@ -13,6 +13,8 @@ import {
   AlertOctagon,
   Clock,
   Loader2,
+  ChevronLeft,
+  ChevronRight,
 } from 'lucide-react'
 import {
   CLASIFICACIONES_RIESGO,
@@ -45,6 +47,10 @@ export function SelectPeligroCatalogModal({
   const [previewItem, setPreviewItem] = useState<any | null>(null)
   const [classificationsList, setClassificationsList] = useState<string[]>(Array.from(CLASIFICACIONES_RIESGO))
   const [detailedCounts, setDetailedCounts] = useState<Record<string, number>>({})
+
+  // Modal Pagination
+  const [currentPage, setCurrentPage] = useState(1)
+  const [pageSize, setPageSize] = useState(10)
 
   useEffect(() => {
     if (open) {
@@ -109,6 +115,15 @@ export function SelectPeligroCatalogModal({
 
     return matchesSearch && matchesClasif && matchesRisk
   })
+
+  // Reset page when filters change
+  useEffect(() => {
+    setCurrentPage(1)
+  }, [searchTerm, selectedClasificacion, selectedNivelRiesgo])
+
+  const totalItems = filteredItems.length
+  const totalPages = Math.max(1, Math.ceil(totalItems / pageSize))
+  const paginatedItems = filteredItems.slice((currentPage - 1) * pageSize, currentPage * pageSize)
 
   const toggleSelect = (id: string) => {
     setSelectedIds((prev) =>
@@ -218,7 +233,7 @@ export function SelectPeligroCatalogModal({
               </div>
             ) : (
               <div className="space-y-3">
-                {filteredItems.map((item) => {
+                {paginatedItems.map((item) => {
                   const isChecked = selectedIds.includes(item.id)
                   const riskInfo = interpNivelRiesgo(Number(item.nivelRiesgo || 0))
 
@@ -323,6 +338,59 @@ export function SelectPeligroCatalogModal({
               </div>
             )}
           </div>
+
+          {/* Pagination Bar inside Modal */}
+          {totalItems > 0 && (
+            <div className="px-6 py-3 bg-[#f8faf9] border-t border-[#dfe9e2] flex flex-col sm:flex-row items-center justify-between gap-3 shrink-0">
+              <div className="text-xs font-semibold text-[#5e6b62]">
+                Mostrando <span className="font-bold text-[#1F7D3E] tabular-nums">{(currentPage - 1) * pageSize + 1}</span> –{' '}
+                <span className="font-bold text-[#1F7D3E] tabular-nums">{Math.min(totalItems, currentPage * pageSize)}</span> de{' '}
+                <span className="font-bold text-[#1F7D3E] tabular-nums">{totalItems}</span> peligros
+              </div>
+
+              {totalPages > 1 && (
+                <div className="flex items-center gap-1.5">
+                  <button
+                    type="button"
+                    disabled={currentPage <= 1}
+                    onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                    className="size-7 rounded-lg border border-[#dfe9e2] bg-white flex items-center justify-center text-[#5e6b62] hover:bg-[#eef7f0] disabled:opacity-40 disabled:pointer-events-none cursor-pointer"
+                  >
+                    <ChevronLeft className="size-3.5" />
+                  </button>
+
+                  <span className="text-xs font-bold text-[#163522] px-2">
+                    {currentPage} / {totalPages}
+                  </span>
+
+                  <button
+                    type="button"
+                    disabled={currentPage >= totalPages}
+                    onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+                    className="size-7 rounded-lg border border-[#dfe9e2] bg-white flex items-center justify-center text-[#5e6b62] hover:bg-[#eef7f0] disabled:opacity-40 disabled:pointer-events-none cursor-pointer"
+                  >
+                    <ChevronRight className="size-3.5" />
+                  </button>
+                </div>
+              )}
+
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-bold text-[#5e6b62]">Mostrar:</span>
+                <select
+                  value={pageSize}
+                  onChange={(e) => {
+                    setPageSize(Number(e.target.value))
+                    setCurrentPage(1)
+                  }}
+                  className="py-1 px-2 rounded-lg text-xs font-bold text-[#163522] bg-white border border-[#d1e2d6] focus:outline-none cursor-pointer"
+                >
+                  <option value={10}>10 por pág.</option>
+                  <option value={20}>20 por pág.</option>
+                  <option value={50}>50 por pág.</option>
+                </select>
+              </div>
+            </div>
+          )}
 
           {/* Modal Footer */}
           <footer className="px-6 py-4 bg-white border-t border-[#dfe9e2] flex items-center justify-between gap-4 shrink-0">

@@ -39,7 +39,7 @@ function stringifyTasksList(items: string[]): string {
   return items.map((item, idx) => `${idx + 1}. ${item}`).join('\n')
 }
 
-export function ActivityDetailPanel({
+export const ActivityDetailPanel = React.memo(function ActivityDetailPanel({
   description,
   tasksString,
   cargo = '',
@@ -374,4 +374,11 @@ export function ActivityDetailPanel({
       )}
     </div>
   )
-}
+}, (prev, next) => {
+  return (
+    prev.description === next.description &&
+    prev.tasksString === next.tasksString &&
+    prev.cargo === next.cargo
+  )
+})
+

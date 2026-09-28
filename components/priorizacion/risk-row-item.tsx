@@ -65,7 +65,7 @@ function getInitialStateBadge(interp: string) {
     return {
       label: 'MUY ALTO',
       bg: 'bg-red-50',
-      text: 'text-[#a50000]',
+      text: 'text-[#b91c1c]',
       border: 'border-red-200',
       icon: AlertTriangle,
     }
@@ -74,9 +74,9 @@ function getInitialStateBadge(interp: string) {
   if (norm.includes('ALTO')) {
     return {
       label: 'ALTO',
-      bg: 'bg-rose-50',
-      text: 'text-[#ef4444]',
-      border: 'border-rose-200',
+      bg: 'bg-red-50',
+      text: 'text-[#f87171]',
+      border: 'border-red-200',
       icon: AlertTriangle,
     }
   }
@@ -84,19 +84,19 @@ function getInitialStateBadge(interp: string) {
   if (norm.includes('MEDIO')) {
     return {
       label: 'MEDIO',
-      bg: 'bg-amber-50',
-      text: 'text-[#d97706]',
-      border: 'border-amber-200',
+      bg: 'bg-yellow-50',
+      text: 'text-[#eab308]',
+      border: 'border-yellow-200',
       icon: AlertCircle,
     }
   }
 
   return {
-    label: interp || 'MEDIO',
-    bg: 'bg-amber-50',
-    text: 'text-[#d97706]',
-    border: 'border-amber-200',
-    icon: AlertCircle,
+    label: interp || 'BAJO',
+    bg: 'bg-emerald-50',
+    text: 'text-[#16a34a]',
+    border: 'border-emerald-200',
+    icon: CheckCircle2,
   }
 }
 
@@ -118,7 +118,7 @@ function getPostStateBadge(evalPost: RiskPrioritizationItem['evaluacionPost']) {
     return {
       label: 'MUY ALTO',
       bg: 'bg-red-50',
-      text: 'text-[#a50000]',
+      text: 'text-[#b91c1c]',
       border: 'border-red-200',
       icon: AlertTriangle,
       isPending: false,
@@ -128,9 +128,9 @@ function getPostStateBadge(evalPost: RiskPrioritizationItem['evaluacionPost']) {
   if (norm.includes('ALTO')) {
     return {
       label: 'ALTO',
-      bg: 'bg-rose-50',
-      text: 'text-[#ef4444]',
-      border: 'border-rose-200',
+      bg: 'bg-red-50',
+      text: 'text-[#f87171]',
+      border: 'border-red-200',
       icon: AlertTriangle,
       isPending: false,
     }
@@ -139,9 +139,9 @@ function getPostStateBadge(evalPost: RiskPrioritizationItem['evaluacionPost']) {
   if (norm.includes('MEDIO')) {
     return {
       label: 'MEDIO',
-      bg: 'bg-amber-50',
-      text: 'text-[#d97706]',
-      border: 'border-amber-200',
+      bg: 'bg-yellow-50',
+      text: 'text-[#eab308]',
+      border: 'border-yellow-200',
       icon: AlertCircle,
       isPending: false,
     }

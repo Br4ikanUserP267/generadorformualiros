@@ -29,7 +29,12 @@ import {
 } from 'lucide-react'
 import { apiFetch } from '@/lib/utils'
 import { exportMatrizToExcel } from '@/lib/matriz-excel-export'
-import { getClasificacionStyle } from '@/lib/gtc45-utils'
+import {
+  getClasificacionStyle,
+  interpProbabilidad,
+  interpNivelRiesgo,
+  aceptabilidadColor,
+} from '@/lib/gtc45-utils'
 import { PlanAccionPreviewModal } from '@/components/plan-accion/plan-accion-preview-modal'
 import {
   DropdownMenu,
@@ -107,32 +112,7 @@ function AnimatedNumber({ value }: { value: number }) {
   return <span>{displayValue}</span>
 }
 
-// Risk interpretation helpers matching GTC 45 & matrix editor
-function interpProbabilidad(np: number) {
-  if (!np) return { label: '', color: '#9CA3AF' }
-  if (np <= 4) return { label: 'Bajo', color: '#16a34a' }      // Green
-  if (np <= 8) return { label: 'Medio', color: '#d97706' }     // Yellow/Amber
-  if (np <= 20) return { label: 'Alto', color: '#dc2626' }     // Red
-  return { label: 'Muy Alto', color: '#991b1b' }               // Deep Red
-}
-
-function interpNivelRiesgo(nr: number) {
-  if (!nr) return { label: '', color: '#9CA3AF' }
-  if (nr <= 20) return { label: 'IV', color: '#16a34a' }       // IV = Green
-  if (nr <= 120) return { label: 'III', color: '#16a34a' }     // III = Green
-  if (nr <= 500) return { label: 'II', color: '#d97706' }      // II = Yellow
-  return { label: 'I', color: '#dc2626' }                      // I = Red
-}
-
-function aceptabilidadColor(text: string) {
-  if (!text) return '#9CA3AF'
-  if (text.includes('No Aceptable')) return '#dc2626'
-  if (text.includes('Control Especifico') || text.includes('Alto')) return '#ea580c'
-  if (text.includes('Mejorable') || text.includes('Medio')) return '#d97706'
-  if (text.includes('Aceptable') || text.includes('Bajo')) return '#16a34a'
-  return '#9CA3AF'
-}
-
+// Risk interpretation helper styling
 function getEvalFieldStyle(colKey: string, row: any) {
   if (colKey === 'interpNp') {
     const color = interpProbabilidad(Number(row.np || 0)).color

@@ -101,33 +101,19 @@ function useArcAnimation(trigger: any, durationMs = 900) {
 function classifyRiskLevel(evalObj: any): 'extremo' | 'alto' | 'moderado' | 'bajo' {
   if (!evalObj) return 'bajo'
 
-  // 1. Check NP interpretation if present
-  const interpNp = String(evalObj.interp_np || evalObj.interpProbabilidad || '').toLowerCase()
-  if (interpNp.includes('muy alto')) return 'extremo'
-  if (interpNp.includes('alto')) return 'alto'
-  if (interpNp.includes('medio') || interpNp.includes('moderado')) return 'moderado'
-  if (interpNp.includes('bajo')) return 'bajo'
+  // 1. Check NP interpretation string
+  const interpNp = String(evalObj.interp_np || evalObj.interpProbabilidad || '').toUpperCase().trim()
+  if (interpNp.includes('MUY ALTO') || interpNp === 'MA' || interpNp === 'EXTREMO') return 'extremo'
+  if (interpNp.includes('ALTO') || interpNp === 'A') return 'alto'
+  if (interpNp.includes('MEDIO') || interpNp.includes('MODERADO') || interpNp === 'M') return 'moderado'
+  if (interpNp.includes('BAJO') || interpNp === 'B') return 'bajo'
 
   // 2. Check numeric NP (Nivel de Probabilidad)
-  const np = Number(evalObj.np || 0)
-  if (np > 20) return 'extremo'
-  if (np > 8) return 'alto'
+  const np = Number(evalObj.np ?? evalObj.nivelProbabilidad ?? 0)
+  if (np >= 24) return 'extremo'
+  if (np >= 10) return 'alto'
   if (np >= 6) return 'moderado'
   if (np > 0) return 'bajo'
-
-  // 3. Fallback to NR (Nivel de Riesgo)
-  const nr = Number(evalObj.nr || 0)
-  if (nr > 500) return 'extremo'     // Nivel I
-  if (nr > 120) return 'alto'        // Nivel II
-  if (nr > 20) return 'moderado'     // Nivel III (40 - 120)
-  if (nr > 0) return 'bajo'          // Nivel IV (<= 20)
-
-  // 4. Fallback to NR text interpretation / aceptabilidad
-  const interpNr = String(evalObj.interp_nr || evalObj.nivel_riesgo || evalObj.aceptabilidad || '').toLowerCase()
-  if (interpNr.includes('i') && !interpNr.includes('ii') && !interpNr.includes('iv')) return 'extremo'
-  if (interpNr.includes('ii') && !interpNr.includes('iii')) return 'alto'
-  if (interpNr.includes('iii') || interpNr.includes('mejorable')) return 'moderado'
-  if (interpNr.includes('iv') || interpNr.includes('aceptable')) return 'bajo'
 
   return 'bajo'
 }
@@ -376,7 +362,46 @@ function RiskBreakdownList({
   )
 }
 
-export function ActivityRiskSummary({ peligros }: ActivityRiskSummaryProps) {
+function areActivityEvaluationsEqual(prev: Hazard[], next: Hazard[]): boolean {
+  if (prev === next) return true
+  if (!prev || !next || prev.length !== next.length) return false
+  for (let i = 0; i < prev.length; i++) {
+    const p1 = prev[i]
+    const p2 = next[i]
+    if (p1.id !== p2.id) return false
+    const e1 = p1.evaluacion
+    const e2 = p2.evaluacion
+    if (
+      (e1?.nd ?? null) !== (e2?.nd ?? null) ||
+      (e1?.ne ?? null) !== (e2?.ne ?? null) ||
+      (e1?.nc ?? null) !== (e2?.nc ?? null) ||
+      (e1?.np ?? null) !== (e2?.np ?? null) ||
+      (e1?.nr ?? null) !== (e2?.nr ?? null) ||
+      (e1?.interp_nr ?? '') !== (e2?.interp_nr ?? '') ||
+      (e1?.interp_np ?? '') !== (e2?.interp_np ?? '') ||
+      (e1?.aceptabilidad ?? '') !== (e2?.aceptabilidad ?? '')
+    ) {
+      return false
+    }
+    const ep1 = p1.evaluacionPost
+    const ep2 = p2.evaluacionPost
+    if (
+      (ep1?.nd ?? null) !== (ep2?.nd ?? null) ||
+      (ep1?.ne ?? null) !== (ep2?.ne ?? null) ||
+      (ep1?.nc ?? null) !== (ep2?.nc ?? null) ||
+      (ep1?.np ?? null) !== (ep2?.np ?? null) ||
+      (ep1?.nr ?? null) !== (ep2?.nr ?? null) ||
+      (ep1?.interp_nr ?? '') !== (ep2?.interp_nr ?? '') ||
+      (ep1?.interp_np ?? '') !== (ep2?.interp_np ?? '') ||
+      (ep1?.aceptabilidad ?? '') !== (ep2?.aceptabilidad ?? '')
+    ) {
+      return false
+    }
+  }
+  return true
+}
+
+export const ActivityRiskSummary = React.memo(function ActivityRiskSummary({ peligros }: ActivityRiskSummaryProps) {
   const [hoveredInherentKey, setHoveredInherentKey] = useState<string | null>(null)
   const [hoveredResidualKey, setHoveredResidualKey] = useState<string | null>(null)
 
@@ -585,5 +610,6 @@ export function ActivityRiskSummary({ peligros }: ActivityRiskSummaryProps) {
       </div>
     </div>
   )
-}
+}, (prev, next) => areActivityEvaluationsEqual(prev.peligros, next.peligros))
+
 

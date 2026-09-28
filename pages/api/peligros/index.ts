@@ -14,7 +14,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
   if (method === 'GET') {
     try {
-      const { q, clasificacion, nivelRiesgo, limit, offset } = req.query
+      const { q, clasificacion, nivelRiesgo, limit, offset, page, pageSize } = req.query
 
       const where: any = {
         deletedAt: null,
@@ -57,8 +57,18 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         }
       }
 
-      const take = limit ? Math.min(500, Math.max(1, parseInt(String(limit), 10))) : undefined
-      const skip = offset ? Math.max(0, parseInt(String(offset), 10)) : undefined
+      let take: number | undefined = undefined
+      let skip: number | undefined = undefined
+
+      if (pageSize) {
+        const ps = Math.min(200, Math.max(1, parseInt(String(pageSize), 10)))
+        take = ps
+        const p = page ? Math.max(1, parseInt(String(page), 10)) : 1
+        skip = (p - 1) * ps
+      } else if (limit) {
+        take = Math.min(500, Math.max(1, parseInt(String(limit), 10)))
+        skip = offset ? Math.max(0, parseInt(String(offset), 10)) : 0
+      }
 
       const [totalCount, items, summaryCounts] = await Promise.all([
         prisma.peligroCatalogo.count({ where }),
@@ -104,8 +114,15 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
       const [totalCatalog, muyAltoCount, altoCount, medioCount, bajoCount] = summaryCounts
 
+      const currentPage = page ? Math.max(1, parseInt(String(page), 10)) : (skip && take ? Math.floor(skip / take) + 1 : 1)
+      const currentPageSize = take || totalCount
+      const totalPages = take ? Math.max(1, Math.ceil(totalCount / take)) : 1
+
       return res.status(200).json({
         total: totalCount,
+        page: currentPage,
+        pageSize: currentPageSize,
+        totalPages,
         items,
         summary: {
           totalCatalog,

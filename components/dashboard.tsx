@@ -68,7 +68,6 @@ export function Dashboard() {
   const versionsCacheRef = useRef<Record<string, { title: string; versions: MatrixVersionSummary[] }>>({})
   const versionDetailCacheRef = useRef<Record<string, MatrixVersionDetail>>({})
   const summariesCacheRef = useRef<Record<string, any>>({})
-  const prefetchTokenRef = useRef(0)
   const fetchTokenRef = useRef(0)
 
   const buildSummaryParams = (page: number) => {
@@ -103,23 +102,6 @@ export function Dashboard() {
     }
   }
 
-  const prefetchRemainingPages = async (fromPage: number, maxPage: number, token: number) => {
-    for (let p = fromPage; p <= maxPage; p++) {
-      if (prefetchTokenRef.current !== token) return
-      const params = buildSummaryParams(p)
-      const key = params.toString()
-      if (summariesCacheRef.current[key]) continue
-      try {
-        const res = await apiFetch(`/api/riesgos/summary?${key}`)
-        if (!res.ok) return
-        const body = await res.json()
-        summariesCacheRef.current[key] = body
-      } catch {
-        return
-      }
-    }
-  }
-
   const loadSummaries = async (page = 1) => {
     setIsLoading(true)
     const currentToken = ++fetchTokenRef.current
@@ -135,15 +117,6 @@ export function Dashboard() {
         const body = await res.json()
         summariesCacheRef.current[key] = body
         if (currentToken === fetchTokenRef.current) applySummaryPayload(body, page)
-      }
-
-      if (currentToken === fetchTokenRef.current) {
-        const currentBody = summariesCacheRef.current[key]
-        const maxPage = Number(currentBody?.totalPages || 1)
-        if (page === 1 && maxPage > 1) {
-          const token = ++prefetchTokenRef.current
-          void prefetchRemainingPages(2, maxPage, token)
-        }
       }
     } catch (error) {
       console.error('Error loading matrix summaries:', error)
@@ -174,7 +147,6 @@ export function Dashboard() {
   useEffect(() => {
     setCurrentPage(1)
     summariesCacheRef.current = {}
-    prefetchTokenRef.current += 1
   }, [search, dateDesde, dateHasta, tipoFilter, pageSize])
 
   const handleResetFilters = () => {

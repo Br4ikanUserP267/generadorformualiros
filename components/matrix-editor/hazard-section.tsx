@@ -24,7 +24,71 @@ interface HazardSectionProps {
   onDrop: (e: React.DragEvent, targetPeligroId: string | null) => void
 }
 
-export function HazardSection({
+interface MemoizedHazardRowProps {
+  hazard: any
+  hazardIndex: number
+  isHighlighted: boolean
+  isTargetEdge: 'before' | 'after' | null
+  onToggleExpand: (peligroId: string) => void
+  onChangeTab: (peligroId: string, tabIndex: number) => void
+  onUpdateField: (peligroId: string, path: string[], value: any) => void
+  onDuplicate: (peligroId: string) => void
+  onDelete: (peligroId: string) => void
+  onDragStart: (e: React.DragEvent, peligroId: string) => void
+  onDragEnd: () => void
+  onDragOver: (e: React.DragEvent, peligroId: string | null) => void
+  onDrop: (e: React.DragEvent, targetPeligroId: string | null) => void
+}
+
+const MemoizedHazardRow = React.memo(function MemoizedHazardRow({
+  hazard,
+  hazardIndex,
+  isHighlighted,
+  isTargetEdge,
+  onToggleExpand,
+  onChangeTab,
+  onUpdateField,
+  onDuplicate,
+  onDelete,
+  onDragStart,
+  onDragEnd,
+  onDragOver,
+  onDrop,
+}: MemoizedHazardRowProps) {
+  const handleToggleExpand = React.useCallback(() => onToggleExpand(hazard.id), [onToggleExpand, hazard.id])
+  const handleChangeTab = React.useCallback((tabIdx: number) => onChangeTab(hazard.id, tabIdx), [onChangeTab, hazard.id])
+  const handleUpdateField = React.useCallback((path: string[], val: any) => onUpdateField(hazard.id, path, val), [onUpdateField, hazard.id])
+  const handleDuplicate = React.useCallback(() => onDuplicate(hazard.id), [onDuplicate, hazard.id])
+  const handleDelete = React.useCallback(() => onDelete(hazard.id), [onDelete, hazard.id])
+  const handleDragStart = React.useCallback((e: React.DragEvent) => onDragStart(e, hazard.id), [onDragStart, hazard.id])
+  const handleDragOver = React.useCallback((e: React.DragEvent) => {
+    e.preventDefault()
+    onDragOver(e, hazard.id)
+  }, [onDragOver, hazard.id])
+  const handleDrop = React.useCallback((e: React.DragEvent) => {
+    onDrop(e, hazard.id)
+  }, [onDrop, hazard.id])
+
+  return (
+    <div onDragOver={handleDragOver} onDrop={handleDrop}>
+      <HazardItem
+        hazard={hazard}
+        hazardIndex={hazardIndex}
+        isHighlighted={isHighlighted}
+        isTargetEdge={isTargetEdge}
+        onToggleExpand={handleToggleExpand}
+        onChangeTab={handleChangeTab}
+        onUpdateField={handleUpdateField}
+        onDuplicate={handleDuplicate}
+        onDelete={handleDelete}
+        onDragStart={handleDragStart}
+        onDragEnd={onDragEnd}
+      />
+    </div>
+  )
+})
+
+export const HazardSection = React.memo(function HazardSection({
   peligros,
   highlightPeligroId = null,
   dragOverPeligroId = null,
@@ -103,31 +167,25 @@ export function HazardSection({
           onDragLeave={onDragLeave}
         >
           {peligros.map((hazard, idx) => (
-            <div
+            <MemoizedHazardRow
               key={hazard.id}
-              onDragOver={(e) => {
-                e.preventDefault()
-                onDragOver(e, hazard.id)
-              }}
-              onDrop={(e) => onDrop(e, hazard.id)}
-            >
-              <HazardItem
-                hazard={hazard}
-                hazardIndex={idx}
-                isHighlighted={highlightPeligroId === hazard.id}
-                isTargetEdge={dragOverPeligroId === hazard.id ? dragOverPeligroEdge : null}
-                onToggleExpand={() => onToggleExpand(hazard.id)}
-                onChangeTab={(tabIdx) => onChangeTab(hazard.id, tabIdx)}
-                onUpdateField={(path, val) => onUpdateField(hazard.id, path, val)}
-                onDuplicate={() => onDuplicate(hazard.id)}
-                onDelete={() => onDelete(hazard.id)}
-                onDragStart={(e) => onDragStart(e, hazard.id)}
-                onDragEnd={onDragEnd}
-              />
-            </div>
+              hazard={hazard}
+              hazardIndex={idx}
+              isHighlighted={highlightPeligroId === hazard.id}
+              isTargetEdge={dragOverPeligroId === hazard.id ? dragOverPeligroEdge : null}
+              onToggleExpand={onToggleExpand}
+              onChangeTab={onChangeTab}
+              onUpdateField={onUpdateField}
+              onDuplicate={onDuplicate}
+              onDelete={onDelete}
+              onDragStart={onDragStart}
+              onDragEnd={onDragEnd}
+              onDragOver={onDragOver}
+              onDrop={onDrop}
+            />
           ))}
         </div>
       )}
     </div>
   )
-}
+})

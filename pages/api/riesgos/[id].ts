@@ -2,68 +2,9 @@ import { NextApiRequest, NextApiResponse } from 'next'
 import { Prisma } from '@prisma/client'
 import prisma from '@/lib/prisma'
 import { persistFilesToDisk } from '@/lib/server-upload'
+import { syncMatrix } from '@/lib/matrix-persistence/sync-matrix'
 
-const prismaSupportsPeligroNumero = !!Prisma.dmmf.datamodel.models
-  .find((m) => m.name === 'Peligro')
-  ?.fields.some((f) => f.name === 'numero')
 
-function desiredPeligroNumero(pel: any, fallbackIdx: number) {
-  if (typeof pel?.numero === 'number' && pel.numero > 0) return pel.numero
-  const labelMatch = String(pel?._ui?.stableLabel || '').match(/\b(\d+)\b/)
-  return labelMatch ? Number(labelMatch[1]) : (fallbackIdx + 1)
-}
-
-async function loadPeligroNumeroMapByMatrizId(matrizId: string) {
-  try {
-    const rows = await prisma.$queryRaw<Array<{ id: string, numero: number }>>`
-      SELECT pg."id", pg."numero"
-      FROM "peligros" pg
-      INNER JOIN "actividades" a ON a."id" = pg."actividad_id"
-      INNER JOIN "zonas" z ON z."id" = a."zona_id"
-      INNER JOIN "procesos" p ON p."id" = z."proceso_id"
-      WHERE p."matriz_id" = ${matrizId}
-    `
-    const map: Record<string, number> = {}
-    for (const row of rows || []) map[row.id] = Number(row.numero || 0)
-    return map
-  } catch {
-    return {}
-  }
-}
-
-async function persistPeligroNumeroByOrderPath(matrizId: string, procesos: any[]) {
-  try {
-    for (let pIdx = 0; pIdx < (procesos || []).length; pIdx++) {
-      const p = procesos[pIdx]
-      for (let zIdx = 0; zIdx < (p?.zonas || []).length; zIdx++) {
-        const z = p.zonas[zIdx]
-        for (let aIdx = 0; aIdx < (z?.actividades || []).length; aIdx++) {
-          const a = z.actividades[aIdx]
-          for (let pelIdx = 0; pelIdx < (a?.peligros || []).length; pelIdx++) {
-            const pel = a.peligros[pelIdx]
-            const numero = desiredPeligroNumero(pel, pelIdx)
-
-            await prisma.$executeRaw`
-              UPDATE "peligros" AS pg
-              SET "numero" = ${numero}
-              FROM "actividades" ac
-              INNER JOIN "zonas" z ON z."id" = ac."zona_id"
-              INNER JOIN "procesos" p ON p."id" = z."proceso_id"
-              WHERE pg."actividad_id" = ac."id"
-                AND p."matriz_id" = ${matrizId}
-                AND p."orden" = ${pIdx}
-                AND z."orden" = ${zIdx}
-                AND ac."orden" = ${aIdx}
-                AND pg."orden" = ${pelIdx}
-            `
-          }
-        }
-      }
-    }
-  } catch {
-    // If the runtime/database doesn't support numero yet, keep save flow working.
-  }
-}
 
 export const config = {
   api: {
@@ -147,14 +88,13 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
       })
       if (!m || m.deletedAt) return res.status(404).json({ error: 'Not found' })
 
-      const numeroMap = await loadPeligroNumeroMapByMatrizId(mid)
-
       const mapped: any = {
         id: m.id,
         area: m.area || '',
         responsable: m.responsable || '',
         fecha_elaboracion: m.fechaElaboracion ? m.fechaElaboracion.toISOString().split('T')[0] : '',
         fecha_actualizacion: m.fechaActualizacion ? m.fechaActualizacion.toISOString().split('T')[0] : '',
+        updatedAt: m.updatedAt ? m.updatedAt.toISOString() : null,
         files: (m as any).archivos.map((a: any) => ({
           name: a.nombreOriginal || 'file',
           type: a.tipoMime || '',
@@ -178,7 +118,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
               tareas: a.tareas || '',
               cargo: a.cargo || '',
               rutinario: !!a.rutinario,
-              peligros: (a.peligros || []).map((pel: any) => {
+              peligros: (a.peligros || []).map((pel: any, pelIdx: number) => {
                 const planItems = (pel.planesAccion && pel.planesAccion.length > 0)
                   ? pel.planesAccion
                   : (pel.catalogoPeligro?.planesAccion || [])
@@ -189,7 +129,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
                   codigo: pel.catalogoPeligro?.codigo || null,
                   descripcion: pel.descripcion || '',
                   clasificacion: pel.clasificacion || '',
-                  numero: (typeof pel.numero === 'number' ? pel.numero : (numeroMap[pel.id] || 0)),
+                  numero: typeof pel.numero === 'number' && pel.numero > 0 ? pel.numero : ((pel.orden ?? pelIdx) + 1),
                   orden: pel.orden || 0,
                   efectos: pel.efectosPosibles || '',
                   controles: {
@@ -247,106 +187,26 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
       const body = req.body
       if (!body || typeof body !== 'object') return res.status(400).json({ error: 'Invalid payload' })
 
-      const persistedFiles = await persistFilesToDisk(body.files || [])
+      try {
+        const syncResult = await syncMatrix(prisma, mid, body)
 
-      const updated = await prisma.matriz.update({
-        where: { id: mid },
-        data: {
-          area: body.area,
-          archivos: {
-            deleteMany: {},
-            create: persistedFiles.map((f: any) => ({
-              nombreOriginal: f.name || 'file',
-              nombreAlmacenado: f.name || 'file',
-              tipoMime: f.type || '',
-              url: f.url || ''
-            }))
-          },
-          responsable: body.responsable,
-          fechaElaboracion: body.fecha_elaboracion ? new Date(body.fecha_elaboracion) : null,
-          fechaActualizacion: body.fecha_actualizacion ? new Date(body.fecha_actualizacion) : null,
-          procesos: {
-            deleteMany: {}, // Clean up existing completely (cascades down due to schema rules)
-            create: (body.procesos || []).map((p: any, pIdx: number) => ({
-              nombre: p.nombre,
-              orden: typeof p.orden === 'number' ? p.orden : pIdx,
-              zonas: {
-                create: (p.zonas || []).map((z: any, zIdx: number) => ({
-                  nombre: z.nombre,
-                  orden: typeof z.orden === 'number' ? z.orden : zIdx,
-                  actividades: {
-                    create: (z.actividades || []).map((a: any, aIdx: number) => ({
-                      nombre: a.nombre,
-                      descripcion: a.descripcion,
-                      tareas: a.tareas,
-                      cargo: z.cargo || a.cargo,
-                      rutinario: a.rutinario || z.rutinario || false,
-                      orden: typeof a.orden === 'number' ? a.orden : aIdx,
-                      peligros: {
-                        create: (a.peligros || []).map((pel: any, pelIdx: number) => ({
-                          ...(prismaSupportsPeligroNumero ? {
-                            numero: (typeof pel.numero === 'number' && pel.numero > 0)
-                              ? pel.numero
-                              : (() => {
-                                  const labelMatch = String(pel?._ui?.stableLabel || '').match(/\b(\d+)\b/)
-                                  return labelMatch ? Number(labelMatch[1]) : (pelIdx + 1)
-                                })(),
-                          } : {}),
-                          descripcion: pel.descripcion,
-                          clasificacion: pel.clasificacion,
-                          efectosPosibles: pel.efectos,
-                          orden: typeof pel.orden === 'number' ? pel.orden : pelIdx,
-                          control: pel.controles ? { create: { fuente: pel.controles.fuente, medio: pel.controles.medio, individuo: pel.controles.individuo } } : undefined,
-                          evaluacion: pel.evaluacion ? { create: { 
-                            nivelDeficiencia: Number(pel.evaluacion.nd) || null,
-                            nivelExposicion: Number(pel.evaluacion.ne) || null,
-                            nivelConsecuencia: Number(pel.evaluacion.nc) || null,
-                            nivelProbabilidad: Number(pel.evaluacion.np) || null,
-                            nivelRiesgo: Number(pel.evaluacion.nr) || null,
-                            interpProbabilidad: pel.evaluacion.interp_np,
-                            interpRiesgo: pel.evaluacion.interp_nr,
-                            aceptabilidad: pel.evaluacion.aceptabilidad
-                          }} : undefined,
-                          evaluacionPost: pel.evaluacionPost ? { create: {
-                            nivelDeficiencia: Number(pel.evaluacionPost.nd) || null,
-                            nivelExposicion: Number(pel.evaluacionPost.ne) || null,
-                            nivelConsecuencia: Number(pel.evaluacionPost.nc) || null,
-                            nivelProbabilidad: Number(pel.evaluacionPost.np) || null,
-                            nivelRiesgo: Number(pel.evaluacionPost.nr) || null,
-                            interpProbabilidad: pel.evaluacionPost.interp_np,
-                            interpRiesgo: pel.evaluacionPost.interp_nr,
-                            aceptabilidad: pel.evaluacionPost.aceptabilidad
-                          }} : undefined,
-                          criterio: pel.criterios ? { create: {
-                            numExpuestos: Number(pel.criterios.num_expuestos) || null,
-                            peorConsecuencia: pel.criterios.peor_consecuencia,
-                            requisitoLegal: !!pel.criterios.requisito_legal
-                          }} : undefined,
-                          intervencion: pel.intervencion ? { create: {
-                            eliminacion: pel.intervencion.eliminacion,
-                            sustitucion: pel.intervencion.sustitucion,
-                            controlesIngenieria: pel.intervencion.controles_ingenieria,
-                            controlesAdministrativos: pel.intervencion.controles_administrativos,
-                            epp: pel.intervencion.epp,
-                            responsable: pel.intervencion.responsable,
-                            fechaEjecucion: pel.intervencion.fecha_ejecucion ? new Date(pel.intervencion.fecha_ejecucion) : null
-                          }} : undefined
-                        }))
-                      }
-                    }))
-                  }
-                }))
-              }
-            }))
-          }
+        return res.status(200).json({
+          id: syncResult.id,
+          updatedAt: syncResult.updatedAt,
+          idMap: syncResult.idMap,
+          stats: syncResult.stats,
+          durationMs: syncResult.durationMs,
+        })
+      } catch (syncErr: any) {
+        if (syncErr.code === 'CONCURRENT_MODIFICATION') {
+          return res.status(409).json({
+            error: 'Conflict',
+            code: 'CONCURRENT_MODIFICATION',
+            message: syncErr.message,
+          })
         }
-      })
-
-      if (!prismaSupportsPeligroNumero) {
-        await persistPeligroNumeroByOrderPath(mid, body.procesos || [])
+        throw syncErr
       }
-      
-      return res.status(200).json({ id: updated.id })
     }
 
     if (method === 'DELETE') {

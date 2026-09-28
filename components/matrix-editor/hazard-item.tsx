@@ -41,19 +41,19 @@ interface HazardItemProps {
 }
 
 function interpProbabilidad(np: number) {
-  if (!np) return { label: '—', color: '#9CA3AF' }
-  if (np <= 4) return { label: 'Bajo', color: '#16a34a' }
-  if (np <= 8) return { label: 'Medio', color: '#ca8a04' }
-  if (np <= 20) return { label: 'Alto', color: '#ea580c' }
-  return { label: 'Muy Alto', color: '#dc2626' }
+  if (!np || np <= 0) return { label: '—', color: '#9CA3AF' }
+  if (np <= 4) return { label: 'Bajo', color: '#16a34a' } // Verde
+  if (np <= 8) return { label: 'Medio', color: '#eab308' } // Amarillo
+  if (np <= 20) return { label: 'Alto', color: '#f87171' } // Rojo pastel
+  return { label: 'Muy Alto', color: '#b91c1c' } // Rojo Oscuro
 }
 
 function interpNivelRiesgo(nr: number) {
-  if (!nr) return { label: '—', color: '#9CA3AF' }
-  if (nr <= 20) return { label: 'IV - Bajo', color: '#16a34a' }
-  if (nr <= 120) return { label: 'III - Moderado', color: '#d97706' }
-  if (nr <= 500) return { label: 'II - Alto', color: '#ea580c' }
-  return { label: 'I - Muy Alto', color: '#dc2626' }
+  if (!nr || nr <= 0) return { label: '—', color: '#9CA3AF' }
+  if (nr <= 20) return { label: 'IV', color: '#16a34a' } // Verde
+  if (nr <= 120) return { label: 'III', color: '#16a34a' } // Verde
+  if (nr <= 500) return { label: 'II', color: '#eab308' } // Amarillo
+  return { label: 'I', color: '#b91c1c' } // Rojo Oscuro
 }
 
 export function getHazardRiskLevel(hazard: any): {
@@ -69,92 +69,41 @@ export function getHazardRiskLevel(hazard: any): {
   // 1. Check direct matrix evaluation (prefer residual if intervened, else initial)
   const initialEval = hazard.evaluacion || {}
   const residualEval = hazard.evaluacionPost || null
-  const activeEval = residualEval && Number(residualEval.nr || 0) > 0 ? residualEval : initialEval
+  const isIntervened = Boolean(
+    residualEval && (
+      (residualEval.interp_np && String(residualEval.interp_np).trim() !== '') ||
+      (residualEval.interpProbabilidad && String(residualEval.interpProbabilidad).trim() !== '') ||
+      (residualEval.np !== null && residualEval.np !== undefined && Number(residualEval.np) > 0) ||
+      (residualEval.nivelProbabilidad !== null && residualEval.nivelProbabilidad !== undefined && Number(residualEval.nivelProbabilidad) > 0)
+    )
+  )
+  const activeEval = isIntervened ? residualEval : initialEval
 
-  const nr = Number(activeEval.nr ?? activeEval.nivelRiesgo ?? 0)
-  const interpRiesgo = String(activeEval.interpRiesgo || activeEval.interp_nr || '').toUpperCase().trim()
-  const aceptabilidad = String(activeEval.aceptabilidad || '').toUpperCase().trim()
+  const interpNp = String(
+    activeEval.interp_np ||
+    activeEval.interpProbabilidad ||
+    hazard.catalogoPeligro?.interpProbabilidad ||
+    ''
+  ).toUpperCase().trim()
 
-  // Strict GTC 45 thresholds based on NR
-  if (nr >= 600) {
-    return { level: 'MUY_ALTO', label: 'Nivel I (Muy Alto)', color: '#dc2626', isEligibleForPlan: true }
-  }
-  if (nr >= 150 && nr < 600) {
-    return { level: 'ALTO', label: 'Nivel II (Alto)', color: '#ea580c', isEligibleForPlan: true }
-  }
-  if (nr >= 40 && nr < 150) {
-    return { level: 'MODERADO', label: 'Nivel III (Moderado)', color: '#d97706', isEligibleForPlan: true }
-  }
-  if (nr > 0 && nr <= 20) {
-    return { level: 'BAJO', label: 'Nivel IV (Bajo)', color: '#16a34a', isEligibleForPlan: false }
-  }
+  const np = Number(
+    activeEval.np ??
+    activeEval.nivelProbabilidad ??
+    hazard.catalogoPeligro?.nivelProbabilidad ??
+    0
+  )
 
-  // String interpretation checks
-  if (
-    interpRiesgo.startsWith('I ') ||
-    interpRiesgo === 'I' ||
-    (interpRiesgo.includes('I') && !interpRiesgo.includes('II') && !interpRiesgo.includes('IV'))
-  ) {
-    return { level: 'MUY_ALTO', label: 'Nivel I (Muy Alto)', color: '#dc2626', isEligibleForPlan: true }
+  if (interpNp.includes('MUY ALTO') || interpNp === 'MA' || interpNp === 'EXTREMO' || np > 20) {
+    return { level: 'MUY_ALTO', label: 'Muy Alto', color: '#b91c1c', isEligibleForPlan: true }
   }
-  if (
-    interpRiesgo.startsWith('II ') ||
-    interpRiesgo === 'II' ||
-    (interpRiesgo.includes('II') && !interpRiesgo.includes('III'))
-  ) {
-    return { level: 'ALTO', label: 'Nivel II (Alto)', color: '#ea580c', isEligibleForPlan: true }
+  if ((interpNp.includes('ALTO') && !interpNp.includes('MUY ALTO')) || interpNp === 'A' || (np >= 10 && np <= 20)) {
+    return { level: 'ALTO', label: 'Alto', color: '#f87171', isEligibleForPlan: true }
   }
-  if (
-    interpRiesgo.startsWith('III ') ||
-    interpRiesgo === 'III' ||
-    interpRiesgo.includes('III') ||
-    interpRiesgo.includes('MEJORABLE') ||
-    interpRiesgo.includes('MODERADO')
-  ) {
-    return { level: 'MODERADO', label: 'Nivel III (Moderado)', color: '#d97706', isEligibleForPlan: true }
+  if (interpNp.includes('MEDIO') || interpNp.includes('MODERADO') || interpNp === 'M' || (np >= 6 && np <= 8)) {
+    return { level: 'MODERADO', label: 'Medio', color: '#eab308', isEligibleForPlan: true }
   }
-  if (interpRiesgo.includes('IV') || interpRiesgo.includes('BAJO') || interpRiesgo === '4') {
-    return { level: 'BAJO', label: 'Nivel IV (Bajo)', color: '#16a34a', isEligibleForPlan: false }
-  }
-
-  // Acceptability checks
-  if (aceptabilidad.includes('NO ACEPTABLE')) {
-    return { level: 'MUY_ALTO', label: 'Nivel I (Muy Alto)', color: '#dc2626', isEligibleForPlan: true }
-  }
-  if (aceptabilidad.includes('ESPECÍFICO') || aceptabilidad.includes('ESPECIFICO')) {
-    return { level: 'ALTO', label: 'Nivel II (Alto)', color: '#ea580c', isEligibleForPlan: true }
-  }
-  if (aceptabilidad.includes('MEJORABLE')) {
-    return { level: 'MODERADO', label: 'Nivel III (Moderado)', color: '#d97706', isEligibleForPlan: true }
-  }
-  if (aceptabilidad === 'ACEPTABLE' || (aceptabilidad.includes('ACEPTABLE') && !aceptabilidad.includes('CONTROL'))) {
-    return { level: 'BAJO', label: 'Nivel IV (Bajo)', color: '#16a34a', isEligibleForPlan: false }
-  }
-
-  // 2. Check catalog hazard fallback
-  const cat = hazard.catalogoPeligro
-  if (cat) {
-    const catNr = Number(cat.nivelRiesgo || 0)
-    const catInterp = String(cat.interpRiesgo || '').toUpperCase().trim()
-
-    if (catNr >= 600 || catInterp.startsWith('I ') || catInterp === 'I') {
-      return { level: 'MUY_ALTO', label: 'Nivel I (Muy Alto)', color: '#dc2626', isEligibleForPlan: true }
-    }
-    if ((catNr >= 150 && catNr < 600) || catInterp.startsWith('II ') || catInterp === 'II') {
-      return { level: 'ALTO', label: 'Nivel II (Alto)', color: '#ea580c', isEligibleForPlan: true }
-    }
-    if (
-      (catNr >= 40 && catNr < 150) ||
-      catInterp.startsWith('III ') ||
-      catInterp === 'III' ||
-      catInterp.includes('MEJORABLE') ||
-      catInterp.includes('MODERADO')
-    ) {
-      return { level: 'MODERADO', label: 'Nivel III (Moderado)', color: '#d97706', isEligibleForPlan: true }
-    }
-    if ((catNr > 0 && catNr <= 20) || catInterp.includes('IV') || catInterp.includes('BAJO') || catInterp.includes('ACEPTABLE')) {
-      return { level: 'BAJO', label: 'Nivel IV (Bajo)', color: '#16a34a', isEligibleForPlan: false }
-    }
+  if (interpNp.includes('BAJO') || interpNp === 'B' || (np > 0 && np <= 4)) {
+    return { level: 'BAJO', label: 'Bajo', color: '#16a34a', isEligibleForPlan: false }
   }
 
   return { level: 'BAJO', label: 'Sin evaluar', color: '#9CA3AF', isEligibleForPlan: false }
@@ -162,10 +111,19 @@ export function getHazardRiskLevel(hazard: any): {
 
 function aceptabilidadColor(text: string) {
   if (!text) return '#9CA3AF'
-  if (text.includes('No Aceptable')) return '#dc2626'
-  if (text.includes('Control Especifico') || text.includes('Alto')) return '#ea580c'
-  if (text.includes('Mejorable') || text.includes('Medio')) return '#ca8a04'
-  if (text.includes('Aceptable') || text.includes('Bajo')) return '#16a34a'
+  const norm = text.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toUpperCase().trim()
+  if (norm.includes('NO ACEPTABLE') || (norm.startsWith('I') && !norm.startsWith('II') && !norm.startsWith('III') && !norm.startsWith('IV'))) {
+    return '#b91c1c' // Rojo Oscuro
+  }
+  if (norm.includes('CONTROL ESPECIFICO') || norm.startsWith('II')) {
+    return '#eab308' // Amarillo
+  }
+  if (norm.includes('MEJORABLE') || norm.startsWith('III')) {
+    return '#16a34a' // Verde
+  }
+  if (norm.includes('ACEPTABLE') || norm.startsWith('IV')) {
+    return '#16a34a' // Verde
+  }
   return '#9CA3AF'
 }
 
@@ -178,7 +136,7 @@ function getStablePeligroTitle(hazard: any, fallbackIndex: number) {
   return base
 }
 
-export function HazardItem({
+export const HazardItem = React.memo(function HazardItem({
   hazard,
   hazardIndex,
   isDragging = false,
@@ -521,115 +479,141 @@ export function HazardItem({
                   </span>
                 </div>
 
-                <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-3">
                   <div>
-                    <label className="text-[10px] font-bold text-[#5e6b62] uppercase tracking-wider block mb-1">
-                      Nivel Deficiencia (ND)
-                    </label>
-                    <select
-                      value={initialEval.nd ?? ''}
-                      onChange={(e) =>
-                        onUpdateField(
-                          ['evaluacion', 'nd'],
-                          e.target.value ? Number(e.target.value) : null
-                        )
-                      }
-                      className="w-full p-2 border rounded-xl text-xs font-bold bg-[#fbfdfb] border-[#d1e2d6] focus:outline-none focus:border-[#1F7D3E]"
-                    >
-                      <option value="">— Seleccionar —</option>
-                      <option value={10}>10 - Muy Alto</option>
-                      <option value={6}>6 - Alto</option>
-                      <option value={2}>2 - Bajo</option>
-                    </select>
-                  </div>
+                    <span className="text-[10px] font-black uppercase tracking-wider text-[#1F7D3E] block mb-2">
+                      Evaluación del Riesgo
+                    </span>
+                    <div className="grid grid-cols-2 gap-2.5">
+                      <div>
+                        <label className="text-[10px] font-bold text-[#5e6b62] uppercase tracking-wider block mb-1">
+                          Nivel Deficiencia (ND)
+                        </label>
+                        <select
+                          value={initialEval.nd ?? ''}
+                          onChange={(e) =>
+                            onUpdateField(
+                              ['evaluacion', 'nd'],
+                              e.target.value ? Number(e.target.value) : null
+                            )
+                          }
+                          className="w-full p-2 border rounded-xl text-xs font-bold bg-[#fbfdfb] border-[#d1e2d6] focus:outline-none focus:border-[#1F7D3E]"
+                        >
+                          <option value="">— Seleccionar —</option>
+                          <option value={10}>10 - Muy Alto</option>
+                          <option value={6}>6 - Alto</option>
+                          <option value={2}>2 - Bajo</option>
+                        </select>
+                      </div>
 
-                  <div>
-                    <label className="text-[10px] font-bold text-[#5e6b62] uppercase tracking-wider block mb-1">
-                      Nivel Exposición (NE)
-                    </label>
-                    <select
-                      value={initialEval.ne ?? ''}
-                      onChange={(e) =>
-                        onUpdateField(
-                          ['evaluacion', 'ne'],
-                          e.target.value ? Number(e.target.value) : null
-                        )
-                      }
-                      className="w-full p-2 border rounded-xl text-xs font-bold bg-[#fbfdfb] border-[#d1e2d6] focus:outline-none focus:border-[#1F7D3E]"
-                    >
-                      <option value="">— Seleccionar —</option>
-                      <option value={4}>4 - Continua</option>
-                      <option value={3}>3 - Frecuente</option>
-                      <option value={2}>2 - Ocasional</option>
-                      <option value={1}>1 - Esporádica</option>
-                    </select>
-                  </div>
+                      <div>
+                        <label className="text-[10px] font-bold text-[#5e6b62] uppercase tracking-wider block mb-1">
+                          Nivel Exposición (NE)
+                        </label>
+                        <select
+                          value={initialEval.ne ?? ''}
+                          onChange={(e) =>
+                            onUpdateField(
+                              ['evaluacion', 'ne'],
+                              e.target.value ? Number(e.target.value) : null
+                            )
+                          }
+                          className="w-full p-2 border rounded-xl text-xs font-bold bg-[#fbfdfb] border-[#d1e2d6] focus:outline-none focus:border-[#1F7D3E]"
+                        >
+                          <option value="">— Seleccionar —</option>
+                          <option value={4}>4 - Continua</option>
+                          <option value={3}>3 - Frecuente</option>
+                          <option value={2}>2 - Ocasional</option>
+                          <option value={1}>1 - Esporádica</option>
+                        </select>
+                      </div>
 
-                  <div>
-                    <label className="text-[10px] font-bold text-[#5e6b62] uppercase tracking-wider block mb-1">
-                      Nivel Probabilidad (NP)
-                    </label>
-                    <div className="w-full p-2 rounded-xl text-xs font-black bg-[#f8faf9] border border-[#dfe9e2] text-[#163522]">
-                      {initialEval.np ?? '—'}
+                      <div>
+                        <label className="text-[10px] font-bold text-[#5e6b62] uppercase tracking-wider block mb-1">
+                          Nivel Probabilidad (NP)
+                        </label>
+                        <div className="w-full p-2 rounded-xl text-xs font-black bg-[#f8faf9] border border-[#dfe9e2] text-[#163522]">
+                          {initialEval.np ?? '—'}
+                        </div>
+                      </div>
+
+                      <div>
+                        <label className="text-[10px] font-bold text-[#5e6b62] uppercase tracking-wider block mb-1">
+                          Interpretación Nivel Probabilidad
+                        </label>
+                        <div
+                          className="w-full p-2 rounded-xl text-xs font-black text-center text-white"
+                          style={{
+                            backgroundColor: interpProbabilidad(Number(initialEval.np || 0)).color,
+                          }}
+                        >
+                          {initialEval.interp_np || '—'}
+                        </div>
+                      </div>
+
+                      <div>
+                        <label className="text-[10px] font-bold text-[#5e6b62] uppercase tracking-wider block mb-1">
+                          Nivel Consecuencia (NC)
+                        </label>
+                        <select
+                          value={initialEval.nc ?? ''}
+                          onChange={(e) =>
+                            onUpdateField(
+                              ['evaluacion', 'nc'],
+                              e.target.value ? Number(e.target.value) : null
+                            )
+                          }
+                          className="w-full p-2 border rounded-xl text-xs font-bold bg-[#fbfdfb] border-[#d1e2d6] focus:outline-none focus:border-[#1F7D3E]"
+                        >
+                          <option value="">— Seleccionar —</option>
+                          <option value={100}>100 - Mortal o Catastrófico</option>
+                          <option value={60}>60 - Muy Grave</option>
+                          <option value={25}>25 - Grave</option>
+                          <option value={10}>10 - Leve</option>
+                        </select>
+                      </div>
+
+                      <div>
+                        <label className="text-[10px] font-bold text-[#5e6b62] uppercase tracking-wider block mb-1">
+                          Nivel Riesgo (NR)
+                        </label>
+                        <div className="w-full p-2 rounded-xl text-xs font-black bg-[#f8faf9] border border-[#dfe9e2] text-[#163522]">
+                          {initialEval.nr ?? '—'}
+                        </div>
+                      </div>
+
+                      <div className="col-span-2">
+                        <label className="text-[10px] font-bold text-[#5e6b62] uppercase tracking-wider block mb-1">
+                          Interpretación Nivel Riesgo
+                        </label>
+                        <div
+                          className="w-full p-2 rounded-xl text-xs font-black text-center text-white"
+                          style={{
+                            backgroundColor: interpNivelRiesgo(Number(initialEval.nr || 0)).color,
+                          }}
+                        >
+                          {initialEval.interp_nr || '—'}
+                        </div>
+                      </div>
                     </div>
                   </div>
 
-                  <div>
-                    <label className="text-[10px] font-bold text-[#5e6b62] uppercase tracking-wider block mb-1">
-                      Interpretación (NP)
-                    </label>
-                    <div
-                      className="w-full p-2 rounded-xl text-xs font-black text-center text-white"
-                      style={{
-                        backgroundColor: interpProbabilidad(Number(initialEval.np || 0)).color,
-                      }}
-                    >
-                      {initialEval.interp_np || '—'}
-                    </div>
-                  </div>
-
-                  <div>
-                    <label className="text-[10px] font-bold text-[#5e6b62] uppercase tracking-wider block mb-1">
-                      Nivel Consecuencia (NC)
-                    </label>
-                    <select
-                      value={initialEval.nc ?? ''}
-                      onChange={(e) =>
-                        onUpdateField(
-                          ['evaluacion', 'nc'],
-                          e.target.value ? Number(e.target.value) : null
-                        )
-                      }
-                      className="w-full p-2 border rounded-xl text-xs font-bold bg-[#fbfdfb] border-[#d1e2d6] focus:outline-none focus:border-[#1F7D3E]"
-                    >
-                      <option value="">— Seleccionar —</option>
-                      <option value={100}>100 - Mortal o Catastrófico</option>
-                      <option value={60}>60 - Muy Grave</option>
-                      <option value={25}>25 - Grave</option>
-                      <option value={10}>10 - Leve</option>
-                    </select>
-                  </div>
-
-                  <div>
-                    <label className="text-[10px] font-bold text-[#5e6b62] uppercase tracking-wider block mb-1">
-                      Nivel Riesgo (NR)
-                    </label>
-                    <div className="w-full p-2 rounded-xl text-xs font-black bg-[#f8faf9] border border-[#dfe9e2] text-[#163522]">
-                      {initialEval.nr ?? '—'}
-                    </div>
-                  </div>
-
-                  <div className="col-span-2">
-                    <label className="text-[10px] font-bold text-[#5e6b62] uppercase tracking-wider block mb-1">
-                      Aceptabilidad del Riesgo
-                    </label>
-                    <div
-                      className="w-full p-2 rounded-xl text-xs font-black text-center text-white"
-                      style={{
-                        backgroundColor: aceptabilidadColor(initialEval.aceptabilidad || ''),
-                      }}
-                    >
-                      {initialEval.aceptabilidad || '—'}
+                  <div className="pt-2 border-t border-[#dfe9e2]">
+                    <span className="text-[10px] font-black uppercase tracking-wider text-[#1F7D3E] block mb-2">
+                      Valoración del Riesgo
+                    </span>
+                    <div>
+                      <label className="text-[10px] font-bold text-[#5e6b62] uppercase tracking-wider block mb-1">
+                        Aceptabilidad del Riesgo
+                      </label>
+                      <div
+                        className="w-full p-2 rounded-xl text-xs font-black text-center text-white"
+                        style={{
+                          backgroundColor: aceptabilidadColor(initialEval.aceptabilidad || ''),
+                        }}
+                      >
+                        {initialEval.aceptabilidad || '—'}
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -718,115 +702,141 @@ export function HazardItem({
                     </Button>
                   </div>
                 ) : (
-                  <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-3">
                     <div>
-                      <label className="text-[10px] font-bold text-[#5e6b62] uppercase tracking-wider block mb-1">
-                        Nivel Deficiencia (ND)
-                      </label>
-                      <select
-                        value={residualEval?.nd ?? ''}
-                        onChange={(e) =>
-                          onUpdateField(
-                            ['evaluacionPost', 'nd'],
-                            e.target.value ? Number(e.target.value) : null
-                          )
-                        }
-                        className="w-full p-2 border rounded-xl text-xs font-bold bg-white border-[#d1e2d6] focus:outline-none focus:border-[#1F7D3E]"
-                      >
-                        <option value="">— Seleccionar —</option>
-                        <option value={10}>10 - Muy Alto</option>
-                        <option value={6}>6 - Alto</option>
-                        <option value={2}>2 - Bajo</option>
-                      </select>
-                    </div>
+                      <span className="text-[10px] font-black uppercase tracking-wider text-[#1F7D3E] block mb-2">
+                        Evaluación del Riesgo Residual
+                      </span>
+                      <div className="grid grid-cols-2 gap-2.5">
+                        <div>
+                          <label className="text-[10px] font-bold text-[#5e6b62] uppercase tracking-wider block mb-1">
+                            Nivel Deficiencia (ND)
+                          </label>
+                          <select
+                            value={residualEval?.nd ?? ''}
+                            onChange={(e) =>
+                              onUpdateField(
+                                ['evaluacionPost', 'nd'],
+                                e.target.value ? Number(e.target.value) : null
+                              )
+                            }
+                            className="w-full p-2 border rounded-xl text-xs font-bold bg-white border-[#d1e2d6] focus:outline-none focus:border-[#1F7D3E]"
+                          >
+                            <option value="">— Seleccionar —</option>
+                            <option value={10}>10 - Muy Alto</option>
+                            <option value={6}>6 - Alto</option>
+                            <option value={2}>2 - Bajo</option>
+                          </select>
+                        </div>
 
-                    <div>
-                      <label className="text-[10px] font-bold text-[#5e6b62] uppercase tracking-wider block mb-1">
-                        Nivel Exposición (NE)
-                      </label>
-                      <select
-                        value={residualEval?.ne ?? ''}
-                        onChange={(e) =>
-                          onUpdateField(
-                            ['evaluacionPost', 'ne'],
-                            e.target.value ? Number(e.target.value) : null
-                          )
-                        }
-                        className="w-full p-2 border rounded-xl text-xs font-bold bg-white border-[#d1e2d6] focus:outline-none focus:border-[#1F7D3E]"
-                      >
-                        <option value="">— Seleccionar —</option>
-                        <option value={4}>4 - Continua</option>
-                        <option value={3}>3 - Frecuente</option>
-                        <option value={2}>2 - Ocasional</option>
-                        <option value={1}>1 - Esporádica</option>
-                      </select>
-                    </div>
+                        <div>
+                          <label className="text-[10px] font-bold text-[#5e6b62] uppercase tracking-wider block mb-1">
+                            Nivel Exposición (NE)
+                          </label>
+                          <select
+                            value={residualEval?.ne ?? ''}
+                            onChange={(e) =>
+                              onUpdateField(
+                                ['evaluacionPost', 'ne'],
+                                e.target.value ? Number(e.target.value) : null
+                              )
+                            }
+                            className="w-full p-2 border rounded-xl text-xs font-bold bg-white border-[#d1e2d6] focus:outline-none focus:border-[#1F7D3E]"
+                          >
+                            <option value="">— Seleccionar —</option>
+                            <option value={4}>4 - Continua</option>
+                            <option value={3}>3 - Frecuente</option>
+                            <option value={2}>2 - Ocasional</option>
+                            <option value={1}>1 - Esporádica</option>
+                          </select>
+                        </div>
 
-                    <div>
-                      <label className="text-[10px] font-bold text-[#5e6b62] uppercase tracking-wider block mb-1">
-                        Nivel Probabilidad (NP)
-                      </label>
-                      <div className="w-full p-2 rounded-xl text-xs font-black bg-white border border-[#dfe9e2] text-[#163522]">
-                        {residualEval?.np ?? '—'}
+                        <div>
+                          <label className="text-[10px] font-bold text-[#5e6b62] uppercase tracking-wider block mb-1">
+                            Nivel Probabilidad (NP)
+                          </label>
+                          <div className="w-full p-2 rounded-xl text-xs font-black bg-white border border-[#dfe9e2] text-[#163522]">
+                            {residualEval?.np ?? '—'}
+                          </div>
+                        </div>
+
+                        <div>
+                          <label className="text-[10px] font-bold text-[#5e6b62] uppercase tracking-wider block mb-1">
+                            Interpretación Nivel Probabilidad
+                          </label>
+                          <div
+                            className="w-full p-2 rounded-xl text-xs font-black text-center text-white"
+                            style={{
+                              backgroundColor: interpProbabilidad(Number(residualEval?.np || 0)).color,
+                            }}
+                          >
+                            {residualEval?.interp_np || '—'}
+                          </div>
+                        </div>
+
+                        <div>
+                          <label className="text-[10px] font-bold text-[#5e6b62] uppercase tracking-wider block mb-1">
+                            Nivel Consecuencia (NC)
+                          </label>
+                          <select
+                            value={residualEval?.nc ?? ''}
+                            onChange={(e) =>
+                              onUpdateField(
+                                ['evaluacionPost', 'nc'],
+                                e.target.value ? Number(e.target.value) : null
+                              )
+                            }
+                            className="w-full p-2 border rounded-xl text-xs font-bold bg-white border-[#d1e2d6] focus:outline-none focus:border-[#1F7D3E]"
+                          >
+                            <option value="">— Seleccionar —</option>
+                            <option value={100}>100 - Mortal o Catastrófico</option>
+                            <option value={60}>60 - Muy Grave</option>
+                            <option value={25}>25 - Grave</option>
+                            <option value={10}>10 - Leve</option>
+                          </select>
+                        </div>
+
+                        <div>
+                          <label className="text-[10px] font-bold text-[#5e6b62] uppercase tracking-wider block mb-1">
+                            Nivel Riesgo (NR)
+                          </label>
+                          <div className="w-full p-2 rounded-xl text-xs font-black bg-white border border-[#dfe9e2] text-[#163522]">
+                            {residualEval?.nr ?? '—'}
+                          </div>
+                        </div>
+
+                        <div className="col-span-2">
+                          <label className="text-[10px] font-bold text-[#5e6b62] uppercase tracking-wider block mb-1">
+                            Interpretación Nivel Riesgo
+                          </label>
+                          <div
+                            className="w-full p-2 rounded-xl text-xs font-black text-center text-white"
+                            style={{
+                              backgroundColor: interpNivelRiesgo(Number(residualEval?.nr || 0)).color,
+                            }}
+                          >
+                            {residualEval?.interp_nr || '—'}
+                          </div>
+                        </div>
                       </div>
                     </div>
 
-                    <div>
-                      <label className="text-[10px] font-bold text-[#5e6b62] uppercase tracking-wider block mb-1">
-                        Interpretación (NP)
-                      </label>
-                      <div
-                        className="w-full p-2 rounded-xl text-xs font-black text-center text-white"
-                        style={{
-                          backgroundColor: interpProbabilidad(Number(residualEval?.np || 0)).color,
-                        }}
-                      >
-                        {residualEval?.interp_np || '—'}
-                      </div>
-                    </div>
-
-                    <div>
-                      <label className="text-[10px] font-bold text-[#5e6b62] uppercase tracking-wider block mb-1">
-                        Nivel Consecuencia (NC)
-                      </label>
-                      <select
-                        value={residualEval?.nc ?? ''}
-                        onChange={(e) =>
-                          onUpdateField(
-                            ['evaluacionPost', 'nc'],
-                            e.target.value ? Number(e.target.value) : null
-                          )
-                        }
-                        className="w-full p-2 border rounded-xl text-xs font-bold bg-white border-[#d1e2d6] focus:outline-none focus:border-[#1F7D3E]"
-                      >
-                        <option value="">— Seleccionar —</option>
-                        <option value={100}>100 - Mortal o Catastrófico</option>
-                        <option value={60}>60 - Muy Grave</option>
-                        <option value={25}>25 - Grave</option>
-                        <option value={10}>10 - Leve</option>
-                      </select>
-                    </div>
-
-                    <div>
-                      <label className="text-[10px] font-bold text-[#5e6b62] uppercase tracking-wider block mb-1">
-                        Nivel Riesgo (NR)
-                      </label>
-                      <div className="w-full p-2 rounded-xl text-xs font-black bg-white border border-[#dfe9e2] text-[#163522]">
-                        {residualEval?.nr ?? '—'}
-                      </div>
-                    </div>
-
-                    <div className="col-span-2">
-                      <label className="text-[10px] font-bold text-[#5e6b62] uppercase tracking-wider block mb-1">
-                        Aceptabilidad Residual
-                      </label>
-                      <div
-                        className="w-full p-2 rounded-xl text-xs font-black text-center text-white"
-                        style={{
-                          backgroundColor: aceptabilidadColor(residualEval?.aceptabilidad || ''),
-                        }}
-                      >
-                        {residualEval?.aceptabilidad || '—'}
+                    <div className="pt-2 border-t border-[#dfe9e2]">
+                      <span className="text-[10px] font-black uppercase tracking-wider text-[#1F7D3E] block mb-2">
+                        Valoración del Riesgo Residual
+                      </span>
+                      <div>
+                        <label className="text-[10px] font-bold text-[#5e6b62] uppercase tracking-wider block mb-1">
+                          Aceptabilidad del Riesgo
+                        </label>
+                        <div
+                          className="w-full p-2 rounded-xl text-xs font-black text-center text-white"
+                          style={{
+                            backgroundColor: aceptabilidadColor(residualEval?.aceptabilidad || ''),
+                          }}
+                        >
+                          {residualEval?.aceptabilidad || '—'}
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -1117,4 +1127,4 @@ export function HazardItem({
       )}
     </div>
   )
-}
+})

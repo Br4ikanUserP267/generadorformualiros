@@ -53,7 +53,7 @@ function parseDateDisplay(value: string) {
   return `${year}-${month}-${day}`
 }
 
-export function MatrixInfoCard({
+export const MatrixInfoCard = React.memo(function MatrixInfoCard({
   matrix,
   isSaving = false,
   hasUnsavedChanges = false,
@@ -304,4 +304,15 @@ export function MatrixInfoCard({
       )}
     </div>
   )
-}
+}, (prev, next) => {
+  return (
+    prev.matrix?.id === next.matrix?.id &&
+    prev.matrix?.area === next.matrix?.area &&
+    prev.matrix?.responsable === next.matrix?.responsable &&
+    prev.matrix?.fecha_elaboracion === next.matrix?.fecha_elaboracion &&
+    prev.matrix?.fecha_actualizacion === next.matrix?.fecha_actualizacion &&
+    prev.isSaving === next.isSaving &&
+    prev.hasUnsavedChanges === next.hasUnsavedChanges
+  )
+})
+

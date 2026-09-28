@@ -34,7 +34,7 @@ interface ActivityHeaderProps {
   onDeleteActivity: () => void
 }
 
-export function ActivityHeader({
+export const ActivityHeader = React.memo(function ActivityHeader({
   activity,
   activityIndex = 0,
   matrixArea = '',
@@ -195,4 +195,19 @@ export function ActivityHeader({
       </div>
     </div>
   )
-}
+}, (prev, next) => {
+  return (
+    prev.activity?.id === next.activity?.id &&
+    prev.activity?.nombre === next.activity?.nombre &&
+    prev.activity?.descripcion === next.activity?.descripcion &&
+    prev.activity?.tareas === next.activity?.tareas &&
+    prev.activity?.cargo === next.activity?.cargo &&
+    prev.activity?.rutinario === next.activity?.rutinario &&
+    prev.activityIndex === next.activityIndex &&
+    prev.matrixArea === next.matrixArea &&
+    prev.procesoNombre === next.procesoNombre &&
+    prev.zonaNombre === next.zonaNombre &&
+    prev.tasksCount === next.tasksCount
+  )
+})
+

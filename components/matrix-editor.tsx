@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useMemo, useState, useEffect, useRef } from "react"
+import React, { useMemo, useState, useEffect, useRef, useCallback } from "react"
 import { useRouter, useSearchParams } from 'next/navigation'
 import { toast } from '@/hooks/use-toast'
 import { exportMatrizToExcel } from '@/lib/matriz-excel-export'
@@ -16,6 +16,14 @@ import { ActivityHeader } from './matrix-editor/activity-header'
 import { ActivityDetailPanel } from './matrix-editor/activity-detail-panel'
 import { ActivityRiskSummary } from './matrix-editor/activity-risk-summary'
 import { HazardSection } from './matrix-editor/hazard-section'
+import {
+  applyHazardFieldUpdate,
+  updateHazardInMatrix,
+  updateActivityInMatrix,
+  interpProbabilidad,
+  interpNivelRiesgo,
+  aceptabilidadFromNivel,
+} from './matrix-editor/matrix-update-helpers'
 
 // Modals
 import { EditProcesoModal } from './matrix-editor/modals/edit-proceso-modal'
@@ -36,37 +44,6 @@ function getTodayDate() {
   return `${year}-${month}-${day}`
 }
 
-function interpProbabilidad(np: number) {
-  if (!np) return { label: '', color: '#9CA3AF' }
-  if (np <= 4) return { label: 'Bajo', color: '#16a34a' }
-  if (np <= 8) return { label: 'Medio', color: '#ca8a04' }
-  if (np <= 20) return { label: 'Alto', color: '#ea580c' }
-  return { label: 'Muy Alto', color: '#dc2626' }
-}
-
-function interpNivelRiesgo(nr: number) {
-  if (!nr) return { label: '', color: '#9CA3AF' }
-  if (nr <= 20) return { label: 'IV', color: '#16a34a' }
-  if (nr <= 120) return { label: 'III', color: '#16a34a' }
-  if (nr <= 500) return { label: 'II', color: '#ca8a04' }
-  return { label: 'I', color: '#dc2626' }
-}
-
-function aceptabilidadFromNivel(label: string) {
-  if (!label) return ''
-  switch (label) {
-    case 'IV':
-      return 'Aceptable'
-    case 'III':
-      return 'Mejorable'
-    case 'II':
-      return 'Aceptable con Control Especifico'
-    case 'I':
-      return 'No Aceptable'
-    default:
-      return ''
-  }
-}
 
 export default function MatrixEditor({ id }: { id?: string }) {
   const router = useRouter()
@@ -148,7 +125,7 @@ export default function MatrixEditor({ id }: { id?: string }) {
             toast({ title: 'Error', variant: 'destructive', description: data.error })
             router.push('/dashboard')
           } else {
-            const withStableLabels = JSON.parse(JSON.stringify(data))
+            const withStableLabels = data
             ;(withStableLabels.procesos || []).forEach((p: any) => {
               ;(p.zonas || []).forEach((z: any) => {
                 ;(z.actividades || []).forEach((a: any) => {
@@ -261,19 +238,15 @@ export default function MatrixEditor({ id }: { id?: string }) {
     // Uncollapse specific peligro without setting dirty unsaved changes
     setMatrix((m: any) => {
       if (!m) return m
-      const cloned = JSON.parse(JSON.stringify(m))
-      for (const proceso of cloned.procesos || []) {
-        for (const zona of proceso.zonas || []) {
-          for (const actividad of zona.actividades || []) {
-            for (const peligro of actividad.peligros || []) {
-              if (peligro.id === peligroIdParam) {
-                peligro._ui = { ...peligro._ui, expanded: true }
-              }
-            }
-          }
-        }
-      }
-      return cloned
+      return updateHazardInMatrix(
+        m,
+        { procesoId: targetProcesoId, zonaId: targetZonaId, actividadId: targetActividadId },
+        peligroIdParam,
+        (pel) => ({
+          ...pel,
+          _ui: { ...(pel._ui || {}), expanded: true },
+        })
+      )
     })
 
     // Set prominent highlight on the card
@@ -309,107 +282,135 @@ export default function MatrixEditor({ id }: { id?: string }) {
   }, [matrix, peligroIdParam, id])
 
   // Helpers to mutate matrix immutably
-  function updateMatrix(fn: (m: any) => any) {
+  const updateMatrix = useCallback((fn: (m: any) => any) => {
     setMatrix((m: any) => {
-      const next = fn(JSON.parse(JSON.stringify(m)))
+      if (!m) return m
+      const next = fn({ ...m })
       return next
     })
     setHasUnsavedChanges(true)
-  }
+  }, [])
 
   // General info update handler
-  function handleUpdateGeneralInfo(data: {
+  const handleUpdateGeneralInfo = useCallback((data: {
     area: string
     responsable: string
     fecha_elaboracion: string
-  }) {
-    updateMatrix((m: any) => {
-      m.area = data.area
-      m.responsable = data.responsable
-      m.fecha_elaboracion = data.fecha_elaboracion
-      return m
+  }) => {
+    setMatrix((m: any) => {
+      if (!m) return m
+      return {
+        ...m,
+        area: data.area,
+        responsable: data.responsable,
+        fecha_elaboracion: data.fecha_elaboracion,
+      }
     })
-  }
+    setHasUnsavedChanges(true)
+  }, [])
 
   // Process Handlers
-  function handleAddProceso() {
+  const handleAddProceso = useCallback(() => {
     setEditingProceso(null)
     setShowProcesoModal(true)
-  }
+  }, [])
 
-  function handleSaveProceso(name: string) {
+  const handleSaveProceso = useCallback((name: string) => {
     if (!name) return setShowProcesoModal(false)
     if (editingProceso && editingProceso.id) {
-      updateMatrix((m: any) => {
-        m.procesos = m.procesos.map((p: any) =>
-          p.id === editingProceso.id ? { ...p, nombre: name } : p
-        )
-        return m
+      setMatrix((m: any) => {
+        if (!m || !m.procesos) return m
+        return {
+          ...m,
+          procesos: m.procesos.map((p: any) =>
+            p.id === editingProceso.id ? { ...p, nombre: name } : p
+          ),
+        }
       })
+      setHasUnsavedChanges(true)
       setShowProcesoModal(false)
       return
     }
 
     const newProcesoId = makeId('p-')
-    updateMatrix((m: any) => {
-      m.procesos.push({ id: newProcesoId, nombre: name, zonas: [] })
-      return m
+    setMatrix((m: any) => {
+      if (!m) return m
+      return {
+        ...m,
+        procesos: [...(m.procesos || []), { id: newProcesoId, nombre: name, zonas: [] }],
+      }
     })
+    setHasUnsavedChanges(true)
     setSelected({ procesoId: newProcesoId, zonaId: undefined, actividadId: undefined })
     setShowProcesoModal(false)
-  }
+  }, [editingProceso])
 
-  function handleEditProceso(p: any) {
+  const handleEditProceso = useCallback((p: any) => {
     setEditingProceso(p)
     setShowProcesoModal(true)
-  }
+  }, [])
 
-  function handleDeleteProceso(procesoId: string) {
+  const handleDeleteProceso = useCallback((procesoId: string) => {
     setConfirmDeleteTitle('Eliminar proceso')
     setConfirmDeleteMessage(
       '¿Estás seguro de que deseas eliminar este proceso? Se eliminarán también sus zonas, actividades y peligros asociados.'
     )
     setPendingDeleteAction(() => () => {
-      updateMatrix((m: any) => {
-        m.procesos = m.procesos.filter((p: any) => p.id !== procesoId)
+      setMatrix((m: any) => {
+        if (!m || !m.procesos) return m
+        const newProcesos = m.procesos.filter((p: any) => p.id !== procesoId)
         if (selected.procesoId === procesoId) {
-          const np = m.procesos[0]
+          const np = newProcesos[0]
           const nz = np?.zonas?.[0]
           const na = nz?.actividades?.[0]
           setSelected({ procesoId: np?.id, zonaId: nz?.id, actividadId: na?.id })
         }
-        return m
+        return {
+          ...m,
+          procesos: newProcesos,
+        }
       })
+      setHasUnsavedChanges(true)
     })
     setConfirmDeleteOpen(true)
-  }
+  }, [selected.procesoId])
 
   // Zone Handlers
-  function handleAddZona(procesoId: string) {
+  const handleAddZona = useCallback((procesoId: string) => {
     setEditingZona(null)
     setZonaParentProcesoId(procesoId)
     setShowZonaModal(true)
-  }
+  }, [])
 
-  function handleEditZona(procesoId: string, z: any) {
+  const handleEditZona = useCallback((procesoId: string, z: any) => {
     setEditingZona(z)
     setZonaParentProcesoId(procesoId)
     setShowZonaModal(true)
-  }
+  }, [])
 
-  function handleSaveZona(name: string) {
+  const handleSaveZona = useCallback((name: string) => {
     if (!zonaParentProcesoId) {
       setShowZonaModal(false)
       return
     }
 
     if (editingZona) {
-      updateMatrix((m: any) => {
-        const p = m.procesos.find((x: any) => x.id === zonaParentProcesoId)
-        const z = p?.zonas?.find((x: any) => x.id === editingZona.id)
-        if (z) z.nombre = name
-        return m
+      setMatrix((m: any) => {
+        if (!m || !m.procesos) return m
+        return {
+          ...m,
+          procesos: m.procesos.map((p: any) => {
+            if (p.id !== zonaParentProcesoId) return p
+            return {
+              ...p,
+              zonas: (p.zonas || []).map((z: any) =>
+                z.id === editingZona.id ? { ...z, nombre: name } : z
+              ),
+            }
+          }),
+        }
       })
+      setHasUnsavedChanges(true)
       setShowZonaModal(false)
       setZonaParentProcesoId(null)
       setEditingZona(null)
@@ -417,139 +418,183 @@ export default function MatrixEditor({ id }: { id?: string }) {
     }
 
     const newZonaId = makeId('z-')
-    updateMatrix((m: any) => {
-      const p = m.procesos.find((x: any) => x.id === zonaParentProcesoId)
-      if (p) {
-        p.zonas = p.zonas || []
-        p.zonas.push({ id: newZonaId, nombre: name, actividades: [] })
+    setMatrix((m: any) => {
+      if (!m || !m.procesos) return m
+      return {
+        ...m,
+        procesos: m.procesos.map((p: any) => {
+          if (p.id !== zonaParentProcesoId) return p
+          return {
+            ...p,
+            zonas: [...(p.zonas || []), { id: newZonaId, nombre: name, actividades: [] }],
+          }
+        }),
       }
-      return m
     })
+    setHasUnsavedChanges(true)
     setExpandedZonaIds((prev) => ({ ...prev, [newZonaId]: true }))
     setShowZonaModal(false)
     setZonaParentProcesoId(null)
-  }
+  }, [zonaParentProcesoId, editingZona])
 
-  function handleDeleteZona(procesoId: string, zonaId: string) {
+  const handleDeleteZona = useCallback((procesoId: string, zonaId: string) => {
     setConfirmDeleteTitle('Eliminar zona')
     setConfirmDeleteMessage(
       '¿Estás seguro de que deseas eliminar esta zona / lugar? Se eliminarán también sus actividades y peligros asociados.'
     )
     setPendingDeleteAction(() => () => {
-      updateMatrix((m: any) => {
-        const p = m.procesos.find((x: any) => x.id === procesoId)
-        if (p) {
-          p.zonas = p.zonas.filter((z: any) => z.id !== zonaId)
-        }
+      setMatrix((m: any) => {
+        if (!m || !m.procesos) return m
+        let newSelectedZonaId = selected.zonaId
+        const newProcesos = m.procesos.map((p: any) => {
+          if (p.id !== procesoId) return p
+          const newZonas = (p.zonas || []).filter((z: any) => z.id !== zonaId)
+          if (selected.zonaId === zonaId) {
+            newSelectedZonaId = newZonas[0]?.id
+          }
+          return { ...p, zonas: newZonas }
+        })
         if (selected.zonaId === zonaId) {
-          setSelected({ procesoId, zonaId: p?.zonas?.[0]?.id })
+          setSelected({ procesoId, zonaId: newSelectedZonaId })
         }
-        return m
+        return { ...m, procesos: newProcesos }
       })
+      setHasUnsavedChanges(true)
     })
     setConfirmDeleteOpen(true)
-  }
+  }, [selected.zonaId])
 
   // Activity Handlers
-  function handleAddActividad(procesoId: string, zonaId: string) {
+  const handleAddActividad = useCallback((procesoId: string, zonaId: string) => {
     const newId = makeId('a-')
-    updateMatrix((m: any) => {
-      const z = m.procesos
-        .find((x: any) => x.id === procesoId)
-        ?.zonas?.find((y: any) => y.id === zonaId)
-      if (z) {
-        z.actividades = z.actividades || []
-        const nueva = {
-          id: newId,
-          nombre: `Actividad ${(z.actividades.length || 0) + 1}`,
-          descripcion: '',
-          tareas: '',
-          cargo: '',
-          rutinario: false,
-          peligros: [],
-        }
-        z.actividades.push(nueva)
+    setMatrix((m: any) => {
+      if (!m || !m.procesos) return m
+      return {
+        ...m,
+        procesos: m.procesos.map((p: any) => {
+          if (p.id !== procesoId) return p
+          return {
+            ...p,
+            zonas: (p.zonas || []).map((z: any) => {
+              if (z.id !== zonaId) return z
+              const actividades = z.actividades || []
+              const nueva = {
+                id: newId,
+                nombre: `Actividad ${actividades.length + 1}`,
+                descripcion: '',
+                tareas: '',
+                cargo: '',
+                rutinario: false,
+                peligros: [],
+              }
+              return {
+                ...z,
+                actividades: [...actividades, nueva],
+              }
+            }),
+          }
+        }),
       }
-      return m
     })
+    setHasUnsavedChanges(true)
     setExpandedZonaIds((s) => ({ ...s, [zonaId]: true }))
     setSelected({ procesoId, zonaId, actividadId: newId })
-  }
+  }, [])
 
-  function handleEditActividad(procesoId: string, zonaId: string, actividad: any) {
+  const handleEditActividad = useCallback((procesoId: string, zonaId: string, actividad: any) => {
     setEditingActividad({ ...actividad, procesoId, zonaId })
     setActividadTarget({ procesoId, zonaId })
     setShowActividadModal(true)
-  }
+  }, [])
 
-  function handleSaveEditedActividad(name: string) {
+  const handleSaveEditedActividad = useCallback((name: string) => {
     if (!editingActividad) return setShowActividadModal(false)
-    updateMatrix((m: any) => {
-      const z = m.procesos
-        .find((x: any) => x.id === editingActividad.procesoId)
-        ?.zonas?.find((y: any) => y.id === editingActividad.zonaId)
-      const a = z?.actividades?.find((aa: any) => aa.id === editingActividad.id)
-      if (a) a.nombre = name
-      return m
+    setMatrix((m: any) => {
+      if (!m || !m.procesos) return m
+      return {
+        ...m,
+        procesos: m.procesos.map((p: any) => {
+          if (p.id !== editingActividad.procesoId) return p
+          return {
+            ...p,
+            zonas: (p.zonas || []).map((z: any) => {
+              if (z.id !== editingActividad.zonaId) return z
+              return {
+                ...z,
+                actividades: (z.actividades || []).map((a: any) =>
+                  a.id === editingActividad.id ? { ...a, nombre: name } : a
+                ),
+              }
+            }),
+          }
+        }),
+      }
     })
+    setHasUnsavedChanges(true)
     setShowActividadModal(false)
     setEditingActividad(null)
     setActividadTarget(null)
-  }
+  }, [editingActividad])
 
-  function handleDeleteActividad(procesoId: string, zonaId: string, actividadId: string) {
+  const handleDeleteActividad = useCallback((procesoId: string, zonaId: string, actividadId: string) => {
     setConfirmDeleteTitle('Eliminar actividad')
     setConfirmDeleteMessage(
       '¿Estás seguro de que deseas eliminar esta actividad? Se eliminarán también sus peligros asociados.'
     )
     setPendingDeleteAction(() => () => {
-      updateMatrix((m: any) => {
-        const z = m.procesos
-          .find((x: any) => x.id === procesoId)
-          ?.zonas?.find((y: any) => y.id === zonaId)
-        if (z) {
-          z.actividades = z.actividades.filter((a: any) => a.id !== actividadId)
-        }
+      setMatrix((m: any) => {
+        if (!m || !m.procesos) return m
+        let newSelectedActId = selected.actividadId
+        const newProcesos = m.procesos.map((p: any) => {
+          if (p.id !== procesoId) return p
+          return {
+            ...p,
+            zonas: (p.zonas || []).map((z: any) => {
+              if (z.id !== zonaId) return z
+              const newActividades = (z.actividades || []).filter((a: any) => a.id !== actividadId)
+              if (selected.actividadId === actividadId) {
+                newSelectedActId = newActividades[0]?.id
+              }
+              return { ...z, actividades: newActividades }
+            }),
+          }
+        })
         if (selected.actividadId === actividadId) {
-          setSelected({ procesoId, zonaId, actividadId: z?.actividades?.[0]?.id })
+          setSelected({ procesoId, zonaId, actividadId: newSelectedActId })
         }
-        return m
+        return { ...m, procesos: newProcesos }
       })
+      setHasUnsavedChanges(true)
     })
     setConfirmDeleteOpen(true)
-  }
+  }, [selected.actividadId])
 
-  function handleUpdateActivityField(field: string, value: any) {
+  const handleUpdateActivityField = useCallback((field: string, value: any) => {
     if (!selected.procesoId || !selected.zonaId || !selected.actividadId) return
-    updateMatrix((m: any) => {
-      const a = m.procesos
-        .find((p: any) => p.id === selected.procesoId)
-        ?.zonas?.find((z: any) => z.id === selected.zonaId)
-        ?.actividades?.find((aa: any) => aa.id === selected.actividadId)
-      if (a) {
-        a[field] = value
-      }
-      return m
+    setMatrix((m: any) => {
+      if (!m) return m
+      return updateActivityInMatrix(m, selected, (act) => ({
+        ...act,
+        [field]: value,
+      }))
     })
-  }
+    setHasUnsavedChanges(true)
+  }, [selected])
 
   // Hazard Handlers - Dangers can only be added from the institutional catalog
-  function handleAddPeligro() {
+  const handleAddPeligro = useCallback(() => {
     setShowCatalogModal(true)
-  }
+  }, [])
 
-  function handleSelectFromCatalog(selectedCatalogItems: any[]) {
+  const handleSelectFromCatalog = useCallback((selectedCatalogItems: any[]) => {
     if (!selected.procesoId || !selected.zonaId || !selected.actividadId) return
     if (!selectedCatalogItems || selectedCatalogItems.length === 0) return
 
-    updateMatrix((m: any) => {
-      const a = m.procesos
-        .find((x: any) => x.id === selected.procesoId)
-        ?.zonas?.find((y: any) => y.id === selected.zonaId)
-        ?.actividades?.find((aa: any) => aa.id === selected.actividadId)
-      if (a) {
-        a.peligros = a.peligros || []
-        let baseNumero = Math.max(0, ...(a.peligros || []).map((p: any) => Number(p.numero) || 0))
+    setMatrix((m: any) => {
+      if (!m) return m
+      return updateActivityInMatrix(m, selected, (act) => {
+        const peligros = [...(act.peligros || [])]
+        let baseNumero = Math.max(0, ...peligros.map((p: any) => Number(p.numero) || 0))
 
         selectedCatalogItems.forEach((catItem) => {
           baseNumero += 1
@@ -560,7 +605,7 @@ export default function MatrixEditor({ id }: { id?: string }) {
           const np = catItem.nivelProbabilidad ?? (nd && ne ? nd * ne : null)
           const nr = catItem.nivelRiesgo ?? (np && nc ? np * nc : null)
 
-          a.peligros.push({
+          peligros.push({
             id: makeId('r-'),
             catalogoPeligroId: catItem.id,
             numero: baseNumero,
@@ -603,142 +648,96 @@ export default function MatrixEditor({ id }: { id?: string }) {
             _ui: { expanded: true, activeTab: 0, stableLabel },
           })
         })
-      }
-      return m
+
+        return {
+          ...act,
+          peligros,
+        }
+      })
     })
 
+    setHasUnsavedChanges(true)
     toast({
       title: 'Peligros agregados',
       description: `Se ${selectedCatalogItems.length === 1 ? 'agregó 1 peligro' : `agregaron ${selectedCatalogItems.length} peligros`} desde el Catálogo Maestro.`,
     })
-  }
+  }, [selected])
 
-  function handleDuplicatePeligro(peligroId: string) {
+  const handleDuplicatePeligro = useCallback((peligroId: string) => {
     if (!selected.procesoId || !selected.zonaId || !selected.actividadId) return
-    updateMatrix((m: any) => {
-      const a = m.procesos
-        .find((x: any) => x.id === selected.procesoId)
-        ?.zonas?.find((y: any) => y.id === selected.zonaId)
-        ?.actividades?.find((aa: any) => aa.id === selected.actividadId)
-      if (a) {
-        const peligroToDuplicate = a.peligros.find((p: any) => p.id === peligroId)
-        if (peligroToDuplicate) {
-          const newPeligro = JSON.parse(JSON.stringify(peligroToDuplicate))
-          newPeligro.id = makeId('r-')
-          newPeligro.numero =
-            Math.max(0, ...(a.peligros || []).map((p: any) => Number(p.numero) || 0)) + 1
-          newPeligro._ui = {
-            expanded: false,
-            activeTab: 0,
-            stableLabel: `Peligro ${newPeligro.numero}`,
-          }
-          a.peligros.push(newPeligro)
+    setMatrix((m: any) => {
+      if (!m) return m
+      return updateActivityInMatrix(m, selected, (act) => {
+        const peligroToDuplicate = (act.peligros || []).find((p: any) => p.id === peligroId)
+        if (!peligroToDuplicate) return act
+        const newPeligro = JSON.parse(JSON.stringify(peligroToDuplicate))
+        newPeligro.id = makeId('r-')
+        newPeligro.numero =
+          Math.max(0, ...(act.peligros || []).map((p: any) => Number(p.numero) || 0)) + 1
+        newPeligro._ui = {
+          expanded: false,
+          activeTab: 0,
+          stableLabel: `Peligro ${newPeligro.numero}`,
         }
-      }
-      return m
+        return {
+          ...act,
+          peligros: [...act.peligros, newPeligro],
+        }
+      })
     })
+    setHasUnsavedChanges(true)
     toast({ title: 'Éxito', description: 'Peligro duplicado correctamente.' })
-  }
+  }, [selected])
 
-  function handleDeletePeligro(peligroId: string) {
+  const handleDeletePeligro = useCallback((peligroId: string) => {
     setConfirmDeleteTitle('Eliminar peligro')
     setConfirmDeleteMessage(
       '¿Estás seguro de que deseas eliminar este peligro? Esta acción no se puede deshacer.'
     )
     setPendingDeleteAction(() => () => {
-      updateMatrix((m: any) => {
-        const a = m.procesos
-          .find((x: any) => x.id === selected.procesoId)
-          ?.zonas?.find((y: any) => y.id === selected.zonaId)
-          ?.actividades?.find((aa: any) => aa.id === selected.actividadId)
-        if (a) {
-          a.peligros = a.peligros.filter((p: any) => p.id !== peligroId)
-        }
-        return m
+      setMatrix((m: any) => {
+        if (!m) return m
+        return updateActivityInMatrix(m, selected, (act) => ({
+          ...act,
+          peligros: (act.peligros || []).filter((p: any) => p.id !== peligroId),
+        }))
       })
+      setHasUnsavedChanges(true)
     })
     setConfirmDeleteOpen(true)
-  }
+  }, [selected])
 
-  function handleToggleExpandPeligro(peligroId: string) {
-    updateMatrix((m: any) => {
-      const a = m.procesos
-        .find((x: any) => x.id === selected.procesoId)
-        ?.zonas?.find((y: any) => y.id === selected.zonaId)
-        ?.actividades?.find((aa: any) => aa.id === selected.actividadId)
-      const p = a?.peligros?.find((pel: any) => pel.id === peligroId)
-      if (p) {
-        p._ui = { ...p._ui, expanded: !p._ui?.expanded }
-      }
-      return m
+  const handleToggleExpandPeligro = useCallback((peligroId: string) => {
+    setMatrix((m: any) => {
+      if (!m) return m
+      return updateHazardInMatrix(m, selected, peligroId, (p) => ({
+        ...p,
+        _ui: { ...p._ui, expanded: !p._ui?.expanded },
+      }))
     })
-  }
+    setHasUnsavedChanges(true)
+  }, [selected])
 
-  function handleChangeTabPeligro(peligroId: string, tabIndex: number) {
-    updateMatrix((m: any) => {
-      const a = m.procesos
-        .find((x: any) => x.id === selected.procesoId)
-        ?.zonas?.find((y: any) => y.id === selected.zonaId)
-        ?.actividades?.find((aa: any) => aa.id === selected.actividadId)
-      const p = a?.peligros?.find((pel: any) => pel.id === peligroId)
-      if (p) {
-        p._ui = { ...p._ui, activeTab: tabIndex }
-      }
-      return m
+  const handleChangeTabPeligro = useCallback((peligroId: string, tabIndex: number) => {
+    setMatrix((m: any) => {
+      if (!m) return m
+      return updateHazardInMatrix(m, selected, peligroId, (p) => ({
+        ...p,
+        _ui: { ...p._ui, activeTab: tabIndex },
+      }))
     })
-  }
+    setHasUnsavedChanges(true)
+  }, [selected])
 
-  function handleUpdatePeligroField(peligroId: string, path: string[], value: any) {
-    updateMatrix((m: any) => {
-      const a = m.procesos
-        .find((x: any) => x.id === selected.procesoId)
-        ?.zonas?.find((y: any) => y.id === selected.zonaId)
-        ?.actividades?.find((aa: any) => aa.id === selected.actividadId)
-      const r = a?.peligros?.find((p: any) => p.id === peligroId)
-      if (!r) return m
-
-      let cur: any = r
-      for (let i = 0; i < path.length - 1; i++) {
-        cur = cur[path[i]]
-      }
-      cur[path[path.length - 1]] = value
-
-      // Initial evaluation recalculation (GTC 45)
-      if (path[0] === 'evaluacion') {
-        const nd = Number(r.evaluacion.nd || 0)
-        const ne = Number(r.evaluacion.ne || 0)
-        const nc = Number(r.evaluacion.nc || 0)
-        const np = !nd || !ne ? 0 : nd * ne
-        const nr = !np || !nc ? 0 : np * nc
-        r.evaluacion.np = np
-        r.evaluacion.nr = nr
-        r.evaluacion.interp_np = interpProbabilidad(np).label
-        r.evaluacion.interp_nr = interpNivelRiesgo(nr).label
-        r.evaluacion.nivel_riesgo = interpNivelRiesgo(nr).label
-        const nivelLabel = interpNivelRiesgo(nr).label
-        r.evaluacion.aceptabilidad = nivelLabel ? aceptabilidadFromNivel(nivelLabel) : ''
-      }
-
-      // Residual evaluation recalculation (GTC 45 post-intervention)
-      if (path[0] === 'evaluacionPost' || r.evaluacionPost) {
-        if (!r.evaluacionPost) r.evaluacionPost = {}
-        const ndP = Number(r.evaluacionPost.nd || 0)
-        const neP = Number(r.evaluacionPost.ne || 0)
-        const ncP = Number(r.evaluacionPost.nc || 0)
-        const npP = !ndP || !neP ? 0 : ndP * neP
-        const nrP = !npP || !ncP ? 0 : npP * ncP
-        r.evaluacionPost.np = npP
-        r.evaluacionPost.nr = nrP
-        r.evaluacionPost.interp_np = interpProbabilidad(npP).label
-        r.evaluacionPost.interp_nr = interpNivelRiesgo(nrP).label
-        r.evaluacionPost.nivel_riesgo = interpNivelRiesgo(nrP).label
-        const nivelLabelP = interpNivelRiesgo(nrP).label
-        r.evaluacionPost.aceptabilidad = nivelLabelP ? aceptabilidadFromNivel(nivelLabelP) : ''
-      }
-
-      return m
+  const handleUpdatePeligroField = useCallback((peligroId: string, path: string[], value: any) => {
+    setMatrix((m: any) => {
+      if (!m) return m
+      return updateHazardInMatrix(m, selected, peligroId, (oldP) =>
+        applyHazardFieldUpdate(oldP, path, value)
+      )
     })
-  }
+    setHasUnsavedChanges(true)
+  }, [selected])
 
   // Drag and drop handlers
   function onActividadDragStart(
@@ -836,10 +835,10 @@ export default function MatrixEditor({ id }: { id?: string }) {
     actividadDragSourceRef.current = null
   }
 
-  function onPeligroDragStart(
+  const onPeligroDragStart = useCallback((
     e: React.DragEvent,
     peligroId: string
-  ) {
+  ) => {
     if (!selected.procesoId || !selected.zonaId || !selected.actividadId) return
     isDraggingPeligroRef.current = true
     const src = {
@@ -857,9 +856,9 @@ export default function MatrixEditor({ id }: { id?: string }) {
     } catch (err) {}
     e.dataTransfer.effectAllowed = 'move'
     e.stopPropagation()
-  }
+  }, [selected.procesoId, selected.zonaId, selected.actividadId])
 
-  function onPeligroDragOver(e: React.DragEvent, targetPeligroId: string | null) {
+  const onPeligroDragOver = useCallback((e: React.DragEvent, targetPeligroId: string | null) => {
     e.preventDefault()
     e.stopPropagation()
     setDragOverPeligroId(targetPeligroId)
@@ -871,14 +870,21 @@ export default function MatrixEditor({ id }: { id?: string }) {
       setDragOverPeligroEdge(edge)
     }
     e.dataTransfer.dropEffect = 'move'
-  }
+  }, [])
 
-  function onPeligroDragLeave() {
+  const onPeligroDragLeave = useCallback(() => {
     setDragOverPeligroId(null)
     setDragOverPeligroEdge(null)
-  }
+  }, [])
 
-  function onPeligroDrop(e: React.DragEvent, targetPeligroId: string | null) {
+  const onPeligroDragEnd = useCallback(() => {
+    isDraggingPeligroRef.current = false
+    peligroDragSourceRef.current = null
+    setDragOverPeligroId(null)
+    setDragOverPeligroEdge(null)
+  }, [])
+
+  const onPeligroDrop = useCallback((e: React.DragEvent, targetPeligroId: string | null) => {
     e.preventDefault()
     e.stopPropagation()
     const dropEdge = dragOverPeligroEdge
@@ -894,37 +900,75 @@ export default function MatrixEditor({ id }: { id?: string }) {
     if (!src || !src.peligroId) return
     if (!selected.procesoId || !selected.zonaId || !selected.actividadId) return
 
-    updateMatrix((m: any) => {
+    setMatrix((m: any) => {
+      if (!m || !m.procesos) return m
       const srcP = m.procesos.find((p: any) => p.id === src.procesoId)
       const srcZ = srcP?.zonas?.find((z: any) => z.id === src.zonaId)
       const srcA = srcZ?.actividades?.find((aa: any) => aa.id === src.actividadId)
       if (!srcA) return m
 
-      const srcIdx = srcA.peligros.findIndex((pp: any) => pp.id === src.peligroId)
+      const srcIdx = (srcA.peligros || []).findIndex((pp: any) => pp.id === src.peligroId)
       if (srcIdx === -1) return m
 
-      const peligroObj = srcA.peligros.splice(srcIdx, 1)[0]
+      const peligroObj = srcA.peligros[srcIdx]
 
-      const dstP = m.procesos.find((p: any) => p.id === selected.procesoId)
-      const dstZ = dstP?.zonas?.find((z: any) => z.id === selected.zonaId)
-      const dstA = dstZ?.actividades?.find((aa: any) => aa.id === selected.actividadId)
-      if (!dstA) return m
-
-      const targetIdx = targetPeligroId
-        ? dstA.peligros.findIndex((pp: any) => pp.id === targetPeligroId)
-        : -1
-      if (targetIdx === -1) {
-        dstA.peligros.push(peligroObj)
-      } else {
-        const insertIdx = dropEdge === 'after' ? targetIdx + 1 : targetIdx
-        dstA.peligros.splice(insertIdx, 0, peligroObj)
+      // Moving within the same activity
+      if (src.procesoId === selected.procesoId && src.zonaId === selected.zonaId && src.actividadId === selected.actividadId) {
+        return updateActivityInMatrix(m, selected, (act) => {
+          const newPeligros = [...(act.peligros || [])]
+          newPeligros.splice(srcIdx, 1)
+          const targetIdx = targetPeligroId ? newPeligros.findIndex((pp: any) => pp.id === targetPeligroId) : -1
+          if (targetIdx === -1) {
+            newPeligros.push(peligroObj)
+          } else {
+            const insertIdx = dropEdge === 'after' ? targetIdx + 1 : targetIdx
+            newPeligros.splice(insertIdx, 0, peligroObj)
+          }
+          return {
+            ...act,
+            peligros: newPeligros,
+          }
+        })
       }
 
-      return m
+      // Moving across activities
+      return {
+        ...m,
+        procesos: m.procesos.map((proc: any) => {
+          const zonas = (proc.zonas || []).map((zona: any) => {
+            const actividades = (zona.actividades || []).map((act: any) => {
+              if (proc.id === src.procesoId && zona.id === src.zonaId && act.id === src.actividadId) {
+                return {
+                  ...act,
+                  peligros: (act.peligros || []).filter((pp: any) => pp.id !== src.peligroId),
+                }
+              }
+              if (proc.id === selected.procesoId && zona.id === selected.zonaId && act.id === selected.actividadId) {
+                const newPeligros = [...(act.peligros || [])]
+                const targetIdx = targetPeligroId ? newPeligros.findIndex((pp: any) => pp.id === targetPeligroId) : -1
+                if (targetIdx === -1) {
+                  newPeligros.push(peligroObj)
+                } else {
+                  const insertIdx = dropEdge === 'after' ? targetIdx + 1 : targetIdx
+                  newPeligros.splice(insertIdx, 0, peligroObj)
+                }
+                return {
+                  ...act,
+                  peligros: newPeligros,
+                }
+              }
+              return act
+            })
+            return { ...zona, actividades }
+          })
+          return { ...proc, zonas }
+        }),
+      }
     })
 
+    setHasUnsavedChanges(true)
     peligroDragSourceRef.current = null
-  }
+  }, [selected.procesoId, selected.zonaId, selected.actividadId, dragOverPeligroEdge])
 
   // Files Handlers
   function handleSaveFilesToMatrix(
@@ -1030,6 +1074,8 @@ export default function MatrixEditor({ id }: { id?: string }) {
         })
       }
 
+      currentMatrix.lastUpdatedAt = currentMatrix.updatedAt || matrix?.updatedAt
+
       const res = await apiFetch(url, {
         method,
         headers: { 'Content-Type': 'application/json' },
@@ -1038,12 +1084,59 @@ export default function MatrixEditor({ id }: { id?: string }) {
 
       if (!res.ok) {
         const errBody = await res.json().catch(() => ({}))
-        const details = [errBody?.error, errBody?.details].filter(Boolean).join(' - ')
+        const details = [errBody?.error, errBody?.message, errBody?.details].filter(Boolean).join(' - ')
         throw new Error(details || 'Error al guardar en el servidor')
       }
 
       const saved = await res.json().catch(() => ({}))
-      setMatrix(currentMatrix)
+
+      // Reconcile temporary IDs with permanent DB IDs
+      if (saved.idMap && currentMatrix.procesos) {
+        currentMatrix.procesos.forEach((p: any) => {
+          if (saved.idMap.procesos?.[p.id]) {
+            const oldId = p.id
+            p.id = saved.idMap.procesos[oldId]
+            if (selected.procesoId === oldId) {
+              setSelected((prev) => ({ ...prev, procesoId: p.id }))
+            }
+          }
+          if (p.zonas) {
+            p.zonas.forEach((z: any) => {
+              if (saved.idMap.zonas?.[z.id]) {
+                const oldId = z.id
+                z.id = saved.idMap.zonas[oldId]
+                if (selected.zonaId === oldId) {
+                  setSelected((prev) => ({ ...prev, zonaId: z.id }))
+                }
+              }
+              if (z.actividades) {
+                z.actividades.forEach((a: any) => {
+                  if (saved.idMap.actividades?.[a.id]) {
+                    const oldId = a.id
+                    a.id = saved.idMap.actividades[oldId]
+                    if (selected.actividadId === oldId) {
+                      setSelected((prev) => ({ ...prev, actividadId: a.id }))
+                    }
+                  }
+                  if (a.peligros) {
+                    a.peligros.forEach((pel: any) => {
+                      if (saved.idMap.peligros?.[pel.id]) {
+                        pel.id = saved.idMap.peligros[pel.id]
+                      }
+                    })
+                  }
+                })
+              }
+            })
+          }
+        })
+      }
+
+      if (saved.updatedAt) {
+        currentMatrix.updatedAt = saved.updatedAt
+      }
+
+      setMatrix({ ...currentMatrix })
       setHasUnsavedChanges(false)
       toast({
         title: 'Éxito',
@@ -1193,6 +1286,36 @@ export default function MatrixEditor({ id }: { id?: string }) {
       .filter(Boolean).length
   }, [currentActividad?.tareas])
 
+  const handleSelectActividad = useCallback((pId: string, zId: string, aId: string) => {
+    setSelected({ procesoId: pId, zonaId: zId, actividadId: aId })
+  }, [])
+
+  const handleToggleExpandZona = useCallback((zId: string) => {
+    setExpandedZonaIds((prev) => ({ ...prev, [zId]: !prev[zId] }))
+  }, [])
+
+  const handleOpenAddFiles = useCallback(() => {
+    setShowFilesModal(true)
+  }, [])
+
+  const handleDeleteCurrentActividad = useCallback(() => {
+    if (currentProceso?.id && currentZona?.id && currentActividad?.id) {
+      handleDeleteActividad(currentProceso.id, currentZona.id, currentActividad.id)
+    }
+  }, [currentProceso?.id, currentZona?.id, currentActividad?.id, handleDeleteActividad])
+
+  const handleUpdateActivityDescription = useCallback((desc: string) => {
+    handleUpdateActivityField('descripcion', desc)
+  }, [handleUpdateActivityField])
+
+  const handleUpdateActivityTasks = useCallback((tasks: string) => {
+    handleUpdateActivityField('tareas', tasks)
+  }, [handleUpdateActivityField])
+
+  const handleOpenCatalog = useCallback(() => {
+    setShowCatalogModal(true)
+  }, [])
+
   if (!matrix) {
     return (
       <div className="flex items-center justify-center p-12 text-[#5e6b62] h-screen w-full bg-[#f8faf9]">
@@ -1235,12 +1358,8 @@ export default function MatrixEditor({ id }: { id?: string }) {
               dragOverActividadId={dragOverActividadId}
               dragOverActividadEdge={dragOverActividadEdge}
               files={matrix.files || []}
-              onSelectActividad={(pId, zId, aId) =>
-                setSelected({ procesoId: pId, zonaId: zId, actividadId: aId })
-              }
-              onToggleExpandZona={(zId) =>
-                setExpandedZonaIds((prev) => ({ ...prev, [zId]: !prev[zId] }))
-              }
+              onSelectActividad={handleSelectActividad}
+              onToggleExpandZona={handleToggleExpandZona}
               onAddProceso={handleAddProceso}
               onEditProceso={handleEditProceso}
               onDeleteProceso={handleDeleteProceso}
@@ -1254,7 +1373,7 @@ export default function MatrixEditor({ id }: { id?: string }) {
               onActividadDragOver={onActividadDragOver}
               onActividadDragLeave={onActividadDragLeave}
               onActividadDrop={onActividadDrop}
-              onOpenAddFiles={() => setShowFilesModal(true)}
+              onOpenAddFiles={handleOpenAddFiles}
               onDeleteFile={handleDeleteFile}
             />
 
@@ -1283,13 +1402,7 @@ export default function MatrixEditor({ id }: { id?: string }) {
                     zonaNombre={currentZona?.nombre || 'Zona'}
                     tasksCount={tasksCount}
                     onUpdateField={handleUpdateActivityField}
-                    onDeleteActivity={() =>
-                      handleDeleteActividad(
-                        currentProceso.id,
-                        currentZona.id,
-                        currentActividad.id
-                      )
-                    }
+                    onDeleteActivity={handleDeleteCurrentActividad}
                   />
 
                   {/* 4. Collapsible Activity Detail (Description + Tasks inline) */}
@@ -1297,8 +1410,8 @@ export default function MatrixEditor({ id }: { id?: string }) {
                     description={currentActividad.descripcion || ''}
                     tasksString={currentActividad.tareas || ''}
                     cargo={currentActividad.cargo || ''}
-                    onUpdateDescription={(desc) => handleUpdateActivityField('descripcion', desc)}
-                    onUpdateTasks={(tasks) => handleUpdateActivityField('tareas', tasks)}
+                    onUpdateDescription={handleUpdateActivityDescription}
+                    onUpdateTasks={handleUpdateActivityTasks}
                   />
 
                   {/* 5. Activity Risk Summary (3 animated cards: Inherent, Impact, Residual) */}
@@ -1311,21 +1424,14 @@ export default function MatrixEditor({ id }: { id?: string }) {
                     dragOverPeligroId={dragOverPeligroId}
                     dragOverPeligroEdge={dragOverPeligroEdge}
                     onAddPeligro={handleAddPeligro}
-                    onOpenCatalog={() => setShowCatalogModal(true)}
+                    onOpenCatalog={handleOpenCatalog}
                     onToggleExpand={handleToggleExpandPeligro}
                     onChangeTab={handleChangeTabPeligro}
                     onUpdateField={handleUpdatePeligroField}
                     onDuplicate={handleDuplicatePeligro}
                     onDelete={handleDeletePeligro}
                     onDragStart={onPeligroDragStart}
-                    onDragEnd={() => {
-                      setDragOverPeligroId(null)
-                      setDragOverPeligroEdge(null)
-                      peligroDragSourceRef.current = null
-                      setTimeout(() => {
-                        isDraggingPeligroRef.current = false
-                      }, 0)
-                    }}
+                    onDragEnd={onPeligroDragEnd}
                     onDragOver={onPeligroDragOver}
                     onDragLeave={onPeligroDragLeave}
                     onDrop={onPeligroDrop}

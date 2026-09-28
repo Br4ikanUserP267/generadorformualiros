@@ -33,18 +33,18 @@ interface InterventionDrawerProps {
 // GTC 45 Interpretation Helpers
 function interpProbabilidad(np: number | null) {
   if (!np || np <= 0) return { label: '', color: '#9CA3AF', bg: 'bg-slate-100', text: 'text-slate-600' }
-  if (np <= 4) return { label: 'Bajo', color: '#16a34a', bg: 'bg-emerald-50', text: 'text-[#16a34a]' }
-  if (np <= 8) return { label: 'Medio', color: '#d97706', bg: 'bg-amber-50', text: 'text-[#d97706]' }
-  if (np <= 20) return { label: 'Alto', color: '#ef4444', bg: 'bg-rose-50', text: 'text-[#ef4444]' }
-  return { label: 'Muy Alto', color: '#a50000', bg: 'bg-red-50', text: 'text-[#a50000]' }
+  if (np <= 4) return { label: 'Bajo', color: '#16a34a', bg: 'bg-emerald-50', text: 'text-[#16a34a]' } // Verde
+  if (np <= 8) return { label: 'Medio', color: '#eab308', bg: 'bg-yellow-50', text: 'text-[#eab308]' } // Amarillo
+  if (np <= 20) return { label: 'Alto', color: '#f87171', bg: 'bg-red-50', text: 'text-[#f87171]' } // Rojo pastel
+  return { label: 'Muy Alto', color: '#b91c1c', bg: 'bg-red-100', text: 'text-[#b91c1c]' } // Rojo Oscuro
 }
 
 function interpNivelRiesgo(nr: number | null) {
   if (!nr || nr <= 0) return { label: '', color: '#9CA3AF', bg: 'bg-slate-100', text: 'text-slate-600' }
-  if (nr <= 20) return { label: 'IV', color: '#16a34a', bg: 'bg-emerald-50', text: 'text-[#16a34a]' }
-  if (nr <= 120) return { label: 'III', color: '#16a34a', bg: 'bg-emerald-50', text: 'text-[#16a34a]' }
-  if (nr <= 500) return { label: 'II', color: '#d97706', bg: 'bg-amber-50', text: 'text-[#d97706]' }
-  return { label: 'I', color: '#ef4444', bg: 'bg-red-50', text: 'text-[#ef4444]' }
+  if (nr <= 20) return { label: 'IV', color: '#16a34a', bg: 'bg-emerald-50', text: 'text-[#16a34a]' } // Verde
+  if (nr <= 120) return { label: 'III', color: '#16a34a', bg: 'bg-emerald-50', text: 'text-[#16a34a]' } // Verde
+  if (nr <= 500) return { label: 'II', color: '#eab308', bg: 'bg-yellow-50', text: 'text-[#eab308]' } // Amarillo
+  return { label: 'I', color: '#b91c1c', bg: 'bg-red-100', text: 'text-[#b91c1c]' } // Rojo Oscuro
 }
 
 function aceptabilidadFromNivel(label: string) {
@@ -55,7 +55,7 @@ function aceptabilidadFromNivel(label: string) {
     case 'III':
       return 'Mejorable'
     case 'II':
-      return 'Aceptable con Control Específico'
+      return 'Aceptable con Control Especifico'
     case 'I':
       return 'No Aceptable'
     default:
@@ -65,14 +65,15 @@ function aceptabilidadFromNivel(label: string) {
 
 function aceptabilidadStyle(text: string) {
   if (!text) return { bg: 'bg-slate-50', text: 'text-slate-500', border: 'border-slate-200' }
-  if (text.includes('No Aceptable')) {
-    return { bg: 'bg-red-50', text: 'text-[#a50000]', border: 'border-red-200' }
+  const norm = text.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toUpperCase().trim()
+  if (norm.includes('NO ACEPTABLE') || (norm.startsWith('I') && !norm.startsWith('II') && !norm.startsWith('III') && !norm.startsWith('IV'))) {
+    return { bg: 'bg-red-50', text: 'text-[#b91c1c]', border: 'border-red-200' } // Rojo Oscuro
   }
-  if (text.includes('Control Específico')) {
-    return { bg: 'bg-amber-50', text: 'text-[#d97706]', border: 'border-amber-200' }
+  if (norm.includes('CONTROL ESPECIFICO') || norm.startsWith('II')) {
+    return { bg: 'bg-yellow-50', text: 'text-[#eab308]', border: 'border-yellow-200' } // Amarillo
   }
-  if (text.includes('Mejorable') || text.includes('Aceptable')) {
-    return { bg: 'bg-emerald-50', text: 'text-[#16a34a]', border: 'border-emerald-200' }
+  if (norm.includes('MEJORABLE') || norm.includes('ACEPTABLE') || norm.startsWith('III') || norm.startsWith('IV')) {
+    return { bg: 'bg-emerald-50', text: 'text-[#16a34a]', border: 'border-emerald-200' } // Verde
   }
   return { bg: 'bg-slate-50', text: 'text-slate-600', border: 'border-slate-200' }
 }

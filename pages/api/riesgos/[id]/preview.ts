@@ -61,88 +61,86 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     }
 
     // Execute Global Summary Counts and Current Page Records in parallel
-    const [
-      totalProcesos,
-      totalZonas,
-      totalActividades,
-      totalPeligros,
-      muyAltoCount,
-      altoCount,
-      medioCount,
-      bajoCount,
-      pagedPeligros,
-    ] = await Promise.all([
-      // 1. Total Procesos in entire matrix
-      prisma.proceso.count({
-        where: { matrizId, deletedAt: null },
-      }),
-
-      // 2. Total Zonas in entire matrix
-      prisma.zona.count({
-        where: {
-          deletedAt: null,
-          proceso: { matrizId, deletedAt: null },
-        },
-      }),
-
-      // 3. Total Actividades in entire matrix
-      prisma.actividad.count({
-        where: {
-          deletedAt: null,
-          zona: {
-            deletedAt: null,
-            proceso: { matrizId, deletedAt: null },
-          },
-        },
-      }),
-
-      // 4. Total Peligros in entire matrix
-      prisma.peligro.count({
-        where: baseWhere,
-      }),
-
-      // 5. Muy Alto (NP > 20)
-      prisma.peligro.count({
-        where: {
-          ...baseWhere,
-          evaluacion: {
-            nivelProbabilidad: { gt: 20 },
-          },
-        },
-      }),
-
-      // 6. Alto (NP between 10 and 20)
-      prisma.peligro.count({
-        where: {
-          ...baseWhere,
-          evaluacion: {
-            nivelProbabilidad: { gte: 10, lte: 20 },
-          },
-        },
-      }),
-
-      // 7. Medio (NP between 6 and 8)
-      prisma.peligro.count({
-        where: {
-          ...baseWhere,
-          evaluacion: {
-            nivelProbabilidad: { gte: 6, lte: 8 },
-          },
-        },
-      }),
-
-      // 8. Bajo (NP <= 4 or unevaluated)
-      prisma.peligro.count({
-        where: {
-          ...baseWhere,
-          OR: [
-            { evaluacion: { nivelProbabilidad: { lte: 4 } } },
-            { evaluacion: null },
-          ],
-        },
-      }),
-
-      // 9. Current Page Peligros with full relationship joins
+    const [countsResult, pagedPeligros, allMatrixHazards] = await Promise.all([
+      prisma.$queryRaw<Array<{
+        total_procesos: number
+        total_zonas: number
+        total_actividades: number
+        total_peligros: number
+        muy_alto: number
+        alto: number
+        medio: number
+        bajo: number
+      }>>`
+        WITH active_data AS (
+          SELECT 
+            p."id",
+            COALESCE(NULLIF(TRIM(ep."interp_probabilidad"), ''), NULLIF(TRIM(e."interp_probabilidad"), ''), '') AS interp_np,
+            CASE 
+              WHEN ep."nivel_probabilidad" IS NOT NULL AND ep."nivel_probabilidad" > 0 THEN ep."nivel_probabilidad"
+              WHEN e."nivel_probabilidad" IS NOT NULL AND e."nivel_probabilidad" > 0 THEN e."nivel_probabilidad"
+              ELSE 0
+            END AS np
+          FROM "peligros" p
+          JOIN "actividades" a ON p."actividad_id" = a."id" AND a."deleted_at" IS NULL
+          JOIN "zonas" z ON a."zona_id" = z."id" AND z."deleted_at" IS NULL
+          JOIN "procesos" pr ON z."proceso_id" = pr."id" AND pr."deleted_at" IS NULL
+          LEFT JOIN "evaluaciones" e ON e."peligro_id" = p."id"
+          LEFT JOIN "evaluaciones_post" ep ON ep."peligro_id" = p."id"
+          WHERE pr."matriz_id" = ${matrizId} AND p."deleted_at" IS NULL
+        )
+        SELECT
+          (SELECT COUNT(*)::int FROM "procesos" WHERE "matriz_id" = ${matrizId} AND "deleted_at" IS NULL) AS total_procesos,
+          (SELECT COUNT(*)::int FROM "zonas" z JOIN "procesos" pr ON z."proceso_id" = pr."id" WHERE pr."matriz_id" = ${matrizId} AND z."deleted_at" IS NULL AND pr."deleted_at" IS NULL) AS total_zonas,
+          (SELECT COUNT(*)::int FROM "actividades" a JOIN "zonas" z ON a."zona_id" = z."id" JOIN "procesos" pr ON z."proceso_id" = pr."id" WHERE pr."matriz_id" = ${matrizId} AND a."deleted_at" IS NULL AND z."deleted_at" IS NULL AND pr."deleted_at" IS NULL) AS total_actividades,
+          COUNT("id")::int AS total_peligros,
+          COUNT("id") FILTER (
+            WHERE np >= 24
+               OR UPPER(interp_np) LIKE '%MUY ALTO%'
+               OR UPPER(interp_np) = 'MA'
+               OR UPPER(interp_np) = 'EXTREMO'
+          )::int AS muy_alto,
+          COUNT("id") FILTER (
+            WHERE (
+              (np >= 10 AND np < 24)
+              OR (UPPER(interp_np) LIKE '%ALTO%' AND UPPER(interp_np) NOT LIKE '%MUY ALTO%')
+              OR UPPER(interp_np) = 'A'
+            )
+            AND NOT (
+              np >= 24
+              OR UPPER(interp_np) LIKE '%MUY ALTO%'
+              OR UPPER(interp_np) = 'MA'
+              OR UPPER(interp_np) = 'EXTREMO'
+            )
+          )::int AS alto,
+          COUNT("id") FILTER (
+            WHERE (
+              (np >= 6 AND np < 10)
+              OR UPPER(interp_np) LIKE '%MEDIO%'
+              OR UPPER(interp_np) LIKE '%MODERADO%'
+              OR UPPER(interp_np) = 'M'
+            )
+            AND NOT (
+              np >= 10
+              OR UPPER(interp_np) LIKE '%ALTO%'
+            )
+          )::int AS medio,
+          COUNT("id") FILTER (
+            WHERE (
+              (np > 0 AND np <= 4)
+              OR UPPER(interp_np) LIKE '%BAJO%'
+              OR UPPER(interp_np) = 'B'
+              OR (np = 0 AND interp_np = '')
+            )
+            AND NOT (
+              np >= 6
+              OR UPPER(interp_np) LIKE '%MEDIO%'
+              OR UPPER(interp_np) LIKE '%MODERADO%'
+              OR UPPER(interp_np) LIKE '%ALTO%'
+            )
+          )::int AS bajo
+        FROM active_data;
+      `,
       prisma.peligro.findMany({
         where: baseWhere,
         select: {
@@ -250,43 +248,63 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         skip: (page - 1) * pageSize,
         take: pageSize,
       }),
-    ])
 
-    // Query distinct dangers in this matrix to get consolidated 5W2H action plans
-    const allMatrixHazards = await prisma.peligro.findMany({
-      where: baseWhere,
-      select: {
-        id: true,
-        descripcion: true,
-        clasificacion: true,
-        catalogoPeligroId: true,
-        evaluacion: {
-          select: {
-            nivelRiesgo: true,
-            interpRiesgo: true,
-            aceptabilidad: true,
-          },
-        },
-        catalogoPeligro: {
-          select: {
-            id: true,
-            codigo: true,
-            descripcion: true,
-            clasificacion: true,
-            nivelRiesgo: true,
-            interpRiesgo: true,
-            planesAccion: {
-              where: { deletedAt: null },
-              orderBy: { orden: 'asc' },
+      // 3. Query distinct dangers in this matrix to get consolidated 5W2H action plans concurrently
+      prisma.peligro.findMany({
+        where: baseWhere,
+        select: {
+          id: true,
+          descripcion: true,
+          clasificacion: true,
+          catalogoPeligroId: true,
+          evaluacion: {
+            select: {
+              nivelRiesgo: true,
+              interpRiesgo: true,
+              aceptabilidad: true,
             },
           },
+          catalogoPeligro: {
+            select: {
+              id: true,
+              codigo: true,
+              descripcion: true,
+              clasificacion: true,
+              nivelRiesgo: true,
+              interpRiesgo: true,
+              planesAccion: {
+                where: { deletedAt: null },
+                orderBy: { orden: 'asc' },
+              },
+            },
+          },
+          planesAccion: {
+            where: { deletedAt: null },
+            orderBy: { orden: 'asc' },
+          },
         },
-        planesAccion: {
-          where: { deletedAt: null },
-          orderBy: { orden: 'asc' },
-        },
-      },
-    })
+      }),
+    ])
+
+    const agg = countsResult[0] || {
+      total_procesos: 0,
+      total_zonas: 0,
+      total_actividades: 0,
+      total_peligros: 0,
+      muy_alto: 0,
+      alto: 0,
+      medio: 0,
+      bajo: 0,
+    }
+
+    const totalProcesos = agg.total_procesos
+    const totalZonas = agg.total_zonas
+    const totalActividades = agg.total_actividades
+    const totalPeligros = agg.total_peligros
+    const muyAltoCount = agg.muy_alto
+    const altoCount = agg.alto
+    const medioCount = agg.medio
+    const bajoCount = agg.bajo
 
     // Consolidate 5W2H action plans grouped by danger (ONLY for Muy Alto, Alto, and Moderado)
     const planesAccion5w2hMap = new Map<string, any>()
@@ -323,7 +341,15 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       const z = a?.zona
       const proc = z?.proceso
       const ctrl = p.control
-      const ev = p.evaluacion
+      const evPost = p.evaluacionPost
+      const isIntervened = Boolean(
+        evPost && (
+          (evPost.interpProbabilidad && String(evPost.interpProbabilidad).trim() !== '') ||
+          (evPost.nivelProbabilidad !== null && evPost.nivelProbabilidad !== undefined && Number(evPost.nivelProbabilidad) > 0) ||
+          (evPost.nivelRiesgo !== null && evPost.nivelRiesgo !== undefined && Number(evPost.nivelRiesgo) > 0)
+        )
+      )
+      const ev = isIntervened ? evPost : p.evaluacion
       const crit = p.criterio
       const inv = p.intervencion
 

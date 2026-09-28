@@ -167,28 +167,46 @@ export function getClasificacionStyle(clasificacion: string): ClasificacionStyle
 }
 
 export function interpProbabilidad(np: number) {
-  if (!np) return { label: '', color: '#9CA3AF', key: 'BAJO' }
-  if (np <= 4) return { label: 'Bajo', color: '#16a34a', key: 'BAJO' }
-  if (np <= 8) return { label: 'Medio', color: '#d97706', key: 'MEDIO' }
-  if (np <= 20) return { label: 'Alto', color: '#ea580c', key: 'ALTO' }
-  return { label: 'Muy Alto', color: '#dc2626', key: 'MUY_ALTO' }
+  if (!np || np <= 0) return { label: '', color: '#9CA3AF', key: 'BAJO' }
+  if (np <= 4) return { label: 'Bajo', color: '#16a34a', key: 'BAJO' } // Verde
+  if (np <= 8) return { label: 'Medio', color: '#eab308', key: 'MEDIO' } // Amarillo
+  if (np <= 20) return { label: 'Alto', color: '#f87171', key: 'ALTO' } // Rojo pastel
+  return { label: 'Muy Alto', color: '#b91c1c', key: 'MUY_ALTO' } // Rojo Oscuro
 }
 
 export function interpNivelRiesgo(nr: number) {
-  if (!nr) return { label: '', color: '#9CA3AF', level: 'IV', key: 'BAJO' }
-  if (nr <= 20) return { label: 'IV - Aceptable', color: '#16a34a', level: 'IV', key: 'BAJO' }
-  if (nr <= 120) return { label: 'III - Mejorable', color: '#eab308', level: 'III', key: 'BAJO' }
-  if (nr <= 500) return { label: 'II - Control Específico', color: '#ef4444', level: 'II', key: 'MEDIO' }
-  return { label: 'I - No Aceptable', color: '#991b1b', level: 'I', key: 'ALTO' }
+  if (!nr || nr <= 0) return { label: '', color: '#9CA3AF', level: 'IV', key: 'BAJO' }
+  if (nr <= 20) return { label: 'IV', color: '#16a34a', level: 'IV', key: 'BAJO' } // Verde
+  if (nr <= 120) return { label: 'III', color: '#16a34a', level: 'III', key: 'MODERADO' } // Verde
+  if (nr <= 500) return { label: 'II', color: '#eab308', level: 'II', key: 'ALTO' } // Amarillo
+  return { label: 'I', color: '#b91c1c', level: 'I', key: 'MUY_ALTO' } // Rojo Oscuro
 }
 
 export function aceptabilidadFromNivel(nivel: string): string {
   if (!nivel) return ''
   if (nivel.includes('I -') || nivel === 'I') return 'No Aceptable'
-  if (nivel.includes('II -') || nivel === 'II') return 'Aceptable con Control Específico'
+  if (nivel.includes('II -') || nivel === 'II') return 'Aceptable con Control Especifico'
   if (nivel.includes('III -') || nivel === 'III') return 'Mejorable'
   if (nivel.includes('IV -') || nivel === 'IV') return 'Aceptable'
   return ''
+}
+
+export function aceptabilidadColor(text: string): string {
+  if (!text) return '#9CA3AF'
+  const norm = text.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toUpperCase().trim()
+  if (norm.includes('NO ACEPTABLE') || (norm.startsWith('I') && !norm.startsWith('II') && !norm.startsWith('III') && !norm.startsWith('IV'))) {
+    return '#b91c1c' // Rojo Oscuro
+  }
+  if (norm.includes('CONTROL ESPECIFICO') || norm.startsWith('II')) {
+    return '#eab308' // Amarillo
+  }
+  if (norm.includes('MEJORABLE') || norm.startsWith('III')) {
+    return '#16a34a' // Verde
+  }
+  if (norm.includes('ACEPTABLE') || norm.startsWith('IV')) {
+    return '#16a34a' // Verde
+  }
+  return '#9CA3AF'
 }
 
 export function calculateGtc45(nd?: number | null, ne?: number | null, nc?: number | null) {

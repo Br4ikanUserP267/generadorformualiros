@@ -91,8 +91,8 @@ function formatNumberCol(val: number): string {
 }
 
 export function DashboardStats({ totals }: DashboardStatsProps) {
-  // Mode switch: 'CATALOGO' (82 Peligros Únicos) vs 'OCURRENCIAS' (2.754 Repeticiones en Matrices)
-  const [viewMode, setViewMode] = useState<'CATALOGO' | 'OCURRENCIAS'>('CATALOGO')
+  // Mode switch: 'OCURRENCIAS' (Repeticiones en Matrices) vs 'CATALOGO' (Peligros Únicos)
+  const [viewMode, setViewMode] = useState<'CATALOGO' | 'OCURRENCIAS'>('OCURRENCIAS')
 
   // Selected Area filter ('TODAS' or specific area name)
   const [selectedArea, setSelectedArea] = useState<string>('TODAS')
@@ -192,17 +192,22 @@ export function DashboardStats({ totals }: DashboardStatsProps) {
     }
 
     // Fallback to prop totals
-    const tot = totals?.totP || 82
+    const tot = totals?.totP ?? 0
+    const ma = totals?.ma ?? 0
+    const al = totals?.al ?? 0
+    const me = totals?.me ?? 0
+    const ba = totals?.ba ?? 0
+    const safeTot = tot > 0 ? tot : 1
     return {
       total: tot,
-      ma: totals?.ma || 0,
-      al: totals?.al || 26,
-      me: totals?.me || 48,
-      ba: totals?.ba || 8,
-      maPct: 0,
-      alPct: 32,
-      mePct: 58,
-      baPct: 10,
+      ma,
+      al,
+      me,
+      ba,
+      maPct: (ma / safeTot) * 100,
+      alPct: (al / safeTot) * 100,
+      mePct: (me / safeTot) * 100,
+      baPct: (ba / safeTot) * 100,
       label: 'Catálogo de Peligros',
     }
   }, [viewMode, isAreaSelected, selectedArea, statsData, totals])
@@ -337,8 +342,8 @@ export function DashboardStats({ totals }: DashboardStatsProps) {
   const radius = 50
   const circumference = 2 * Math.PI * radius
   const donutSlices = [
-    { key: 'ma', label: 'Muy Alto', sub: 'Nivel I', count: activeStats.ma, pct: activeStats.maPct, color: '#991b1b' },
-    { key: 'al', label: 'Alto', sub: 'Nivel II', count: activeStats.al, pct: activeStats.alPct, color: '#ef4444' },
+    { key: 'ma', label: 'Muy Alto', sub: 'Nivel I', count: activeStats.ma, pct: activeStats.maPct, color: '#b91c1c' },
+    { key: 'al', label: 'Alto', sub: 'Nivel II', count: activeStats.al, pct: activeStats.alPct, color: '#f87171' },
     { key: 'me', label: 'Moderado', sub: 'Nivel III', count: activeStats.me, pct: activeStats.mePct, color: '#eab308' },
     { key: 'ba', label: 'Bajo', sub: 'Nivel IV', count: activeStats.ba, pct: activeStats.baPct, color: '#16a34a' },
   ]
