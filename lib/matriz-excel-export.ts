@@ -213,3 +213,52 @@ export async function exportMatrizToExcel(matrizData: MatrizData): Promise<void>
     throw error;
   }
 }
+
+export interface ExportAllFilters {
+  search?: string
+  dateDesde?: string
+  dateHasta?: string
+  tipo?: string
+}
+
+export async function exportAllMatricesToZip(filters?: ExportAllFilters): Promise<void> {
+  try {
+    const params = new URLSearchParams()
+    if (filters?.search?.trim()) params.set('search', filters.search.trim())
+    if (filters?.dateDesde) params.set('dateDesde', filters.dateDesde)
+    if (filters?.dateHasta) params.set('dateHasta', filters.dateHasta)
+    if (filters?.tipo) params.set('tipo', filters.tipo)
+
+    const queryString = params.toString() ? `?${params.toString()}` : ''
+    const response = await apiFetch(`/api/export/all${queryString}`)
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}))
+      throw new Error(errorData.error || `Error al exportar: ${response.statusText}`)
+    }
+
+    const blob = await response.blob()
+    const url = URL.createObjectURL(blob)
+    const link = document.createElement('a')
+
+    let filename = `Matrices_Riesgos_${new Date().toISOString().split('T')[0]}.zip`
+    const disposition = response.headers.get('Content-Disposition')
+    if (disposition && disposition.indexOf('attachment') !== -1) {
+      const filenameRegex = /filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/
+      const matches = filenameRegex.exec(disposition)
+      if (matches != null && matches[1]) {
+        filename = matches[1].replace(/['"]/g, '')
+      }
+    }
+
+    link.download = filename
+    link.href = url
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+    URL.revokeObjectURL(url)
+  } catch (error) {
+    console.error('Error generating Zip of all matrices:', error)
+    throw error
+  }
+}

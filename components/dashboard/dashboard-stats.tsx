@@ -91,8 +91,28 @@ function formatNumberCol(val: number): string {
 }
 
 export function DashboardStats({ totals }: DashboardStatsProps) {
-  // Mode switch: 'OCURRENCIAS' (Repeticiones en Matrices) vs 'CATALOGO' (Peligros Únicos)
-  const [viewMode, setViewMode] = useState<'CATALOGO' | 'OCURRENCIAS'>('OCURRENCIAS')
+  // Mode switch: 'OCURRENCIAS' (Repeticiones en Matrices) vs 'CATALOGO' (Peligros Únicos) - Defaults to CATALOGO
+  const [viewMode, setViewMode] = useState<'CATALOGO' | 'OCURRENCIAS'>('CATALOGO')
+
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem('dashboard_stats_view_mode')
+      if (saved === 'CATALOGO' || saved === 'OCURRENCIAS') {
+        setViewMode(saved)
+      }
+    } catch {
+      // Ignore localStorage errors
+    }
+  }, [])
+
+  const handleViewModeChange = (mode: 'CATALOGO' | 'OCURRENCIAS') => {
+    setViewMode(mode)
+    try {
+      localStorage.setItem('dashboard_stats_view_mode', mode)
+    } catch {
+      // Ignore localStorage errors
+    }
+  }
 
   // Selected Area filter ('TODAS' or specific area name)
   const [selectedArea, setSelectedArea] = useState<string>('TODAS')
@@ -363,7 +383,7 @@ export function DashboardStats({ totals }: DashboardStatsProps) {
         <div className="flex flex-wrap items-center gap-1.5 bg-[#f6f9f7] p-1 rounded-2xl border border-[#dfe9e2]">
           <button
             type="button"
-            onClick={() => setViewMode('CATALOGO')}
+            onClick={() => handleViewModeChange('CATALOGO')}
             className={`flex items-center gap-2 px-3.5 py-1.5 rounded-xl text-xs font-black transition-all cursor-pointer ${
               viewMode === 'CATALOGO'
                 ? 'bg-[#1F7D3E] text-white shadow-xs'
@@ -381,7 +401,7 @@ export function DashboardStats({ totals }: DashboardStatsProps) {
 
           <button
             type="button"
-            onClick={() => setViewMode('OCURRENCIAS')}
+            onClick={() => handleViewModeChange('OCURRENCIAS')}
             className={`flex items-center gap-2 px-3.5 py-1.5 rounded-xl text-xs font-black transition-all cursor-pointer ${
               viewMode === 'OCURRENCIAS'
                 ? 'bg-[#1F7D3E] text-white shadow-xs'

@@ -1,7 +1,7 @@
 "use client"
 
 import React from 'react'
-import { Search, RotateCcw, Plus, FileSpreadsheet, FilePlus2, ChevronDown } from 'lucide-react'
+import { Search, RotateCcw, Plus, FileSpreadsheet, FilePlus2, ChevronDown, Archive, Loader2 } from 'lucide-react'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -19,9 +19,12 @@ interface MatrixFiltersProps {
   tipoFilter: string
   setTipoFilter: (value: string) => void
   tiposList: string[]
+  totalMatrices?: number
+  isExportingAll?: boolean
   onResetFilters: () => void
   onNewMatrix: () => void
   onOpenImport: () => void
+  onExportAll?: () => void
 }
 
 export function MatrixFilters({
@@ -34,9 +37,12 @@ export function MatrixFilters({
   tipoFilter,
   setTipoFilter,
   tiposList,
+  totalMatrices = 0,
+  isExportingAll = false,
   onResetFilters,
   onNewMatrix,
   onOpenImport,
+  onExportAll,
 }: MatrixFiltersProps) {
   const hasActiveFilters = Boolean(search || dateDesde || dateHasta || tipoFilter)
 
@@ -108,6 +114,36 @@ export function MatrixFilters({
             >
               <RotateCcw className="size-3.5 text-[#8aa08f]" />
               <span>Limpiar</span>
+            </button>
+          )}
+
+          {/* Exportar Todas Button */}
+          {onExportAll && (
+            <button
+              type="button"
+              onClick={onExportAll}
+              disabled={isExportingAll || totalMatrices === 0}
+              title={
+                hasActiveFilters
+                  ? `Exportar las ${totalMatrices} matrices filtradas en archivos individuales (.zip)`
+                  : `Exportar todas las matrices (${totalMatrices}) en archivos individuales (.zip)`
+              }
+              className="inline-flex items-center justify-center gap-2 px-3.5 sm:px-4 py-2.5 rounded-xl border border-[#b9d2bf] bg-[#f0f9f1] text-[#1F7D3E] hover:bg-[#e2f3e5] hover:border-[#1F7D3E] active:scale-[0.98] text-xs font-black uppercase tracking-wider shadow-xs transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed flex-1 sm:flex-none"
+            >
+              {isExportingAll ? (
+                <>
+                  <Loader2 className="size-4 animate-spin text-[#1F7D3E]" />
+                  <span>Exportando...</span>
+                </>
+              ) : (
+                <>
+                  <Archive className="size-4 text-[#1F7D3E]" />
+                  <span>Exportar Todas</span>
+                  <span className="text-[10px] font-black px-1.5 py-0.5 rounded-md bg-[#1F7D3E]/15 text-[#1F7D3E]">
+                    ZIP
+                  </span>
+                </>
+              )}
             </button>
           )}
 

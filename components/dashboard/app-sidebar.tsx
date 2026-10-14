@@ -8,7 +8,6 @@ import {
   BarChart3,
   Flame,
   ClipboardCheck,
-  Settings,
   ChevronLeft,
   ChevronRight,
   X,
@@ -55,14 +54,6 @@ const navItems: NavItem[] = [
     label: 'Catálogo de Peligros',
     href: '/dashboard/peligros',
     icon: Flame,
-  },
-  {
-    label: 'Configuración',
-    href: '#',
-    icon: Settings,
-    disabled: true,
-    badge: 'Próximamente',
-    adminOnly: true,
   },
 ]
 

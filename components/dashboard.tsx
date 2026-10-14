@@ -6,11 +6,12 @@ import { useAuth } from '@/lib/auth-context'
 import ConfirmModal from './confirm-modal'
 import { ImportMatrizModal } from './ImportMatrizModal'
 import { MatrixPreview } from './matrix-preview'
-import { exportMatrizToExcel } from '@/lib/matriz-excel-export'
+import { exportMatrizToExcel, exportAllMatricesToZip } from '@/lib/matriz-excel-export'
+import { useToast } from '@/hooks/use-toast'
 import type { Riesgo } from '@/lib/types'
 import { apiFetch } from '@/lib/utils'
 import { InstructionsModal } from './InstructionsModal'
-import { ShieldCheck } from 'lucide-react'
+import { ShieldCheck, LayoutList, BarChart3 } from 'lucide-react'
 
 // Modular Dashboard Subcomponents
 import { AppSidebar } from './dashboard/app-sidebar'
@@ -27,6 +28,7 @@ import {
 export function Dashboard() {
   const { user } = useAuth()
   const router = useRouter()
+  const { toast } = useToast()
 
   // App Shell State
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false)
@@ -44,6 +46,28 @@ export function Dashboard() {
   const [totals, setTotals] = useState({ totM: 0, totP: 0, ma: 0, al: 0, me: 0, ba: 0 })
   const [isLoading, setIsLoading] = useState(true)
   const [facetTipos, setFacetTipos] = useState<string[]>([])
+  const [isExportingAll, setIsExportingAll] = useState(false)
+  const [activeTab, setActiveTab] = useState<'matrices' | 'stats'>('matrices')
+
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem('dashboard_active_tab')
+      if (saved === 'matrices' || saved === 'stats') {
+        setActiveTab(saved)
+      }
+    } catch {
+      // Ignore localStorage errors
+    }
+  }, [])
+
+  const handleTabChange = (tab: 'matrices' | 'stats') => {
+    setActiveTab(tab)
+    try {
+      localStorage.setItem('dashboard_active_tab', tab)
+    } catch {
+      // Ignore localStorage errors
+    }
+  }
 
   // Modals & Action State
   const [deleteTarget, setDeleteTarget] = useState<string | null>(null)
@@ -203,6 +227,32 @@ export function Dashboard() {
     }
   }
 
+  async function handleExportAll() {
+    if (isExportingAll) return
+    setIsExportingAll(true)
+    try {
+      await exportAllMatricesToZip({
+        search,
+        dateDesde,
+        dateHasta,
+        tipo: tipoFilter,
+      })
+      toast({
+        title: 'Exportación completada',
+        description: `Se han exportado ${totalMatrices} ${totalMatrices === 1 ? 'matriz' : 'matrices'} en archivos separados dentro de un archivo ZIP.`,
+      })
+    } catch (error: any) {
+      console.error('Error exporting all matrices:', error)
+      toast({
+        title: 'Error de exportación',
+        description: error.message || 'No se pudieron exportar las matrices.',
+        variant: 'destructive',
+      })
+    } finally {
+      setIsExportingAll(false)
+    }
+  }
+
   async function handleDuplicateMatrix(matrizId: string) {
     try {
       const res = await apiFetch(`/api/riesgos/${matrizId}`)
@@ -341,42 +391,115 @@ export function Dashboard() {
             </p>
           </div>
 
-          {/* KPI Statistics & Segmented Risk Distribution */}
-          <DashboardStats totals={totals} />
+          {/* Main Dashboard Navigation Tabs */}
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-[#e2e9e4] pb-2">
+            <div className="inline-flex p-1.5 rounded-2xl bg-white border border-[#dfe9e2] shadow-xs gap-1.5">
+              <button
+                type="button"
+                onClick={() => handleTabChange('matrices')}
+                className={`inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all cursor-pointer ${
+                  activeTab === 'matrices'
+                    ? 'bg-[#1F7D3E] text-white shadow-xs ring-1 ring-[#1F7D3E]/20'
+                    : 'text-[#5e6b62] hover:text-[#163522] hover:bg-[#f0f9f1]'
+                }`}
+              >
+                <LayoutList className="size-4" />
+                <span>Lista de Matrices</span>
+                <span
+                  className={`text-[10px] font-black px-2 py-0.5 rounded-full transition-colors ${
+                    activeTab === 'matrices'
+                      ? 'bg-white/20 text-white'
+                      : 'bg-[#eef5f0] text-[#1F7D3E]'
+                  }`}
+                >
+                  {totalMatrices}
+                </span>
+              </button>
 
-          {/* Matrix Filters */}
-          <MatrixFilters
-            search={search}
-            setSearch={setSearch}
-            dateDesde={dateDesde}
-            setDateDesde={setDateDesde}
-            dateHasta={dateHasta}
-            setDateHasta={setDateHasta}
-            tipoFilter={tipoFilter}
-            setTipoFilter={setTipoFilter}
-            tiposList={facetTipos}
-            onResetFilters={handleResetFilters}
-            onNewMatrix={handleNew}
-            onOpenImport={handleOpenImport}
-          />
+              <button
+                type="button"
+                onClick={() => handleTabChange('stats')}
+                className={`inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all cursor-pointer ${
+                  activeTab === 'stats'
+                    ? 'bg-[#1F7D3E] text-white shadow-xs ring-1 ring-[#1F7D3E]/20'
+                    : 'text-[#5e6b62] hover:text-[#163522] hover:bg-[#f0f9f1]'
+                }`}
+              >
+                <BarChart3 className="size-4" />
+                <span>Estadísticas y Analítica</span>
+                <span
+                  className={`text-[10px] font-black px-2 py-0.5 rounded-full transition-colors ${
+                    activeTab === 'stats'
+                      ? 'bg-white/20 text-white'
+                      : 'bg-[#eef5f0] text-[#1F7D3E]'
+                  }`}
+                >
+                  {totals.totP > 0 ? `${totals.totP.toLocaleString('es-CO')} peligros` : 'KPIs'}
+                </span>
+              </button>
+            </div>
 
-          {/* Matrix List with Cards, Skeletons, and Pagination */}
-          <MatrixList
-            matrices={matrices}
-            totalMatrices={totalMatrices}
-            isLoading={isLoading}
-            currentPage={currentPage}
-            totalPages={totalPages}
-            pageSize={pageSize}
-            setPageSize={setPageSize}
-            onPageChange={setCurrentPage}
-            onResetFilters={handleResetFilters}
-            onPreview={setPreviewMatrixId}
-            onVersions={handleOpenVersions}
-            onDownload={handleDownloadMatrix}
-            onDuplicate={handleDuplicateMatrix}
-            onDelete={handleDeleteMatrix}
-          />
+            <div className="flex items-center gap-2 text-xs text-[#5e6b62] px-1">
+              {activeTab === 'matrices' ? (
+                <span className="text-[11px] font-medium text-[#7a9182]">
+                  Mostrando <strong className="text-[#163522]">{totalMatrices}</strong> matrices institucionales
+                </span>
+              ) : (
+                <span className="text-[11px] font-medium text-[#7a9182]">
+                  Resumen de indicadores y distribución de riesgos GTC 45
+                </span>
+              )}
+            </div>
+          </div>
+
+          {/* TAB 1: Matrices List + Filters & Export */}
+          {activeTab === 'matrices' && (
+            <div className="space-y-6">
+              {/* Matrix Filters with Export Button */}
+              <MatrixFilters
+                search={search}
+                setSearch={setSearch}
+                dateDesde={dateDesde}
+                setDateDesde={setDateDesde}
+                dateHasta={dateHasta}
+                setDateHasta={setDateHasta}
+                tipoFilter={tipoFilter}
+                setTipoFilter={setTipoFilter}
+                tiposList={facetTipos}
+                totalMatrices={totalMatrices}
+                isExportingAll={isExportingAll}
+                onResetFilters={handleResetFilters}
+                onNewMatrix={handleNew}
+                onOpenImport={handleOpenImport}
+                onExportAll={handleExportAll}
+              />
+
+              {/* Matrix List with Cards, Skeletons, and Pagination */}
+              <MatrixList
+                matrices={matrices}
+                totalMatrices={totalMatrices}
+                isLoading={isLoading}
+                currentPage={currentPage}
+                totalPages={totalPages}
+                pageSize={pageSize}
+                setPageSize={setPageSize}
+                onPageChange={setCurrentPage}
+                onResetFilters={handleResetFilters}
+                onPreview={setPreviewMatrixId}
+                onVersions={handleOpenVersions}
+                onDownload={handleDownloadMatrix}
+                onDuplicate={handleDuplicateMatrix}
+                onDelete={handleDeleteMatrix}
+              />
+            </div>
+          )}
+
+          {/* TAB 2: Institutional Statistics & Risk Distribution */}
+          {activeTab === 'stats' && (
+            <div className="space-y-6">
+              <DashboardStats totals={totals} />
+            </div>
+          )}
         </main>
       </div>
 
